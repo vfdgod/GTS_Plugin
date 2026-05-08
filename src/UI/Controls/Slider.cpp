@@ -10,6 +10,8 @@ namespace ImGuiEx {
 
     	ImGui::BeginDisabled(a_disabled);
 
+        // AlwaysClamp mainly affects temporary text input on sliders (e.g. Ctrl+click),
+        // while normal dragging still stays within the slider's min/max range.
         auto flags = GTS::Config::Advanced.bEnforceUIClamps ? ImGuiSliderFlags_AlwaysClamp : 0;
 
         if (a_alwaysClamp && flags) {

@@ -59,12 +59,14 @@ namespace GTS {
 
             PSString T0 = "启用/禁用对玩家体力和魔力的 ActorValue 消耗。";
             PSString T1 = "启用后，尺寸相关技能会保留冷却。关闭后，主要技能冷却会被一并跳过。";
-            PSString T2 = "在 UI 中强制执行滑条最小值/最大值限制。";
+            PSString T2 = "限制滑条的手动输入范围。\n"
+                          "开启后，Ctrl+单击滑条输入数值时会被限制在 UI 范围内。\n"
+                          "关闭后，可以手动输入超出范围的值；普通拖动滑条本身始终受范围限制。";
 
             if (ImGui::CollapsingHeader("调试/作弊", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("启用属性消耗", &Config::Advanced.bDamageAV, T0);
                 ImGuiEx::CheckBox("启用尺寸技能冷却", &Config::Advanced.bCooldowns, T1);
-                ImGuiEx::CheckBox("强制滑条范围", &Config::Advanced.bEnforceUIClamps, T2);
+                ImGuiEx::CheckBox("限制手动输入范围", &Config::Advanced.bEnforceUIClamps, T2);
 
                 if (ImGuiEx::Button("清空技能冷却")) {
                     CooldownManager::GetSingleton().Reset();

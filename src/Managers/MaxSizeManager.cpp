@@ -1,5 +1,9 @@
+#include <cmath>
+
 #include "Managers/MaxSizeManager.hpp"
 #include "Config/Config.hpp"
+#include "Constants.hpp"
+#include "Systems/Misc/Time.hpp"
 #include "Utils/Actions/ButtCrushUtils.hpp"
 
 using namespace GTS;
@@ -7,9 +11,58 @@ using namespace GTS;
 namespace SizeOverride {
 
 	constexpr float SIZE_OVERRIDE_MIN = 0.05f;
+	constexpr float ACTION_FIT_RESULT_MIN = 0.051f;
+	constexpr float ACTION_FIT_RESULT_MAX = 1.0f;
+	constexpr float ACTION_FIT_STRICTEST_THRESHOLD = Action_Vore + 0.01f;
+	constexpr float ACTION_FIT_UPDATE_INTERVAL = 0.15f;
+	constexpr float ACTION_FIT_SCALE_THRESHOLD = 0.01f;
+
+	struct ActionFitCache {
+		float PlayerVisualScale = 1.0f;
+		float Limit = ACTION_FIT_RESULT_MAX;
+		double RefreshAfter = 0.0;
+		bool Initialized = false;
+	};
+
+	ActionFitCache& GetActionFitCache() {
+		static ActionFitCache cache;
+		return cache;
+	}
 
 	bool IsImportantTarget(Actor* a_actor) {
 		return a_actor && !a_actor->IsPlayerRef() && !GTS::IsTeammate(a_actor) && a_actor->IsEssential();
+	}
+
+	float ComputeActionFitLimit(float a_playerScale) {
+		float playerScale = std::max(a_playerScale, ACTION_FIT_RESULT_MIN);
+		if (playerScale >= ACTION_FIT_STRICTEST_THRESHOLD) {
+			return ACTION_FIT_RESULT_MAX;
+		}
+
+		float actionLimit = playerScale / ACTION_FIT_STRICTEST_THRESHOLD;
+		return std::clamp(actionLimit, ACTION_FIT_RESULT_MIN, ACTION_FIT_RESULT_MAX);
+	}
+
+	float GetActionFitLimit(bool a_forceRefresh = false) {
+		Actor* player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return ACTION_FIT_RESULT_MAX;
+		}
+
+		auto& cache = GetActionFitCache();
+		const float playerScale = get_visual_scale(player);
+		const double now = Time::WorldTimeElapsed();
+		const bool playerScaleChanged = std::abs(playerScale - cache.PlayerVisualScale) >= ACTION_FIT_SCALE_THRESHOLD;
+		const bool refreshExpired = now >= cache.RefreshAfter;
+
+		if (a_forceRefresh || !cache.Initialized || playerScaleChanged || refreshExpired) {
+			cache.PlayerVisualScale = playerScale;
+			cache.Limit = ComputeActionFitLimit(playerScale);
+			cache.RefreshAfter = now + ACTION_FIT_UPDATE_INTERVAL;
+			cache.Initialized = true;
+		}
+
+		return cache.Limit;
 	}
 
 	float GetConfiguredOverrideForActor(Actor* a_actor) {
@@ -22,11 +75,24 @@ namespace SizeOverride {
 		}
 
 		if (GTS::IsTeammate(a_actor)) {
+			if (Config::Balance.bFollowerDynamicActionFit) {
+				return GetActionFitLimit();
+			}
 			return Config::Balance.fMaxFollowerSize;
 		}
 
-		if (IsImportantTarget(a_actor) && Config::Balance.fMaxImportantSize > SIZE_OVERRIDE_MIN) {
-			return Config::Balance.fMaxImportantSize;
+		if (IsImportantTarget(a_actor)) {
+			if (Config::Balance.bImportantDynamicActionFit) {
+				return GetActionFitLimit();
+			}
+
+			if (Config::Balance.fMaxImportantSize > SIZE_OVERRIDE_MIN) {
+				return Config::Balance.fMaxImportantSize;
+			}
+		}
+
+		if (Config::Balance.bOtherDynamicActionFit) {
+			return GetActionFitLimit();
 		}
 
 		return Config::Balance.fMaxOtherSize;
@@ -143,6 +209,10 @@ namespace {
 
 namespace GTS {
 
+	float GetActionCompatibleSizeLimit(bool a_forceRefresh) {
+		return SizeOverride::GetActionFitLimit(a_forceRefresh);
+	}
+
     void UpdateMaxScale(Actor* a_actor) {
        	GTS_PROFILE_SCOPE("MaxSizeManager: UpdateMaxScale");
 
@@ -179,7 +249,7 @@ namespace GTS {
 			float OverrideLimit = SizeOverride::GetConfiguredOverrideForActor(a_actor);
 
 			if (OverrideLimit > SizeOverride::SIZE_OVERRIDE_MIN) {
-				TotalLimit = OverrideLimit * NaturalScale;
+				TotalLimit = OverrideLimit;
 			}
 		}
 
@@ -263,7 +333,8 @@ namespace GTS {
 		if (IsSizeUnlocked()) {
 			const float SizeLimit = SizeOverride::GetConfiguredOverrideForActor(actor);
 			if (SizeLimit > SizeOverride::SIZE_OVERRIDE_MIN) {
-				ScaleMult = std::clamp(SizeLimit, 0.1f, 1.0f);
+				const float NaturalScale = std::max(get_natural_scale(actor, true), 0.001f);
+				ScaleMult = std::clamp(SizeLimit / NaturalScale, 0.0f, 1.0f);
 			}
 		}
 	}

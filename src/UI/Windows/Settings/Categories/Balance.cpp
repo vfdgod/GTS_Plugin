@@ -16,6 +16,53 @@
 
 namespace GTS {
 
+	namespace {
+		constexpr float MaxSizeSliderAutoThreshold = 0.0001f;
+		constexpr float MaxSizeSliderPresetReset = 1.0f;
+
+		const char* GetManualMaxSizeSliderFormat(float value) {
+			return value < 1.0f ? "%.2fx" : "%.1fx";
+		}
+
+		std::string GetActionFitSliderFormat() {
+			return fmt::format("动作适配 [{:.2f}x]", GetActionCompatibleSizeLimit());
+		}
+
+		bool DrawMaxSizePresetButtons(float* scale, const char* resetLabel, bool* dynamicActionFit = nullptr, const char* actionLabel = nullptr) {
+			bool changed = false;
+
+			ImGui::SameLine();
+			if (ImGuiEx::Button(resetLabel, "将此滑块快速重置为 1.0x")) {
+				*scale = MaxSizeSliderPresetReset;
+				if (dynamicActionFit) {
+					*dynamicActionFit = false;
+				}
+				changed = true;
+			}
+
+			if (dynamicActionFit && actionLabel) {
+				const float actionFitLimit = GetActionCompatibleSizeLimit();
+				const std::string actionTooltip = fmt::format(
+					"动态跟随当前玩家体型，为所有常规目标动作保留可用上限。\n"
+					"按最严格的 Grab/Vore 条件（> x8 体型差）计算，并限制在 1.0x 以内。\n"
+					"每 0.15 秒，或玩家体型变化至少 0.01x 时自动刷新。\n"
+					"当前结果：{:.2f}x。\n"
+					"启用后，拖动滑块或点击 1x 会退出此模式。",
+					actionFitLimit
+				);
+
+				ImGui::SameLine();
+				if (ImGuiEx::Button(actionLabel, actionTooltip.c_str())) {
+					*scale = GetActionCompatibleSizeLimit(true);
+					*dynamicActionFit = true;
+					changed = true;
+				}
+			}
+
+			return changed;
+		}
+	}
+
 	CategoryBalance::CategoryBalance() {
 		m_name = "平衡";
 	}
@@ -168,7 +215,7 @@ namespace GTS {
                     float* Scale = &Config::Balance.fMaxPlayerSizeOverride;
 
                     const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + 0.1000f);
+                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
 
                     float UIValue = StoredInf ? Max : (StoredAuto ? Min : *Scale);
 
@@ -186,7 +233,7 @@ namespace GTS {
                         }
                     }
                     else {
-                        _Frmt = "%.1fx";
+                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
                     }
 
                     std::string ToolTip = fmt::format(
@@ -200,7 +247,7 @@ namespace GTS {
 
                     if (Changed) {
                         const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + 0.1000f);
+                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
 
                         if (WantsInf) {
                             *Scale = InfSentinel;
@@ -220,25 +267,32 @@ namespace GTS {
                             *Scale = 0.0f;
                         }
                     }
+
+                    DrawMaxSizePresetButtons(Scale, "1x##PlayerMaxSizeReset");
                 }
 
                 {   // Max Follower Size
                     float* Scale = &Config::Balance.fMaxFollowerSize;
+                    bool* DynamicActionFit = &Config::Balance.bFollowerDynamicActionFit;
 
                     const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + 0.1000f);
+                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
+                    const bool StoredDynamic = *DynamicActionFit;
 
-                    float UIValue = StoredInf ? Max : (StoredAuto ? Min : *Scale);
+                    float UIValue = StoredDynamic ? GetActionCompatibleSizeLimit() : (StoredInf ? Max : (StoredAuto ? Min : *Scale));
 
                     std::string _Frmt;
-                    if (StoredInf) {
+                    if (StoredDynamic) {
+                        _Frmt = GetActionFitSliderFormat();
+                    }
+                    else if (StoredInf) {
                         _Frmt = "无限";
                     }
                     else if (StoredAuto) {
                         _Frmt = IsMassBased ? "质量模式" : "技能决定";
                     }
                     else {
-                        _Frmt = "%.1fx";
+                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
                     }
 
                     std::string ToolTip = fmt::format(
@@ -251,8 +305,9 @@ namespace GTS {
                     const bool Changed = ImGuiEx::SliderF("追随者最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
 
                     if (Changed) {
+                        *DynamicActionFit = false;
                         const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + 0.1000f);
+                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
 
                         if (WantsInf) {
                             *Scale = InfSentinel;
@@ -264,7 +319,7 @@ namespace GTS {
                             *Scale = UIValue;
                         }
                     }
-                    else {
+                    else if (!StoredDynamic) {
                         if (StoredInf) {
                             *Scale = InfSentinel;
                         }
@@ -272,25 +327,43 @@ namespace GTS {
                             *Scale = 0.0f;
                         }
                     }
+
+                    DrawMaxSizePresetButtons(
+                        Scale,
+                        "1x##FollowerMaxSizeReset",
+                        DynamicActionFit,
+                        StoredDynamic ? "动作适配中##FollowerMaxSizeActionFit" : "动作适配##FollowerMaxSizeActionFit"
+                    );
                 }
 
                 {   // Important Target Max Size
                     float* Scale = &Config::Balance.fMaxImportantSize;
+                    bool* DynamicActionFit = &Config::Balance.bImportantDynamicActionFit;
+                    const bool OtherDynamicActionFit = Config::Balance.bOtherDynamicActionFit;
 
                     const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + 0.1000f);
+                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
+                    const bool StoredDynamic = *DynamicActionFit;
 
-                    float UIValue = StoredInf ? Max : (StoredAuto ? Min : *Scale);
+                    float UIValue = StoredDynamic ? GetActionCompatibleSizeLimit() : (StoredInf ? Max : (StoredAuto ? Min : *Scale));
 
                     std::string _Frmt;
-                    if (StoredInf) {
+                    if (StoredDynamic) {
+                        _Frmt = GetActionFitSliderFormat();
+                    }
+                    else if (StoredInf) {
                         _Frmt = "无限";
                     }
                     else if (StoredAuto) {
-                        _Frmt = IsMassBased ? "沿用其他普通目标/质量模式" : "沿用其他普通目标/技能决定";
+                        if (OtherDynamicActionFit) {
+                            _Frmt = fmt::format("沿用其他普通目标/动作适配 [{:.2f}x]", GetActionCompatibleSizeLimit());
+                        }
+                        else {
+                            _Frmt = IsMassBased ? "沿用其他普通目标/质量模式" : "沿用其他普通目标/技能决定";
+                        }
                     }
                     else {
-                        _Frmt = "%.1fx";
+                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
                     }
 
                     std::string ToolTip = fmt::format(
@@ -305,8 +378,9 @@ namespace GTS {
                     const bool Changed = ImGuiEx::SliderF("重要角色最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
 
                     if (Changed) {
+                        *DynamicActionFit = false;
                         const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + 0.1000f);
+                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
 
                         if (WantsInf) {
                             *Scale = InfSentinel;
@@ -318,7 +392,7 @@ namespace GTS {
                             *Scale = UIValue;
                         }
                     }
-                    else {
+                    else if (!StoredDynamic) {
                         if (StoredInf) {
                             *Scale = InfSentinel;
                         }
@@ -326,25 +400,37 @@ namespace GTS {
                             *Scale = 0.0f;
                         }
                     }
+
+                    DrawMaxSizePresetButtons(
+                        Scale,
+                        "1x##ImportantMaxSizeReset",
+                        DynamicActionFit,
+                        StoredDynamic ? "动作适配中##ImportantMaxSizeActionFit" : "动作适配##ImportantMaxSizeActionFit"
+                    );
                 }
 
                 {   // Other Normal Target Max Size
                     float* Scale = &Config::Balance.fMaxOtherSize;
+                    bool* DynamicActionFit = &Config::Balance.bOtherDynamicActionFit;
 
                     const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + 0.1000f);
+                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
+                    const bool StoredDynamic = *DynamicActionFit;
 
-                    float UIValue = StoredInf ? Max : (StoredAuto ? Min : *Scale);
+                    float UIValue = StoredDynamic ? GetActionCompatibleSizeLimit() : (StoredInf ? Max : (StoredAuto ? Min : *Scale));
 
                     std::string _Frmt;
-                    if (StoredInf) {
+                    if (StoredDynamic) {
+                        _Frmt = GetActionFitSliderFormat();
+                    }
+                    else if (StoredInf) {
                         _Frmt = "无限";
                     }
                     else if (StoredAuto) {
                         _Frmt = IsMassBased ? "质量模式" : "技能决定";
                     }
                     else {
-                        _Frmt = "%.1fx";
+                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
                     }
 
                     std::string ToolTip = fmt::format(
@@ -359,8 +445,9 @@ namespace GTS {
                     const bool Changed = ImGuiEx::SliderF("其他普通目标最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
 
                     if (Changed) {
+                        *DynamicActionFit = false;
                         const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + 0.1000f);
+                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
 
                         if (WantsInf) {
                             *Scale = InfSentinel;
@@ -372,7 +459,7 @@ namespace GTS {
                             *Scale = UIValue;
                         }
                     }
-                    else {
+                    else if (!StoredDynamic) {
                         if (StoredInf) {
                             *Scale = InfSentinel;
                         }
@@ -380,6 +467,13 @@ namespace GTS {
                             *Scale = 0.0f;
                         }
                     }
+
+                    DrawMaxSizePresetButtons(
+                        Scale,
+                        "1x##OtherMaxSizeReset",
+                        DynamicActionFit,
+                        StoredDynamic ? "动作适配中##OtherMaxSizeActionFit" : "动作适配##OtherMaxSizeActionFit"
+                    );
                 }
 
                 ImGui::Spacing();
