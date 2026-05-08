@@ -2,6 +2,7 @@
 
 #include "UI/Core/ImUtil.hpp"
 
+#include "UI/Controls/Button.hpp"
 #include "UI/Controls/CheckBox.hpp"
 #include "UI/Controls/Slider.hpp"
 #include "UI/Controls/ToolTip.hpp"
