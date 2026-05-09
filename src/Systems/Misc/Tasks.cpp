@@ -4,7 +4,7 @@ namespace {
 
 	struct QueuedTask {
 		std::string name;
-		GTS::BaseTask* task;
+		std::shared_ptr<GTS::BaseTask> task;
 	};
 
 	std::vector<QueuedTask> CollectTasksForUpdate(auto& taskings, std::mutex& taskingsLock, GTS::UpdateKind kind) {
@@ -18,7 +18,7 @@ namespace {
 				if (task && task->UpdateOn() == kind) {
 					queued.push_back({
 						name,
-						task.get(),
+						task,
 					});
 				}
 			}
@@ -37,7 +37,7 @@ namespace {
 
 		for (const auto& queued : toRemove) {
 			auto it = taskings.find(queued.name);
-			if (it != taskings.end() && it->second.get() == queued.task) {
+			if (it != taskings.end() && it->second == queued.task) {
 				taskings.erase(it);
 			}
 		}
@@ -50,7 +50,14 @@ namespace {
 		toRemove.reserve(queued.size());
 
 		for (const auto& entry : queued) {
-			if (!entry.task->Update()) {
+			if (!entry.task || !entry.task->TryBeginUpdate()) {
+				continue;
+			}
+
+			const bool shouldContinue = entry.task->Update();
+			entry.task->EndUpdate();
+
+			if (!shouldContinue) {
 				toRemove.push_back(entry);
 			}
 		}
@@ -175,7 +182,8 @@ namespace GTS {
 
 	void TaskManager::InsertTask(std::string_view name, std::unique_ptr<BaseTask> task) {
 		std::scoped_lock lock(m_taskingsLock);
-		auto [it, inserted] = m_taskings.try_emplace(std::string(name), std::move(task));
+		auto sharedTask = std::shared_ptr<BaseTask>(std::move(task));
+		auto [it, inserted] = m_taskings.try_emplace(std::string(name), std::move(sharedTask));
 		if (!inserted) {
 			//logger::warn("Task '{}' already exists", name);
 		}

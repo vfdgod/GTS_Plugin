@@ -17,6 +17,17 @@ namespace GTS {
 		virtual ~BaseTask() = default;
 		virtual bool Update() = 0;
 
+		// Tasks can be queued by one update path and canceled or re-routed by another.
+		// This lightweight gate avoids overlapping Update() calls on the same task instance.
+		bool TryBeginUpdate() {
+			bool expected = false;
+			return this->isUpdating.compare_exchange_strong(expected, true, std::memory_order_acq_rel);
+		}
+
+		void EndUpdate() {
+			this->isUpdating.store(false, std::memory_order_release);
+		}
+
 		__forceinline UpdateKind UpdateOn() const {
 			return this->updateOnKind;
 		}
@@ -27,6 +38,9 @@ namespace GTS {
 
 		protected:
 		UpdateKind updateOnKind = UpdateKind::Main;
+
+		private:
+		std::atomic_bool isUpdating = false;
 	};
 
 	class Oneshot : public BaseTask {
@@ -111,7 +125,7 @@ namespace GTS {
 		static void UpdateTasks(UpdateKind kind);
 		static void InsertTask(std::unique_ptr<BaseTask> task);
 		static void InsertTask(std::string_view name, std::unique_ptr<BaseTask> task);
-		static inline absl::flat_hash_map<std::string, std::unique_ptr<BaseTask>> m_taskings;
+		static inline absl::flat_hash_map<std::string, std::shared_ptr<BaseTask>> m_taskings;
 		static inline std::mutex m_taskingsLock;
 	};
 }
