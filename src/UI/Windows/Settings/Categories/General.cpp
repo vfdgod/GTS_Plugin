@@ -1,4 +1,4 @@
-﻿#include "UI/Windows/Settings/Categories/General.hpp"
+#include "UI/Windows/Settings/Categories/General.hpp"
 
 #include "UI/Core/ImUtil.hpp"
 
@@ -20,24 +20,24 @@
 
 namespace {
 
-	PSString T_Export = "Export the current mod configuration to a file.";
-	PSString T_Import = "Import the current mod configuration from the selected export file.";
-	PSString T_Delete = "Delete the currently selected settings export.";
-	PSString T_Cleanup = "Delete all but the 5 most recent exports.";
+	PSString T_Export = "将当前模组配置导出到文件。";
+	PSString T_Import = "从选中的导出文件导入当前模组配置。";
+	PSString T_Delete = "删除当前选中的设置导出。";
+	PSString T_Cleanup = "删除除最近 5 个以外的所有导出。";
 
-	PSString T_Reset = "Reset all settings, this does not reset any modified action keybinds.\n"
-	                   "If you want to reset those press the reset button on its page instead.";
+	PSString T_Reset = "重置所有设置，但不会重置已修改的动作按键绑定。\n"
+	                   "如需重置按键绑定，请在对应页面点击重置按钮。";
 
-	PSString T_PandoraWarn = "The animations for this mod were designed to be used with the Nemesis behavior generator.\n"
-						     "Whilst pandora can use nemesis' behavior format, its not fully compatible with it.\n"
-		                     "You may experience subtle animation bugs, desyncs or some animations not playing at all if behaviors are generated through pandora for this mod.";
+	PSString T_PandoraWarn = "本模组动画是按 Nemesis 行为生成器设计的。\n"
+						     "Pandora 虽然能使用 Nemesis 的行为格式，但并不完全兼容。\n"
+		                     "如果使用 Pandora 为本模组生成行为，可能会遇到细微动画错误、不同步，或部分动画完全无法播放。";
 
-	PSString T_FirstPersonWarn = "Animations can't be checked for as they do not exist for first person.\n"
-							     "Either switch to third person or use Improved Camera 2's \"Fake First Person\"\n"
-			                     "to be able to use third person animations in first person.";
+	PSString T_FirstPersonWarn = "无法检查第一人称动画，因为这些动画没有第一人称版本。\n"
+							     "请切换到第三人称，或使用 Improved Camera 2 的 “Fake First Person”，\n"
+			                     "以便在第一人称中使用第三人称动画。";
 
-	PSString T_UnknownBehavior = "The used behavior generator could not be determined.\n"
-							     "This can either mean that you didn't run Nemsis/Pandora or are using another tool to generate them.";
+	PSString T_UnknownBehavior = "无法确定使用的行为生成器。\n"
+							     "这可能表示你没有运行 Nemesis/Pandora，或使用了其他工具生成行为。";
 
 	void DrawImportExport(){
 
@@ -57,7 +57,7 @@ namespace {
 			if (GTS::Config::ExportSettings()) {
 				auto files = GTS::Config::GetExportedFiles();
 				if (!files.empty()) {
-					statusText = fmt::format("✓ Saved as {}", files.front().filename().string());
+					statusText = fmt::format("✓ 已保存为 {}", files.front().filename().string());
 				}
 			}
 		}
@@ -66,15 +66,15 @@ namespace {
 
 		if (ImGuiEx::ImageButton("##Import", ImageList::Export_Load, 32, T_Import)) {
 			if(selectedExportIndex < 0) {
-				statusText = fmt::format("Select an export first", fileNames[selectedExportIndex]);
+				statusText = "请先选择一个导出文件";
 			}
 			else if (selectedExportIndex >= 0 && selectedExportIndex < exportFiles.size()) {
 				if (GTS::Config::LoadFromExport(exportFiles[selectedExportIndex].string())) {
 					GTS::EventDispatcher::DoConfigRefreshEvent();
-					statusText = fmt::format("✓ Applied {}", fileNames[selectedExportIndex]);
+					statusText = fmt::format("✓ 已应用 {}", fileNames[selectedExportIndex]);
 				}
 				else {
-					statusText = "Import failed";
+					statusText = "导入失败";
 				}
 			}
 		}
@@ -84,11 +84,11 @@ namespace {
 		if (ImGuiEx::ImageButton("##Delete", ImageList::Export_Delete, 32, T_Delete)) {
 
 			if (selectedExportIndex < 0) {
-				statusText = fmt::format("Select an export first", fileNames[selectedExportIndex]);
+				statusText = "请先选择一个导出文件";
 			}
 			else if (selectedExportIndex >= 0 && selectedExportIndex < exportFiles.size()) {
 				GTS::Config::DeleteExport(exportFiles[selectedExportIndex].string());
-				statusText = fmt::format("Deleted {}", fileNames[selectedExportIndex]);
+				statusText = fmt::format("已删除 {}", fileNames[selectedExportIndex]);
 				selectedExportIndex = -1;
 			}
 		}
@@ -97,21 +97,21 @@ namespace {
 
 		if (ImGuiEx::ImageButton("##Cleaunup", ImageList::Export_Cleanup, 32, T_Cleanup)) {
 			GTS::Config::CleanOldExports(keepCount);
-			statusText = fmt::format("✓ Removed old exports [Kept {0} most recent]", keepCount);
+			statusText = fmt::format("✓ 已移除旧导出 [保留最近 {0} 个]", keepCount);
 		}
 
 		ImGuiEx::SeperatorV();
 
 		if (ImGuiEx::ImageButton("##Reset", ImageList::Generic_Reset, 32, T_Reset)) {
 			GTS::EventDispatcher::DoConfigResetEvent();
-			statusText = fmt::format("✓ Mod settings have been reset");
+			statusText = "✓ 模组设置已重置";
 		}
 
 		// Combo box for selecting exports
 		const char* previewValue = (
 			selectedExportIndex >= 0 && selectedExportIndex < fileNames.size()) ?
 			fileNames[selectedExportIndex].c_str() :
-			"Select export file...";
+			"选择导出文件...";
 
 		if (ImGui::BeginCombo("##ExportCombo", previewValue)) {
 			for (int i = 0; i < fileNames.size(); i++) {
@@ -150,12 +150,12 @@ namespace GTS {
 		ImUtil_Unique 
 		{
 
-			PSString T0 = "The automatic check can sometimes be unreliable.\n"
-						  "By pressing this you can forcefully try to play an animation.\n"
-						  "It is highly recommended to stand still on the ground when using this.\n\n"
-						  "A messagebox should appear stating wether the animation was successfully played or not.";
+			PSString T0 = "自动检查有时并不可靠。\n"
+						  "点击此按钮可强制尝试播放一次动画。\n"
+						  "强烈建议使用时站在地面上并保持不动。\n\n"
+						  "随后会弹出消息框，提示动画是否成功播放。";
 
-			if (ImGui::CollapsingHeader("Animations Check", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("动画检查", ImUtil::HeaderFlagsDefaultOpen)) {
 				const auto Player = PlayerCharacter::GetSingleton();
 				const bool WorkingAnims = AnimationVars::Utility::BehaviorsInstalled(Player);
 				const bool FirstPerson = IsFirstPerson();
@@ -167,18 +167,18 @@ namespace GTS {
 				{
 					ImFontManager::Push(ImFontManager::ActiveFontType::kWidgetTitle);
 
-					ImGui::Text("Animations Installed: ");
+					ImGui::Text("动画已安装：");
 					if (FirstPerson) {
 						ImGui::SameLine(0);
-						ImGui::TextColored(ImUtil::Colors::Warning, "Unknown");
+						ImGui::TextColored(ImUtil::Colors::Warning, "未知");
 					}
 					else if (WorkingAnims) {
 						ImGui::SameLine(0, 1);
-						ImGui::TextColored(ImUtil::Colors::OK, "Yes");
+						ImGui::TextColored(ImUtil::Colors::OK, "是");
 					}
 					else {
 						ImGui::SameLine(0);
-						ImGui::TextColored(ImUtil::Colors::Error, "No");
+						ImGui::TextColored(ImUtil::Colors::Error, "否");
 					}
 
 					ImFontManager::Pop();
@@ -190,7 +190,7 @@ namespace GTS {
 
 				// Behavior Generator Info
 				{
-					ImGui::Text("Behavior Generator: ");
+					ImGui::Text("行为生成器：");
 					if (IsPandoraGenerated) {
 						ImGui::SameLine(0);
 						ImGui::TextColored(ImUtil::Colors::Warning, "Pandora");
@@ -202,17 +202,17 @@ namespace GTS {
 					}
 					else if (FirstPerson) {
 						ImGui::SameLine(0);
-						ImGui::TextColored(ImUtil::Colors::Warning, "Unknown");
+						ImGui::TextColored(ImUtil::Colors::Warning, "未知");
 						ImGuiEx::Tooltip(T_FirstPersonWarn, true);
 					}
 					else {
 						ImGui::SameLine(0);
-						ImGui::TextColored(ImUtil::Colors::Error, "None/Other");
+						ImGui::TextColored(ImUtil::Colors::Error, "无/其他");
 						ImGuiEx::Tooltip(T_UnknownBehavior, true);
 					}
 				}
 
-				if (ImGuiEx::Button("Manualy Test Animations", T0)) {
+				if (ImGuiEx::Button("手动测试动画", T0)) {
 
 					//Simulate Closing the menu
 					GTSMenu::CloseInputConsumers();
@@ -226,10 +226,10 @@ namespace GTS {
 							if (progressData.runtime > 0.5) {
 
 								if (AnimationVars::General::IsGTSBusy(Player)) {
-									PrintMessageBox("Animations should be working.");
+									PrintMessageBox("动画应已正常工作。");
 								}
 								else {
-									PrintMessageBox("Animation did not start.");
+									PrintMessageBox("动画未能开始。");
 								}
 								return false;
 							}
@@ -245,7 +245,7 @@ namespace GTS {
 
 		ImUtil_Unique 
 		{
-			if (ImGui::CollapsingHeader("Export/Import Settings", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("导出/导入设置", ImUtil::HeaderFlagsDefaultOpen)) {
 				DrawImportExport();
 			}
 		}
@@ -255,14 +255,14 @@ namespace GTS {
 		ImUtil_Unique 
 		{
 
-			PSString T0 = "Open this mod's custom skill tree";
-			PSString T1 = "Automatically complete this mod's quest.";
-			PSString T2 = "Get all of the mod's spells";
-			PSString T3 = "Instantly complete the perk tree.";
-			PSString T4 = "Get all of the mod's shouts";
+			PSString T0 = "打开本模组的自定义技能树。";
+			PSString T1 = "自动完成本模组任务。";
+			PSString T2 = "获得本模组的全部法术。";
+			PSString T3 = "立即完成 Perk 树。";
+			PSString T4 = "获得本模组的全部龙吼。";
 
-			if (ImGui::CollapsingHeader("Shortcuts", ImUtil::HeaderFlagsDefaultOpen)) {
-				if (ImGuiEx::Button("Open Skill Tree", T0)) {
+			if (ImGui::CollapsingHeader("快捷操作", ImUtil::HeaderFlagsDefaultOpen)) {
+				if (ImGuiEx::Button("打开技能树", T0)) {
 					GTSMenu::CloseInputConsumers();
 					Runtime::SetFloat(Runtime::GLOB.GTSSkillMenu, 1.0f);
 				}
@@ -272,26 +272,26 @@ namespace GTS {
 				const auto Complete = ProgressionQuestCompleted();
 
 				if (!Complete) {
-					if (ImGuiEx::Button("Skip Quest", T1)) {
+					if (ImGuiEx::Button("跳过任务", T1)) {
 						SkipProgressionQuest();
 					}
 				}
 				else {
 					ImGui::SameLine();
 
-					if (ImGuiEx::Button("Get All Spells", T2, !Complete)) {
+					if (ImGuiEx::Button("获得全部法术", T2, !Complete)) {
 						GiveAllSpellsToPlayer();
 					}
 
 					ImGui::SameLine();
 
-					if (ImGuiEx::Button("Get All Perks", T3, !Complete)) {
+					if (ImGuiEx::Button("获得全部 Perk", T3, !Complete)) {
 						GiveAllPerksToPlayer();
 					}
 
 					ImGui::SameLine();
 
-					if (ImGuiEx::Button("Get All Shouts", T4, !Complete)) {
+					if (ImGuiEx::Button("获得全部龙吼", T4, !Complete)) {
 						GiveAllShoutsToPlayer();
 					}
 				}
@@ -305,13 +305,13 @@ namespace GTS {
 		ImUtil_Unique 
 		{
 
-			PSString T0 = "Protect essential NPCs from being crushed, eaten, or affected by size-related spells/actions.";
-			PSString T1 = "Protect followers from being crushed, eaten, or affected by size-related spells/actions.";
+			PSString T0 = "保护重要 NPC，避免其被碾压、吞噬，或受到体型相关法术/动作影响。";
+			PSString T1 = "保护追随者，避免其被碾压、吞噬，或受到体型相关法术/动作影响。";
 
-			if (ImGui::CollapsingHeader("Protect Actors", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Protect Essential NPCs",&Config::General.bProtectEssentials, T0);
+			if (ImGui::CollapsingHeader("保护角色", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("保护重要 NPC",&Config::General.bProtectEssentials, T0);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Protect Followers",&Config::General.bProtectFollowers, T1);
+				ImGuiEx::CheckBox("保护追随者",&Config::General.bProtectFollowers, T1);
 				ImGui::Spacing();
 			}
 	}
@@ -320,17 +320,17 @@ namespace GTS {
 		ImUtil_Unique 
 		{
 
-			PSString T0 = "Enable or disable experimental compatibility with the Devourment mod.\n"
-							 "This compatibility toggle may lead to issues such as actors being swallowed with delay (because Papyrus lags) or other bugs\n\n"
-							 "If enabled, when this mod's vore actions are completed, the NPC will be delegated to the Devourment mod.";
+			PSString T0 = "启用或禁用与 Devourment 模组的实验性兼容。\n"
+							 "此兼容开关可能导致角色被延迟吞下（因为 Papyrus 延迟）或其他 Bug。\n\n"
+							 "启用后，本模组吞噬动作完成时，该 NPC 会交由 Devourment 模组处理。";
 
-			PSString T1 = "Enable or disable compatibility with the Alternate Conversation Camera mod.\n"
-							 "If enabled, this mod's camera offsets during dialogue will be disabled.";
+			PSString T1 = "启用或禁用与 Alternate Conversation Camera 模组的兼容。\n"
+							 "启用后，本模组在对话期间的镜头偏移会被禁用。";
 
-			if (ImGui::CollapsingHeader("Compatibility", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Devourment Compatibility",&Config::General.bDevourmentCompat, T0, !Runtime::IsDevourmentInstalled());
+			if (ImGui::CollapsingHeader("兼容性", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("Devourment 兼容",&Config::General.bDevourmentCompat, T0, !Runtime::IsDevourmentInstalled());
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Alt Conversation Cam. Compatibility", &Config::General.bConversationCamCompat, T1, !Runtime::IsAltConversationCamInstalled());
+				ImGuiEx::CheckBox("Alt Conversation Cam. 兼容", &Config::General.bConversationCamCompat, T1, !Runtime::IsAltConversationCamInstalled());
 				ImGui::Spacing();
 
 			}
@@ -338,13 +338,13 @@ namespace GTS {
 
 		ImUtil_Unique
 		{
-			PSString T1 = "Adjust the speed of all animations based on an actor's scale.";
-			PSString T2 = "Reduce the amount of gore in some sound and visual effects.";
+			PSString T1 = "根据角色体型调整所有动画速度。";
+			PSString T2 = "减少部分声音和视觉效果中的血腥程度。";
 
-			if (ImGui::CollapsingHeader("Miscellaneous", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Dynamic Animation Speed", &Config::General.bDynamicAnimspeed, T1);
+			if (ImGui::CollapsingHeader("杂项", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("动态动画速度", &Config::General.bDynamicAnimspeed, T1);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Less Gore", &Config::General.bLessGore, T2);
+				ImGuiEx::CheckBox("减少血腥", &Config::General.bLessGore, T2);
 				ImGui::Spacing();
 			}
 		}
@@ -354,26 +354,26 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Male Actor Support:\n"
-	                      "No support is provided for this feature.\n"
-	                      "This mod was primarily designed with female NPCs in mind\n"
-	                      "and always assumes the player/followers are female.\n"
-	                      "Animations may not look good and could cause issues even.\n"
-	                      "Use at your own risk.";
+	        PSString T0 = "男性角色支持：\n"
+	                      "此功能不提供支持保障。\n"
+	                      "本模组主要按女性 NPC 设计，\n"
+	                      "并始终假设玩家/追随者为女性。\n"
+	                      "动画观感可能不佳，甚至可能引发问题。\n"
+	                      "请自行承担风险。";
 
-			PSString T1 = "Apply computationally expensive damage calculations to all NPC's in the scene.\n"
-	    	              "This toggle can be EXTREMELY fps hungry, it is highly recommended to keep it off.";
+			PSString T1 = "对场景中的所有 NPC 应用计算成本较高的伤害计算。\n"
+		              "此开关可能极其消耗 FPS，强烈建议保持关闭。";
 			
-			PSString T2 = "Enable or disable dynamic alteration of fActivatePickLength and fActivatePickRadius ini\n"
-	    	              "It will be altered from 180 and 18 (default) to 180 and 18 * Player Scale";
+			PSString T2 = "启用或禁用对 ini 中 fActivatePickLength 与 fActivatePickRadius 的动态修改。\n"
+		              "它会从默认的 180 和 18 改为 180 和 18 * 玩家体型。";
 
 
 
-	        if (ImGui::CollapsingHeader("Experimental", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Allow Male Actors", &Config::General.bEnableMales, T0);
+	        if (ImGui::CollapsingHeader("实验性", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("允许男性角色", &Config::General.bEnableMales, T0);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Apply Size Effects to all Actors", &Config::General.bAllActorSizeEffects, T1);
-				ImGuiEx::CheckBox("Override Item/NPC Interaction Range", &Config::General.bOverrideInteractionDist, T2);
+				ImGuiEx::CheckBox("对所有角色应用体型效果", &Config::General.bAllActorSizeEffects, T1);
+				ImGuiEx::CheckBox("覆盖物品/NPC 互动距离", &Config::General.bOverrideInteractionDist, T2);
 	        }
 	    }
 	}
@@ -386,21 +386,21 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-			PSString T0 = "This toggle enables automatic size adjustment:\n"
-			              "If the player or their followers are too large to fit within a room, they will be temporarily shrunk down to roughly 90%% of the room's current height.\n"
-			              "Once outside the small room, they will regrow to their previous size.";
+			PSString T0 = "此开关启用自动体型调整：\n"
+			              "如果玩家或追随者太大而无法适应房间，会被临时缩小到约为当前房间高度的 90%%。\n"
+			              "离开小房间后，会恢复到之前的体型。";
 
-			PSString T1 = "Temporarily shrinks the target actor to fit the occupied furniture.";
+			PSString T1 = "临时缩小目标角色，使其适应正在使用的家具。";
 
-			if (ImGui::CollapsingHeader("Dynamic Scale", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("动态体型", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::CheckBox("Scale To Room (Player)", &Config::General.bDynamicSizePlayer, T0);
+				ImGuiEx::CheckBox("适应房间（玩家）", &Config::General.bDynamicSizePlayer, T0);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Scale To Room (Followers)", &Config::General.bDynamicSizeFollowers, T0);
+				ImGuiEx::CheckBox("适应房间（追随者）", &Config::General.bDynamicSizeFollowers, T0);
 
-				ImGuiEx::CheckBox("Scale To Furniture (Player)", &Config::General.bDynamicFurnSizePlayer, T1);
+				ImGuiEx::CheckBox("适应家具（玩家）", &Config::General.bDynamicFurnSizePlayer, T1);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Scale To Furniture (Followers)", &Config::General.bDynamicFurnSizeFollowers, T1);
+				ImGuiEx::CheckBox("适应家具（追随者）", &Config::General.bDynamicFurnSizeFollowers, T1);
 			}
 
 			ImGui::Spacing();
@@ -408,23 +408,23 @@ namespace GTS {
 
 		ImUtil_Unique
 		{
-			PSString T2Help = "Movement speed clamping gradually reduces NPC movement speed as they exceed certain size thresholds.\n"
-							  "This prevents large NPCs from moving unrealistically fast.\n"
-							  "The speed reduction scales smoothly between the start and maximum thresholds.";
+			PSString T2Help = "移动速度钳制会在 NPC 超过指定体型阈值后逐渐降低移动速度。\n"
+							  "这能防止大型 NPC 以不真实的速度移动。\n"
+							  "速度降低会在起始阈值与最大阈值之间平滑缩放。";
 
-			PSString T2_1 = "The scale at which sprinting is disabled and the speed reduction begins.";
-			PSString T2_2 = "The scale at which the NPC speed multiplier is fully clamped to the value set below.";
+			PSString T2_1 = "禁用冲刺并开始降低速度的体型。";
+			PSString T2_2 = "NPC 速度倍率完全钳制到下方设置值时的体型。";
 			PSString T2_3 =
-				"Controls how slow NPCs are allowed to become when size-based speed clamping is applied.\n"
-				"For example, 80%% means NPCs will still move at least at 80%% of their normal run/jog speed,\n"
-				"even when past the max clamping threshold scale. 0%% effectively disables this feature.";
+				"控制应用体型速度钳制后，NPC 最多能变得多慢。\n"
+				"例如，80%% 表示即使超过最大钳制阈值，NPC 仍至少以正常跑步/慢跑速度的 80%% 移动。\n"
+				"0%% 实际上会禁用此功能。";
 
 
-			if (ImGui::CollapsingHeader("Movement", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::HelpText("What is this", T2Help);
-				ImGuiEx::SliderF("Start NPC Speed Clamp", &Config::General.fNPCMaxSpeedMultClampStartAt, 1.0f, 20.0f, T2_1, "When larger than %.1fx");
-				ImGuiEx::SliderF("NPC Max Clamp", &Config::General.fNPCMaxSpeedMultClampMaxAt, Config::General.fNPCMaxSpeedMultClampStartAt, Config::General.fNPCMaxSpeedMultClampStartAt + 20.f, T2_2, "At %.1fx");
-				ImGuiEx::SliderF("Lowest Speed Offset %", &Config::General.fNPCMaxSpeedMultLerpTargetPercent, 0.0f, 100.f, T2_3, "%.0f%% Of Walk Speed");
+			if (ImGui::CollapsingHeader("移动", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::HelpText("这是什么", T2Help);
+				ImGuiEx::SliderF("NPC 速度钳制起点", &Config::General.fNPCMaxSpeedMultClampStartAt, 1.0f, 20.0f, T2_1, "大于 %.1fx 时");
+				ImGuiEx::SliderF("NPC 最大钳制", &Config::General.fNPCMaxSpeedMultClampMaxAt, Config::General.fNPCMaxSpeedMultClampStartAt, Config::General.fNPCMaxSpeedMultClampStartAt + 20.f, T2_2, "%.1fx 时");
+				ImGuiEx::SliderF("最低速度偏移 %", &Config::General.fNPCMaxSpeedMultLerpTargetPercent, 0.0f, 100.f, T2_3, "步行速度的 %.0f%%");
 				ImGui::Spacing();
 			}
 		}
@@ -434,17 +434,17 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Enable height adjustment/correction for actors wearing high heels.";
-	        PSString T1 = "Disable HH height adjustments when using furniture to allow other mods to handle it.";
+	        PSString T0 = "为穿高跟鞋的角色启用高度调整/修正。";
+	        PSString T1 = "使用家具时禁用高跟鞋高度调整，以允许其他模组处理。";
 
-	        if (ImGui::CollapsingHeader("High-Heels", ImUtil::HeaderFlagsDefaultOpen)) {
+	        if (ImGui::CollapsingHeader("高跟鞋", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::CheckBox("Height Adjustment", &Config::General.bEnableHighHeels, T0);
+				ImGuiEx::CheckBox("高度调整", &Config::General.bEnableHighHeels, T0);
 
 				ImGui::SameLine();
 
-	        	if (ImGuiEx::CheckBox("Disable With Furniture", &Config::General.bHighheelsFurniture, T1, !Config::General.bEnableHighHeels)){
-	        		ConfigModHandler::DoHighHeelStateReset();
+		if (ImGuiEx::CheckBox("使用家具时禁用", &Config::General.bHighheelsFurniture, T1, !Config::General.bEnableHighHeels)){
+			ConfigModHandler::DoHighHeelStateReset();
 	            }
 
 				ImGui::Spacing();
@@ -458,14 +458,13 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Toggle whether actions like vore, shrink to death, or crushing\n"
-	                         "should spawn loot piles containing the dead actors' inventory.\n"
-	                         "If disabled, the inventory will be automatically transferred to the killer upon death.";
+	        PSString T0 = "切换吞噬、缩小致死或碾压等动作是否生成包含死者物品栏的战利品堆。\n"
+	                         "如果禁用，死亡时物品栏会自动转移给击杀者。";
 
-	        if (ImGui::CollapsingHeader("Looting", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Player: Spawn Loot Piles",&Config::General.bPlayerLootpiles, T0);
+	        if (ImGui::CollapsingHeader("战利品", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("玩家：生成战利品堆",&Config::General.bPlayerLootpiles, T0);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Followers: Spawn Loot Piles",&Config::General.bFollowerLootpiles, T0);
+				ImGuiEx::CheckBox("追随者：生成战利品堆",&Config::General.bFollowerLootpiles, T0);
 	            ImGui::Spacing();
 
 	        }
@@ -477,26 +476,26 @@ namespace GTS {
 		ImUtil_Unique 
 		{
 
-			PSString T0 = "Enables or Disables gravity acceleration based on size \n"
-							"- If enabled, gravity will slightly increase as the player grows: 1.0 * sqrt(size)\n"
-							"  (This means large player falls faster, but not too fast)\n"
-							"- If disabled, gravity stays constant at 1.0\n"
-							"- This option is player exclusive.";
+			PSString T0 = "根据体型启用或禁用重力加速度。\n"
+							"- 启用后，重力会随玩家成长略微增加：1.0 * sqrt(size)\n"
+							"  （这表示大型玩家会掉得更快，但不会过快。）\n"
+							"- 禁用后，重力保持 1.0 不变。\n"
+							"- 此选项仅作用于玩家。";
 
-			PSString T1 = "Some animations have bad event timings during jump lands\n"
-							"- If anim timings are bad = then damage zones may spawn in air, not hitting anyone\n"
-							"- Use this slider to adjust delay, 0 = no delay, 1 = 1sec delay on jump land";
+			PSString T1 = "部分动画在落地时事件时机较差。\n"
+							"- 如果动画时机不佳，伤害区域可能生成在空中而打不到任何人。\n"
+							"- 使用此滑条调整延迟，0 = 无延迟，1 = 落地时延迟 1 秒。";
 
-			PSString T2 = "Adjusts extra jump land delay when 'Affect Player Gravity' is on\n"
-							"- It may be needed because animation may not have enough time to do foot events on ground\n"
-							"- Which will lead to not dealing any damage to enemies on the ground\n"
-							"- Acts as additional value on top of original jump land delay\n\n"
-							"- This value is further multiplied by Gravity Power.";
+			PSString T2 = "启用“影响玩家重力”时，调整额外跳跃落地延迟。\n"
+							"- 这可能是必要的，因为动画可能没有足够时间在地面触发脚部事件。\n"
+							"- 否则可能无法对地面敌人造成任何伤害。\n"
+							"- 此值会叠加在原始跳跃落地延迟之上。\n\n"
+							"- 此值还会进一步乘以重力强度。";
 
-			if (ImGui::CollapsingHeader("Jumping", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Affect Player Gravity", &Config::General.bAlterPlayerGravity, T0);
-				ImGuiEx::SliderF("Damage Effect Delay - Gravity", &Config::General.fAdditionalJumpEffectDelay_Gravity, 0.0f, 1.0f, T2, "%.2fs", !Config::General.bAlterPlayerGravity);
-				ImGuiEx::SliderF("Damage Effect Delay", &Config::General.fAdditionalJumpEffectDelay, 0.0f, 1.0f, T1, "%.2fs");
+			if (ImGui::CollapsingHeader("跳跃", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("影响玩家重力", &Config::General.bAlterPlayerGravity, T0);
+				ImGuiEx::SliderF("伤害效果延迟 - 重力", &Config::General.fAdditionalJumpEffectDelay_Gravity, 0.0f, 1.0f, T2, "%.2fs", !Config::General.bAlterPlayerGravity);
+				ImGuiEx::SliderF("伤害效果延迟", &Config::General.fAdditionalJumpEffectDelay, 0.0f, 1.0f, T1, "%.2fs");
 
 				ImGui::Spacing();
 			}

@@ -5,34 +5,34 @@
 
 namespace {
 
-	PSString TDamageResist = "Total damage resistance in percent.\n"
-		"Effectively increases total HP.";
+	PSString TDamageResist = "总伤害抗性百分比。\n"
+		"实际提高总生命值。";
 
-	PSString TOnTheEdge = "When health drops below 60%%:\n"
-		"- All growth gained becomes stronger the less health there is.\n"
-		"- Hostile shrinking is less effective the less health there is.\n\n"
-		"The effect is strongest when 10%% (or less) HP remains.";
+	PSString TOnTheEdge = "生命低于 60%% 时：\n"
+		"- 当前生命越低，获得的所有成长越强。\n"
+		"- 当前生命越低，敌对缩小效果越弱。\n\n"
+		"生命剩余 10%% 或更低时效果最强。";
 
-	PSString TSizeReserve = "Total size size stored from the size reserve perk.\n"
-		"Gained by eating/absorbing/crushing others";
+	PSString TSizeReserve = "体型储备 Perk 储存的总体型。\n"
+		"通过吞噬、吸收或碾压他人获得。";
 
-	PSString TAspectOfGTS = "This is the strength of Aspect of the Giantess enchantment\n"
-		"Aspect Of Giantess affects:\n"
-		"- Maximum Size, genral shrink power and the strength of size steal spells\n"
-		"- Size-Related damage, mimimum shrink threshold from quest/balance mode\n"
-		"- Growth rate and growth chance from random growth\n"
-		"- The stregth of the shrink outburst power and the amount of growth gained on hit\n"
-		"- Shrink resistance towards all hostile shrink sources\n\n"
-		"The enchantment can be obtained from the 'Amulet of Giants', which will randomly in end of dungeon hests.";
+	PSString TAspectOfGTS = "这是“女巨人化身”附魔的强度。\n"
+		"女巨人化身会影响：\n"
+		"- 最大体型、通用缩小强度和体型偷取法术强度\n"
+		"- 体型相关伤害，以及任务/平衡模式中的最低缩小阈值\n"
+		"- 随机成长的成长速率和成长几率\n"
+		"- 缩小爆发强度，以及受击获得的成长量\n"
+		"- 对所有敌对缩小来源的缩小抗性\n\n"
+		"可从“巨人护符”获得该附魔；它会随机出现在地牢尽头的宝箱中。";
 
-	PSString TLifeAbsorb = "Current amount of Life Absorption stacks.\n"
-				           "Gained by having the relevant perk and performing Size-Related Overkills.";
+	PSString TLifeAbsorb = "当前生命吸收层数。\n"
+				           "拥有对应 Perk 并执行体型相关过量击杀后获得。";
 
 
-	PSString TCataclismicStompStacks = "Currrent amount of Cataclismic Stomp stacks.\n"
-		                               "Gained by having the relevant perk and after Vore fully consumes someone.";
+	PSString TCataclismicStompStacks = "当前灾变踩踏层数。\n"
+		                               "拥有对应 Perk，并在吞噬完全消化目标后获得。";
 
-	PSString TVoreBeingAbsorbed = "Current count of tinies being digested/absorbed";
+	PSString TVoreBeingAbsorbed = "当前正在消化/吸收的小型目标数量";
 
 }
 

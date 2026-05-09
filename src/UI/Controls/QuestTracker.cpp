@@ -20,7 +20,7 @@ namespace ImGuiEx {
 			return;
 		}
 
-		std::string questname = fmt::format("Quest: {}", Quest->GetName());
+		std::string questname = fmt::format("任务：{}", Quest->GetName());
 
 		std::string questobjectiveText;
 		for (auto objective : Quest->objectives) {
@@ -107,7 +107,7 @@ namespace ImGuiEx {
 
 		ImGui::TextWrapped(questobjectiveText.c_str());
 
-		std::string Text = fmt::format("{:.2f} Out of {:.0f}", Current, Total);
+		std::string Text = fmt::format("{:.2f} / {:.0f}", Current, Total);
 		ProgressBar(
 			Current / Total,
 			{ ImGui::GetContentRegionAvail().x, 0.0f },

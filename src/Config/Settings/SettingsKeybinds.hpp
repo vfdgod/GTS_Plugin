@@ -74,22 +74,22 @@ struct InputEvent_t {
 
 namespace Strings::Keybinds {
 	constexpr PSString CategoryNames[] = {
-		"Default",
-		"Menu / UI",
-		"Vore",
-		"Hugs",
-		"Thighs",
-		"Grabs",
-		"(Grabs) Breasts",
-		"(Grabs) Play",
-		"Stomps",
-		"Kicks / Swipes",
-		"Movement",
-		"Crush",
-		"(Grabs) Cleavage",
-		"Camera",
-		"Abilities / Perks",
-		"Other"
+			"默认",
+			"菜单 / UI",
+			"吞噬",
+			"拥抱",
+			"大腿",
+			"抓取",
+			"（抓取）胸部",
+			"（抓取）玩弄",
+			"踩踏",
+			"踢击 / 挥击",
+			"移动",
+			"碾压",
+			"（抓取）乳沟",
+			"镜头",
+			"能力 / Perk",
+			"其他"
 	};
 
 	static_assert(std::size(CategoryNames) == static_cast<size_t>(LInputCategory_t::kTotal));
@@ -136,8 +136,8 @@ namespace GTS {
 	    {
 	        .UICategory    = LInputCategory_t::kMenu,
 		    .AdvFeature    = false,
-		    .UIName        = "Settings Menu",
-		    .UIDescription = "Open this window, you can alternatively disable this keybind and use the \"gts menu\" console command to open it again.",
+		    .UIName        = "设置菜单",
+		    .UIDescription = "打开此窗口。也可以禁用此按键绑定，并改用控制台命令 \"gts menu\" 再次打开。",
             .Event = {
 		        .Event      = "OpenModSettings",
 		        .Keys       = {"F1"},
@@ -148,8 +148,8 @@ namespace GTS {
         {
 	        .UICategory    = LInputCategory_t::kMenu,
 		    .AdvFeature    = false,
-		    .UIName        = "Skill Tree",
-		    .UIDescription = "Open the skill tree if \"Custom Skills Framework\" is Installed",
+		    .UIName        = "技能树",
+		    .UIDescription = "如果已安装 \"Custom Skills Framework\"，则打开技能树。",
 			.Event = {
 		        .Event      = "OpenSkillTree",
 		        .Keys       = {"F4"},
@@ -160,8 +160,8 @@ namespace GTS {
 		{
 	        .UICategory    = LInputCategory_t::kMenu,
 		    .AdvFeature    = true,
-		    .UIName        = "Debug Menu",
-		    .UIDescription = "Open the debug menu.",
+		    .UIName        = "调试菜单",
+		    .UIDescription = "打开调试菜单。",
 			.Event = {
 				.Event      = "OpenDebugMenu",
 				.Keys       = {"LCONTROL", "LSHIFT", "F12"},
@@ -172,8 +172,8 @@ namespace GTS {
         {
 	        .UICategory    = LInputCategory_t::kMenu,
 		    .AdvFeature    = false,
-		    .UIName        = "Quick Stats",
-		    .UIDescription = "Show brief size info for the player and current followers.",
+		    .UIName        = "快速状态",
+		    .UIDescription = "显示玩家和当前追随者的简要体型信息。",
 			.Event = {
                 .Event      = "ShowQuickStats",
                 .Keys       = {"F3"},
@@ -183,8 +183,8 @@ namespace GTS {
         {
 	        .UICategory    = LInputCategory_t::kMenu,
 		    .AdvFeature    = true,
-		    .UIName        = "Size Report",
-		    .UIDescription = "Prints NPC/Player debug information in the console.",
+		    .UIName        = "体型报告",
+		    .UIDescription = "在控制台打印 NPC/玩家调试信息。",
 			.Event = {
                 .Event      = "DebugReport",
                 .Keys       = {"RCONTROL"},
@@ -200,8 +200,8 @@ namespace GTS {
 		{
 	        .UICategory    = LInputCategory_t::kVore,
 		    .AdvFeature    = false,
-		    .UIName        = "Start Vore",
-		    .UIDescription = "Start the basic vore action.",
+		    .UIName        = "开始吞噬",
+		    .UIDescription = "开始基础吞噬动作。",
 			.Event = {
 		        .Event      = "Vore",
 		        .Keys       = {"LSHIFT", "V"},
@@ -211,8 +211,8 @@ namespace GTS {
         {
 	        .UICategory    = LInputCategory_t::kVore,
 		    .AdvFeature    = false,
-		    .UIName        = "Start Vore (Player)",
-		    .UIDescription = "Starts the basic vore action with the player as the target.",
+		    .UIName        = "开始吞噬（玩家）",
+		    .UIDescription = "以玩家为目标开始基础吞噬动作。",
 			.Event = {
 		        .Event      = "PlayerVore",
 		        .Keys       = {"LSHIFT", "V"},
@@ -230,8 +230,8 @@ namespace GTS {
 		{
 	        .UICategory    = LInputCategory_t::kStomp,
 		    .AdvFeature    = false,
-		    .UIName        = "Start L. Stomp (Right)",
-		    .UIDescription = "Start a light stomp action.",
+		    .UIName        = "开始轻踩（右）",
+		    .UIDescription = "开始轻踩动作。",
 			.Event = {
 		        .Event      = "RightStomp",
 		        .Keys       = {"LSHIFT", "E"},
@@ -241,8 +241,8 @@ namespace GTS {
         {
 	        .UICategory    = LInputCategory_t::kStomp,
 		    .AdvFeature    = false,
-		    .UIName        = "Start L. Stomp (Left)",
-		    .UIDescription = "Start a light stomp action.",
+		    .UIName        = "开始轻踩（左）",
+		    .UIDescription = "开始轻踩动作。",
 			.Event = {
 		        .Event      = "LeftStomp",
 		        .Keys       = {"LSHIFT", "Q"},
@@ -252,8 +252,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kStomp,
 			.AdvFeature    = false,
-			.UIName        = "Start H. Stomp (Right)",
-			.UIDescription = "Start a heavy stomp action.",
+			.UIName        = "开始重踩（右）",
+			.UIDescription = "开始重踩动作。",
 			.Event = {
 		        .Event      = "RightStomp_Strong",
 		        .Keys       = {"LSHIFT", "E"},
@@ -264,8 +264,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kStomp,
 			.AdvFeature    = false,
-			.UIName        = "Start H. Stomp (Left)",
-			.UIDescription = "Start a heavy stomp action.",
+			.UIName        = "开始重踩（左）",
+			.UIDescription = "开始重踩动作。",
 			.Event = {
 		        .Event      = "LeftStomp_Strong",
 		        .Keys       = {"LSHIFT", "Q"},
@@ -276,8 +276,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kStomp,
 			.AdvFeature    = false,
-			.UIName        = "Start Trample (Right)",
-			.UIDescription = "Start a trample action.",
+			.UIName        = "开始践踏（右）",
+			.UIDescription = "开始践踏动作。",
 			.Event = {
 		        .Event      = "TrampleRight",
 		        .Keys       = {"LSHIFT", "E"},
@@ -288,8 +288,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kStomp,
 			.AdvFeature    = false,
-			.UIName        = "Start Trample (Left)",
-			.UIDescription = "Start a trample action.",
+			.UIName        = "开始践踏（左）",
+			.UIDescription = "开始践踏动作。",
 			.Event = {
 		        .Event      = "TrampleLeft",
 		        .Keys       = {"LSHIFT", "Q"},
@@ -306,8 +306,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Start Thigh-Crush",
-			.UIDescription = "Start the thigh crush action.",
+			.UIName        = "开始大腿碾压",
+			.UIDescription = "开始大腿碾压动作。",
 			.Event = {
 		        .Event      = "ThighCrush",
 		        .Keys       = {"LSHIFT", "W", "C"},
@@ -317,8 +317,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Thigh-Crush Attack",
-			.UIDescription = "Perform a thigh crush attack / kill action.",
+			.UIName        = "大腿碾压攻击",
+			.UIDescription = "执行大腿碾压攻击/击杀动作。",
 			.Event = {
 		        .Event      = "ThighCrushKill",
 		        .Keys       = {"LMB"},
@@ -328,8 +328,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Thigh-Crush Exit",
-			.UIDescription = "Exit thigh crush mode.",
+			.UIName        = "退出大腿碾压",
+			.UIDescription = "退出大腿碾压模式。",
 			.Event = {
 		        .Event      = "ThighCrushSpare",
 		        .Keys       = {"W"},
@@ -345,8 +345,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Start Thigh-Sandwich",
-			.UIDescription = "Start the thigh sandwich action.",
+			.UIName        = "开始大腿夹击",
+			.UIDescription = "开始大腿夹击动作。",
 			.Event = {
 		        .Event      = "ThighSandwichEnter",
 		        .Keys       = {"LSHIFT", "C"},
@@ -356,8 +356,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Start Thigh-Sandwich (Player)",
-			.UIDescription = "Starts the thigh sandwich action with the player as the target.",
+			.UIName        = "开始大腿夹击（玩家）",
+			.UIDescription = "以玩家为目标开始大腿夹击动作。",
 			.Event = {
 		        .Event      = "PlayerThighSandwichEnter",
 		        .Keys       = {"LSHIFT", "C"},
@@ -370,8 +370,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Thigh-Sandwich H. Attack",
-			.UIDescription = "Perform a heavy attack while in thigh sandwich mode.",
+			.UIName        = "大腿夹击重攻击",
+			.UIDescription = "在大腿夹击模式中执行重攻击。",
 			.Event = {
 		        .Event      = "ThighSandwichAttackHeavy",
 		        .Keys       = {"LMB"},
@@ -383,8 +383,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Thigh-Sandwich L. Attack",
-			.UIDescription = "Perform a light attack while in thigh sandwich mode.",
+			.UIName        = "大腿夹击轻攻击",
+			.UIDescription = "在大腿夹击模式中执行轻攻击。",
 			.Event = {
 		        .Event      = "ThighSandwichAttack",
 		        .Keys       = {"LMB"},
@@ -395,8 +395,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kThighs,
 			.AdvFeature    = false,
-			.UIName        = "Thigh-Sandwich Exit",
-			.UIDescription = "Exit thigh sandwich mode.",
+			.UIName        = "退出大腿夹击",
+			.UIDescription = "退出大腿夹击模式。",
 			.Event = {
 		        .Event      = "ThighSandwichExit",
 		        .Keys       = {"W"},
@@ -413,8 +413,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Butt Start",
-			.UIDescription = "Enter thigh-sandwich butt mode.",
+			.UIName = "进入臀部大腿夹击",
+			.UIDescription = "进入臀部大腿夹击模式。",
 			.Event = {
 				.Event = "SandwichButtStart",
 				.Keys = {"LSHIFT", "H"},
@@ -424,8 +424,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Butt Stop",
-			.UIDescription = "Exit thigh-sandwich butt mode.",
+			.UIName = "退出臀部大腿夹击",
+			.UIDescription = "退出臀部大腿夹击模式。",
 			.Event = {
 				.Event = "SandwichButtStop",
 				.Keys = {"LSHIFT", "H"},
@@ -435,8 +435,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Butt Attack H.",
-			.UIDescription = "Perform a heavy butt attack while in thigh-sandwich butt mode.",
+			.UIName = "臀部大腿夹击重攻击",
+			.UIDescription = "在臀部大腿夹击模式中执行重臀部攻击。",
 			.Event = {
 				.Event = "SandwichHeavyAttack",
 				.Keys       = {"LMB"},
@@ -449,8 +449,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Butt Attack L.",
-			.UIDescription = "Perform a light butt attack while in thigh-sandwich butt mode.",
+			.UIName = "臀部大腿夹击轻攻击",
+			.UIDescription = "在臀部大腿夹击模式中执行轻臀部攻击。",
 			.Event = {
 				.Event = "SandwichLightAttack",
 				.Keys = {"LMB"},
@@ -461,8 +461,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Grow",
-			.UIDescription = "Grow in size while in thigh-sandwich butt mode. Requires perk.",
+			.UIName = "大腿夹击成长",
+			.UIDescription = "在臀部大腿夹击模式中成长。需要 Perk。",
 			.Event = {
 				.Event = "SandwichGrowth",
 				.Keys = {"W"},
@@ -472,8 +472,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Grind Start",
-			.UIDescription = "Perform a continious grinding action on the NPC being butt-sandwiched.",
+			.UIName = "开始大腿夹击碾磨",
+			.UIDescription = "对被臀部夹住的 NPC 执行持续碾磨动作。",
 			.Event = {
 				.Event = "SandwichGrindStart",
 				.Keys = {"S"},
@@ -483,8 +483,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Grind Stop",
-			.UIDescription = "Stop grinding the butt-sandwichiched NPC.",
+			.UIName = "停止大腿夹击碾磨",
+			.UIDescription = "停止碾磨被臀部夹住的 NPC。",
 			.Event = {
 				.Event = "SandwichGrindStop",
 				.Keys = {"S"},
@@ -495,8 +495,8 @@ namespace GTS {
 		{
 			.UICategory = LInputCategory_t::kThighs,
 			.AdvFeature = false,
-			.UIName = "Thigh-Sandwich Unbirth/Vore",
-			.UIDescription = "Vore the butt-sandwiched NPC.",
+			.UIName = "大腿夹击逆产/吞噬",
+			.UIDescription = "吞噬被臀部夹住的 NPC。",
 			.Event = {
 				.Event = "SandwichUB",
 				.Keys = {"V"},
@@ -512,8 +512,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start L. Kick (Right)",
-			.UIDescription = "Perform a light kick.",
+			.UIName        = "开始轻踢（右）",
+			.UIDescription = "执行轻踢。",
 			.Event = {
 		        .Event      = "LightKickRight",
 		        .Keys       = {"LALT", "E"},
@@ -523,8 +523,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start L. Kick (Left)",
-			.UIDescription = "Perform a light kick.",
+			.UIName        = "开始轻踢（左）",
+			.UIDescription = "执行轻踢。",
 			.Event = {
 		        .Event      = "LightKickLeft",
 		        .Keys       = {"LALT", "Q"},
@@ -534,8 +534,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start H. Kick (Right)",
-			.UIDescription = "Perform a heavy kick.",
+			.UIName        = "开始重踢（右）",
+			.UIDescription = "执行重踢。",
 			.Event = {
 		        .Event      = "HeavyKickRight",
 		        .Keys       = {"LALT", "E"},
@@ -546,8 +546,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start H. Kick (Left)",
-			.UIDescription = "Perform a heavy kick.",
+			.UIName        = "开始重踢（左）",
+			.UIDescription = "执行重踢。",
 			.Event = {
 		        .Event      = "HeavyKickLeft",
 		        .Keys       = {"LALT", "Q"},
@@ -558,8 +558,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start H. Low Kick (Right)",
-			.UIDescription = "Perform an alternative variant of the heavy kick.",
+			.UIName        = "开始重低踢（右）",
+			.UIDescription = "执行重踢的替代版本。",
 			.Event = {
 		        .Event      = "HeavyKickRight_Low",
 		        .Keys       = {"LALT", "E"},
@@ -570,8 +570,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start H. Low Kick (Left)",
-			.UIDescription = "Perform an alternative variant of the heavy kick.",
+			.UIName        = "开始重低踢（左）",
+			.UIDescription = "执行重踢的替代版本。",
 			.Event = {
 		        .Event      = "HeavyKickLeft_Low",
 		        .Keys       = {"LALT", "Q"},
@@ -587,8 +587,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMovement,
 			.AdvFeature    = false,
-			.UIName        = "Toggle Crawl (Player)",
-			.UIDescription = "Swap between the regular sneak animations or an alternative crawl ones.",
+			.UIName        = "切换爬行（玩家）",
+			.UIDescription = "在常规潜行动画和替代爬行动画之间切换。",
 			.Event = {
 		        .Event      = "TogglePlayerCrawl",
 		        .Keys       = {"NUMPAD1"},
@@ -597,8 +597,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMovement,
 			.AdvFeature    = false,
-			.UIName        = "Toggle Crawl (Followers)",
-			.UIDescription = "Swap between the regular sneak animations or an alternative crawl ones.",
+			.UIName        = "切换爬行（追随者）",
+			.UIDescription = "在常规潜行动画和替代爬行动画之间切换。",
 			.Event = {
 		        .Event      = "ToggleFollowerCrawl",
 		        .Keys       = {"NUMPAD3"},
@@ -607,8 +607,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start Swipe L. (Right)",
-			.UIDescription = "Perform a light swipe attack (only works when sneaking / crawling).",
+			.UIName        = "开始轻挥击（右）",
+			.UIDescription = "执行轻挥击攻击（仅在潜行/爬行时生效）。",
 			.Event = {
 		        .Event      = "LightSwipeRight",
 		        .Keys       = {"LALT", "E"},
@@ -618,8 +618,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start Swipe L. (Left)",
-			.UIDescription = "Perform a light swipe attack (only works when sneaking / crawling).",
+			.UIName        = "开始轻挥击（左）",
+			.UIDescription = "执行轻挥击攻击（仅在潜行/爬行时生效）。",
 			.Event = {
 		        .Event      = "LightSwipeLeft",
 		        .Keys       = {"LALT", "Q"},
@@ -629,8 +629,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start Swipe H. (Right)",
-			.UIDescription = "Perform a heavy swipe attack (only works when sneaking / crawling).",
+			.UIName        = "开始重挥击（右）",
+			.UIDescription = "执行重挥击攻击（仅在潜行/爬行时生效）。",
 			.Event = {
 		        .Event      = "HeavySwipeRight",
 		        .Keys       = {"LALT", "E"},
@@ -641,8 +641,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "Start Swipe H. (Left)",
-			.UIDescription = "Perform a light swipe attack (only works when sneaking / crawling).",
+			.UIName        = "开始重挥击（左）",
+			.UIDescription = "执行重挥击攻击（仅在潜行/爬行时生效）。",
 			.Event = {
 		        .Event      = "HeavySwipeLeft",
 		        .Keys       = {"LALT", "Q"},
@@ -658,8 +658,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Start Cleavage Mode",
-			.UIDescription = "Enter cleavage mode (Requires an NPC to be placed there first).",
+			.UIName        = "开始乳沟模式",
+			.UIDescription = "进入乳沟模式（需要先把 NPC 放进去）。",
 			.Event = {
 		        .Event      = "CleavageEnter",
 		        .Keys       = {"LSHIFT", "H"},
@@ -668,8 +668,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Exit Cleavage Mode",
-			.UIDescription = "Exit cleavage mode and return to breast hold mode.",
+			.UIName        = "退出乳沟模式",
+			.UIDescription = "退出乳沟模式并返回胸部抓握模式。",
 			.Event = {
 		        .Event      = "CleavageExit",
 		        .Keys       = {"RMB"},
@@ -679,8 +679,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Cleavage L. Attack",
-			.UIDescription = "Perform a light attack.",
+			.UIName        = "乳沟轻攻击",
+			.UIDescription = "执行轻攻击。",
 			.Event = {
 		        .Event      = "CleavageLightAttack",
 		        .Keys       = {"LMB"},
@@ -692,8 +692,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Cleavage H. Attack",
-			.UIDescription = "Perform a heavy attack.",
+			.UIName        = "乳沟重攻击",
+			.UIDescription = "执行重攻击。",
 			.Event = {
 		        .Event      = "CleavageHeavyAttack",
 		        .Keys       = {"LMB"},
@@ -706,8 +706,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Cleavage Suffocate",
-			.UIDescription = "Perform a cleavage suffocation attack / action.",
+			.UIName        = "乳沟窒息",
+			.UIDescription = "执行乳沟窒息攻击/动作。",
 			.Event = {
 		        .Event      = "CleavageSuffocate",
 		        .Keys       = {"W"},
@@ -717,8 +717,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Cleavage Absorb",
-			.UIDescription = "Absorb (and kill) the held NPC.",
+			.UIName        = "乳沟吸收",
+			.UIDescription = "吸收（并杀死）被夹住的 NPC。",
 			.Event = {
 		        .Event      = "CleavageAbsorb",
 		        .Keys       = {"S"},
@@ -728,8 +728,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Cleavage Vore",
-			.UIDescription = "Vore/Eat the held NPC.",
+			.UIName        = "乳沟吞噬",
+			.UIDescription = "吞噬/吃掉被夹住的 NPC。",
 			.Event = {
 		        .Event      = "CleavageVore",
 		        .Keys       = {"V"},
@@ -739,8 +739,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCleavage,
 			.AdvFeature    = false,
-			.UIName        = "Cleavage Strangle",
-			.UIDescription = "Perform a cleavage strangle attack / action.",
+			.UIName        = "乳沟勒杀",
+			.UIDescription = "执行乳沟勒杀攻击/动作。",
 			.Event = {
 		        .Event      = "CleavageDOT",
 		        .Keys       = {"E"},
@@ -754,8 +754,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kHugs,
 			.AdvFeature    = false,
-			.UIName        = "Start Hug",
-			.UIDescription = "Start a hug action and enter hug mode.",
+			.UIName        = "开始拥抱",
+			.UIDescription = "开始拥抱动作并进入拥抱模式。",
 			.Event = {
 		        .Event      = "HugAttempt",
 		        .Keys       = {"LSHIFT", "H"},
@@ -765,8 +765,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kHugs,
 			.AdvFeature    = false,
-			.UIName        = "Start Hug (Player)",
-			.UIDescription = "Start a hug action and enter hug mode with the player as the target.",
+			.UIName        = "开始拥抱（玩家）",
+			.UIDescription = "以玩家为目标开始拥抱动作并进入拥抱模式。",
 			.Event = {
 		        .Event      = "HugPlayer",
 		        .Keys       = {"LSHIFT", "H"},
@@ -778,8 +778,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kHugs,
 			.AdvFeature    = false,
-			.UIName        = "Hug Shrink",
-			.UIDescription = "Perform a hug shrink attack / action.",
+			.UIName        = "拥抱缩小",
+			.UIDescription = "执行拥抱缩小攻击/动作。",
 			.Event = {
 		        .Event      = "HugShrink",
 		        .Keys       = {"LMB"},
@@ -790,8 +790,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kHugs,
 			.AdvFeature    = false,
-			.UIName        = "Hug Heal",
-			.UIDescription = "Perform a hug heal action.",
+			.UIName        = "拥抱治疗",
+			.UIDescription = "执行拥抱治疗动作。",
 			.Event = {
 		        .Event      = "HugHeal",
 		        .Keys       = {"LMB"},
@@ -803,8 +803,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kHugs,
 			.AdvFeature    = false,
-			.UIName        = "Hug Crush",
-			.UIDescription = "Perfom a hug crush action (will kill the held target).",
+			.UIName        = "拥抱碾压",
+			.UIDescription = "执行拥抱碾压动作（会杀死被抱住的目标）。",
 			.Event = {
 		        .Event      = "HugCrush",
 		        .Keys       = {"S"},
@@ -813,8 +813,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kHugs,
 			.AdvFeature    = false,
-			.UIName        = "Hug Exit / Release",
-			.UIDescription = "Release the held NPC / target and exit hug mode.",
+			.UIName        = "退出/释放拥抱",
+			.UIDescription = "释放被抱住的 NPC/目标并退出拥抱模式。",
 			.Event = {
 		        .Event      = "HugRelease",
 		        .Keys       = {"RMB"},
@@ -830,8 +830,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCrush,
 			.AdvFeature    = false,
-			.UIName        = "Start Quick Crush",
-			.UIDescription = "Start an untargeted butt / breast crush action.",
+			.UIName        = "开始快速碾压",
+			.UIDescription = "开始无目标臀部/胸部碾压动作。",
 			.Event = {
 		        .Event      = "QuickButtCrushStart",
 		        .Keys       = {"LSHIFT", "B"},
@@ -842,8 +842,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCrush,
 			.AdvFeature    = false,
-			.UIName        = "Start Targeted Crush",
-			.UIDescription = "Start a targeted butt / breast crush action and enter crush mode.",
+			.UIName        = "开始锁定目标碾压",
+			.UIDescription = "开始锁定目标的臀部/胸部碾压动作并进入碾压模式。",
 			.Event = {
 		        .Event      = "ButtCrushStart",
 		        .Keys       = {"LSHIFT", "B"},
@@ -853,8 +853,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCrush,
 			.AdvFeature    = false,
-			.UIName        = "Start Targeted Crush (Player)",
-			.UIDescription = "Start a targeted butt / breast crush action with the player as the target and enter crush mode.",
+			.UIName        = "开始锁定目标碾压（玩家）",
+			.UIDescription = "以玩家为目标开始锁定目标的臀部/胸部碾压动作并进入碾压模式。",
 			.Event = {
 		        .Event      = "ButtCrushStart_Player",
 		        .Keys       = {"LSHIFT", "B"},
@@ -866,8 +866,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCrush,
 			.AdvFeature    = false,
-			.UIName        = "Crush Grow",
-			.UIDescription = "Perform a grow action while in crush mode.",
+			.UIName        = "碾压成长",
+			.UIDescription = "在碾压模式中执行成长动作。",
 			.Event = {
 		        .Event      = "ButtCrushGrow",
 		        .Keys       = {"W"},
@@ -877,8 +877,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCrush,
 			.AdvFeature    = false,
-			.UIName        = "Crush Attack",
-			.UIDescription = "Peform a crush attack, this will also exit crush mode.",
+			.UIName        = "碾压攻击",
+			.UIDescription = "执行碾压攻击，并同时退出碾压模式。",
 			.Event = {
 		        .Event      = "ButtCrushAttack",
 		        .Keys       = {"LMB"},
@@ -893,8 +893,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMovement,
 			.AdvFeature    = false,
-			.UIName        = "Enter Prone",
-			.UIDescription = "Enter Prone mode (only possible if already sneaking / crawling.",
+			.UIName        = "进入趴伏",
+			.UIDescription = "进入趴伏模式（仅在已经潜行/爬行时可用）。",
 			.Event = {
 		        .Event      = "SBO_ToggleProne",
 		        .Keys       = {"X"},
@@ -906,8 +906,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMovement,
 			.AdvFeature    = false,
-			.UIName        = "Prone Dive (Standing)",
-			.UIDescription = "Enter prone mode by diving to the ground while not sneaking / crawling.",
+			.UIName        = "趴伏扑倒（站立）",
+			.UIDescription = "未潜行/爬行时通过扑向地面进入趴伏模式。",
 			.Event = {
 		        .Event      = "SBO_ToggleDive_Standing",
 		        .Keys       = {"W", "S"},
@@ -919,8 +919,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMovement,
 			.AdvFeature    = false,
-			.UIName        = "Prone Dive (Sneaking)",
-			.UIDescription = "Enter prone mode by diving to the ground while sneaking / crawling.",
+			.UIName        = "趴伏扑倒（潜行）",
+			.UIDescription = "潜行/爬行时通过扑向地面进入趴伏模式。",
 			.Event = {
 		        .Event      = "SBO_ToggleDive_Sneak",
 		        .Keys       = {"W", "S"},
@@ -937,8 +937,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrab,
 			.AdvFeature    = false,
-			.UIName        = "Start Grab",
-			.UIDescription = "Start a grab action and enter grab mode.",
+			.UIName        = "开始抓取",
+			.UIDescription = "开始抓取动作并进入抓取模式。",
 			.Event = {
 		        .Event      = "GrabOther",
 		        .Keys       = {"F"},
@@ -949,8 +949,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrab,
 			.AdvFeature    = false,
-			.UIName        = "Start Grab (Player)",
-			.UIDescription = "Start a grab action and enter grab mode with the player as the target.",
+			.UIName        = "开始抓取（玩家）",
+			.UIDescription = "以玩家为目标开始抓取动作并进入抓取模式。",
 			.Event = {
 		        .Event      = "GrabPlayer",
 		        .Keys       = {"F"},
@@ -962,8 +962,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrab,
 			.AdvFeature    = false,
-			.UIName        = "Grab Attack",
-			.UIDescription = "Perform a grab crush attack on a held character.",
+			.UIName        = "抓取攻击",
+			.UIDescription = "对被抓住的角色执行抓取碾压攻击。",
 			.Event = {
 				.Event      = "GrabAttack",
 		        .Keys       = {"E"},
@@ -975,8 +975,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrab,
 			.AdvFeature    = false,
-			.UIName        = "Grab Vore",
-			.UIDescription = "Vore the held character.",
+			.UIName        = "抓取吞噬",
+			.UIDescription = "吞噬被抓住的角色。",
 			.Event = {
 		        .Event      = "GrabVore",
 		        .Keys       = {"V"},
@@ -987,8 +987,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrab,
 			.AdvFeature    = false,
-			.UIName        = "Grab Throw",
-			.UIDescription = "Throw the held character and exit grab mode.",
+			.UIName        = "抓取投掷",
+			.UIDescription = "扔出被抓住的角色并退出抓取模式。",
 			.Event = {
 		        .Event      = "GrabThrow",
 		        .Keys       = {"X"},
@@ -999,8 +999,8 @@ namespace GTS {
         {
 		    .UICategory    = LInputCategory_t::kGrab,
 			.AdvFeature    = false,
-			.UIName        = "Grab Exit / Release",
-			.UIDescription = "Drop the held character and exit grab mode.",
+			.UIName        = "退出/释放抓取",
+			.UIDescription = "放下被抓住的角色并退出抓取模式。",
 			.Event = {
 		        .Event      = "GrabRelease",
 		        .Keys       = {"RMB"},
@@ -1015,8 +1015,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kBreats,
 			.AdvFeature    = false,
-			.UIName        = "Breasts Place",
-			.UIDescription = "Place the held character between the holder's breasts.\n(This leaves grab mode, so you can grab another NPC while having another between breasts)",
+			.UIName        = "放入胸部",
+			.UIDescription = "把被抓住的角色放到持有者胸间。\n（这会离开抓取模式，因此可在胸间已有 NPC 时再抓另一个 NPC。）",
 			.Event = {
 		        .Event      = "BreastsPut",
 		        .Keys       = {"LSHIFT", "B"},
@@ -1026,8 +1026,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kBreats,
 			.AdvFeature    = false,
-			.UIName        = "Breasts Remove",
-			.UIDescription = "Remove the placed character from the holder's breasts.",
+			.UIName        = "移出胸部",
+			.UIDescription = "将已放置的角色从持有者胸间移出。",
 			.Event = {
 		        .Event      = "BreastsRemove",
 		        .Keys       = {"LSHIFT", "B"},
@@ -1043,8 +1043,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "Start GrabPlay",
-			.UIDescription = "Enter grab play mode with the held character.",
+			.UIName        = "开始抓取玩弄",
+			.UIDescription = "与被抓住的角色进入抓取玩弄模式。",
 			.Event = {
 		        .Event      = "GrabPlay_Start",
 		        .Keys       = {"LSHIFT", "H"},
@@ -1056,8 +1056,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "Exit GrabPlay",
-			.UIDescription = "Exit grab play mode.",
+			.UIName        = "退出抓取玩弄",
+			.UIDescription = "退出抓取玩弄模式。",
 			.Event = {
 		        .Event      = "GrabPlay_Exit",
 		        .Keys       = {"LSHIFT","H"},
@@ -1069,8 +1069,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Crush",
-			.UIDescription = "Perform a crush attack.",
+			.UIName        = "抓取玩弄碾压",
+			.UIDescription = "执行碾压攻击。",
 			.Event = {
 		        .Event      = "GrabPlay_CrushHeavy",
 		        .Keys       = {"LMB"},
@@ -1082,8 +1082,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Vore",
-			.UIDescription = "Vore the held character.",
+			.UIName        = "抓取玩弄吞噬",
+			.UIDescription = "吞噬被抓住的角色。",
 			.Event = {
 		        .Event      = "GrabPlay_Vore",
 		        .Keys       = {"V"},
@@ -1095,8 +1095,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Kiss",
-			.UIDescription = "Kiss the held character, healing them.",
+			.UIName        = "抓取玩弄亲吻",
+			.UIDescription = "亲吻被抓住的角色并治疗他们。",
 			.Event = {
 		        .Event      = "GrabPlay_Kiss",
 		        .Keys       = {"E"},
@@ -1108,8 +1108,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Vore During Kiss",
-			.UIDescription = "Vore the held character whilst performing the kiss action.",
+			.UIName        = "亲吻时抓取吞噬",
+			.UIDescription = "执行亲吻动作时吞噬被抓住的角色。",
 			.Event = {
 				.Event      = "GrabPlay_KissVore",
 				.Keys       = {"V"},
@@ -1121,8 +1121,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Poke",
-			.UIDescription = "Poke the held character.",
+			.UIName        = "抓取玩弄戳弄",
+			.UIDescription = "戳弄被抓住的角色。",
 			.Event = {
 		        .Event      = "GrabPlay_Poke",
 		        .Keys       = {"LMB"},
@@ -1134,8 +1134,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Flick",
-			.UIDescription = "Flick the held charcater away, this exits grab mode.",
+			.UIName        = "抓取玩弄弹开",
+			.UIDescription = "将被抓住的角色弹飞，并退出抓取模式。",
 			.Event = {
 		        .Event      = "GrabPlay_Flick",
 		        .Keys       = {"RMB"},
@@ -1147,8 +1147,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Sandwich",
-			.UIDescription = "Perform a sandwich action.",
+			.UIName        = "抓取玩弄夹击",
+			.UIDescription = "执行夹击动作。",
 			.Event = {
 		        .Event      = "GrabPlay_Sandwich",
 		        .Keys       = {"S"},
@@ -1160,8 +1160,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Grind (Enter)",
-			.UIDescription = "Enter the grabplay grind mode, this slowly damages the held character.",
+			.UIName        = "抓取玩弄碾磨（进入）",
+			.UIDescription = "进入抓取玩弄碾磨模式，会缓慢伤害被抓住的角色。",
 			.Event = {
 		        .Event      = "GrabPlay_GrindStart",
 		        .Keys       = {"W"},
@@ -1173,8 +1173,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kGrabPlay,
 			.AdvFeature    = false,
-			.UIName        = "GrabPlay Grind (Exit)",
-			.UIDescription = "Exit grab play grind mode.",
+			.UIName        = "抓取玩弄碾磨（退出）",
+			.UIDescription = "退出抓取玩弄碾磨模式。",
 			.Event = {
 		        .Event      = "GrabPlay_GrindStop",
 		        .Keys       = {"W"},
@@ -1191,8 +1191,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCamera,
 			.AdvFeature    = false,
-			.UIName        = "Camera Reset (Horizontal)",
-			.UIDescription = "Reset the temporary horizontal camera offsets.",
+			.UIName        = "镜头重置（水平）",
+			.UIDescription = "重置临时水平镜头偏移。",
 			.Event = {
 		        .Event      = "HorizontalCameraReset",
 		        .Keys       = {"RIGHT", "LEFT"},
@@ -1202,8 +1202,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCamera,
 			.AdvFeature    = false,
-			.UIName        = "Camera Reset (Vertical)",
-			.UIDescription = "Reset the temporary vertical camera offsets.",
+			.UIName        = "镜头重置（垂直）",
+			.UIDescription = "重置临时垂直镜头偏移。",
 			.Event = {
 		        .Event      = "VerticalCameraReset",
 		        .Keys       = {"UP", "DOWN"},
@@ -1213,8 +1213,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCamera,
 			.AdvFeature    = false,
-			.UIName        = "Shift Camera (Right)",
-			.UIDescription = "Temporarily shift the camera to the right.",
+			.UIName        = "移动镜头（右）",
+			.UIDescription = "临时将镜头向右移动。",
 			.Event = {
 		        .Event      = "CameraRight",
 		        .Keys       = {"LALT", "RIGHT"},
@@ -1224,8 +1224,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kCamera,
 			.AdvFeature    = false,
-			.UIName        = "Shift Camera (Left)",
-			.UIDescription = "Temporarily shift the camera to the left.",
+			.UIName        = "移动镜头（左）",
+			.UIDescription = "临时将镜头向左移动。",
 			.Event = {
 				.Event      = "CameraLeft",
 				.Keys       = {"LALT", "LEFT"},
@@ -1235,8 +1235,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCamera,
 			.AdvFeature    = false,
-			.UIName        = "Shift Camera (Up)",
-			.UIDescription = "Temporarily shift the camera upwards.",
+			.UIName        = "移动镜头（上）",
+			.UIDescription = "临时将镜头向上移动。",
 			.Event = {
 		        .Event      = "CameraUp",
 		        .Keys       = {"LALT", "UP"},
@@ -1246,8 +1246,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCamera,
 			.AdvFeature    = false,
-			.UIName        = "Shift Camera (Down)",
-			.UIDescription = "Temporarily shift the camera downwards.",
+			.UIName        = "移动镜头（下）",
+			.UIDescription = "临时将镜头向下移动。",
 			.Event = {
 		        .Event      = "CameraDown",
 		        .Keys       = {"LALT", "DOWN"},
@@ -1257,8 +1257,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kCamera,
 			.AdvFeature    = false,
-			.UIName        = "Cycle Camera Mode",
-			.UIDescription = "Switch between alternative camera modes.",
+			.UIName        = "循环镜头模式",
+			.UIDescription = "在替代镜头模式之间切换。",
 			.Event = {
 		        .Event      = "SwitchCameraMode",
 		        .Keys       = {"F2"}
@@ -1272,8 +1272,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMisc,
 			.AdvFeature    = false,
-			.UIName        = "Attack Speedup",
-			.UIDescription = "Increase the attack speed of some animations.",
+			.UIName        = "攻击加速",
+			.UIDescription = "提高部分动画的攻击速度。",
 			.Event = {
 		        .Event      = "AnimSpeedUp",
 		        .Keys       = {"LMB"},
@@ -1283,8 +1283,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMisc,
 			.AdvFeature    = false,
-			.UIName        = "Attack Slowdown",
-			.UIDescription = "Decrease the attack speed of some animations.",
+			.UIName        = "攻击减速",
+			.UIDescription = "降低部分动画的攻击速度。",
 			.Event = {
 		        .Event      = "AnimSpeedDown",
 		        .Keys       = {"RMB"},
@@ -1294,8 +1294,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kMisc,
 			.AdvFeature    = false,
-			.UIName        = "Attack Max Speed",
-			.UIDescription = "Sets the attack speed to max for supported actions.",
+			.UIName        = "攻击最高速度",
+			.UIDescription = "将支持动作的攻击速度设为最高。",
 			.Event = {
 		        .Event      = "AnimMaxSpeed",
 		        .Keys       = {"LMB", "RMB"},
@@ -1305,8 +1305,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kMisc,
 			.AdvFeature    = false,
-			.UIName        = "Struggle Up",
-			.UIDescription = "Attempt to escape hugs or being grabbed",
+			.UIName        = "挣扎向上",
+			.UIDescription = "尝试挣脱拥抱或抓取。",
 			.Event = {
 		        .Event      = "StruggleUp",
 		        .Keys       = {"W"},
@@ -1316,8 +1316,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kMisc,
 			.AdvFeature    = false,
-			.UIName        = "Struggle Down",
-			.UIDescription = "Attempt to escape hugs or being grabbed",
+			.UIName        = "挣扎向下",
+			.UIDescription = "尝试挣脱拥抱或抓取。",
 			.Event = {
 		        .Event      = "StruggleDown",
 		        .Keys       = {"S"},
@@ -1327,8 +1327,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kMisc,
 			.AdvFeature    = false,
-			.UIName        = "Struggle Left",
-			.UIDescription = "Attempt to escape hugs or being grabbed",
+			.UIName        = "挣扎向左",
+			.UIDescription = "尝试挣脱拥抱或抓取。",
 			.Event = {
 		        .Event      = "StruggleLeft",
 		        .Keys       = {"A"},
@@ -1338,8 +1338,8 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kMisc,
 			.AdvFeature    = false,
-			.UIName        = "Struggle Right",
-			.UIDescription = "Attempt to escape hugs or being grabbed",
+			.UIName        = "挣扎向右",
+			.UIDescription = "尝试挣脱拥抱或抓取。",
 			.Event = {
 		        .Event      = "StruggleRight",
 		        .Keys       = {"D"},
@@ -1354,8 +1354,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Shrink Outburst",
-			.UIDescription = "Do a shrink outburst attack, shrinking everyone near you.",
+			.UIName        = "缩小爆发",
+			.UIDescription = "执行缩小爆发攻击，缩小你附近的所有人。",
 			.Event = {
 		        .Event      = "ShrinkOutburst",
 		        .Keys       = {"LSHIFT", "F"},
@@ -1364,8 +1364,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Size Reseve (Use)",
-			.UIDescription = "Apply the stored size reserve (the longer this is held down the more size is converted).",
+			.UIName        = "体型储备（使用）",
+			.UIDescription = "应用已储存的体型储备（按住越久，转换的体型越多）。",
 			.Event = {
 		        .Event      = "SizeReserve",
 		        .Keys       = {"E"},
@@ -1377,8 +1377,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Size Reserve (Display)",
-			.UIDescription = "Show a notification containing the amount of stored size reserve.",
+			.UIName        = "体型储备（显示）",
+			.UIDescription = "显示包含当前储存体型储备量的通知。",
 			.Event = {
 		        .Event      = "DisplaySizeReserve",
 		        .Keys       = {"F"},
@@ -1390,8 +1390,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Grow (Rapid)",
-			.UIDescription = "A one-off animated growth spurt.",
+			.UIName        = "成长（快速）",
+			.UIDescription = "一次性的动画成长爆发。",
 			.Event = {
 		        .Event      = "RapidGrowth",
 		        .Keys       = {"LSHIFT", "1"},
@@ -1400,8 +1400,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Shrink (Rapid)",
-			.UIDescription = "A one-off animated shrink spurt.",
+			.UIName        = "缩小（快速）",
+			.UIDescription = "一次性的动画缩小爆发。",
 			.Event = {
 		        .Event      = "RapidShrink",
 		        .Keys       = {"LSHIFT", "2"},
@@ -1410,8 +1410,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Grow (Manual)",
-			.UIDescription = "Slow continuous growth.",
+			.UIName        = "成长（手动）",
+			.UIDescription = "缓慢持续成长。",
 			.Event = {
 		        .Event      = "ManualGrow",
 		        .Keys       = {"UP", "LEFT"},
@@ -1421,8 +1421,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Shrink (Manual)",
-			.UIDescription = "Slow continuous shrinking.",
+			.UIName        = "缩小（手动）",
+			.UIDescription = "缓慢持续缩小。",
 			.Event = {
 		        .Event      = "ManualShrink",
 		        .Keys       = {"DOWN", "LEFT"},
@@ -1432,8 +1432,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Grow Followers (Manual)",
-			.UIDescription = "Slow continuous growth.",
+			.UIName        = "追随者成长（手动）",
+			.UIDescription = "缓慢持续成长。",
 			.Event = {
 		        .Event      = "ManualGrowOther",
 		        .Keys       = {"LSHIFT", "UP", "LEFT"},
@@ -1443,8 +1443,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Shrink Folowers (Manual)",
-			.UIDescription = "Slow continuous shrinking.",
+			.UIName        = "追随者缩小（手动）",
+			.UIDescription = "缓慢持续缩小。",
 			.Event = {
 		        .Event      = "ManualShrinkOther",
 		        .Keys       = {"LSHIFT", "DOWN", "LEFT"},
@@ -1454,8 +1454,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Grow (Incremental)",
-			.UIDescription = "An incremental non animated growth spurt.",
+			.UIName        = "成长（增量）",
+			.UIDescription = "一次非动画的增量成长爆发。",
 			.Event = {
 		        .Event      = "ManualGrowOverTime",
 		        .Keys       = {"NUMPAD8"},
@@ -1465,8 +1465,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Shrink (Incremental)",
-			.UIDescription = "An incremental non animated shrink spurt.",
+			.UIName        = "缩小（增量）",
+			.UIDescription = "一次非动画的增量缩小爆发。",
 			.Event = {
 		        .Event      = "ManualShrinkOverTime",
 		        .Keys       = {"NUMPAD4"},
@@ -1476,8 +1476,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Grow Folowers (Incremental)",
-			.UIDescription = "An incremental non animated growth spurt.",
+			.UIName        = "追随者成长（增量）",
+			.UIDescription = "一次非动画的增量成长爆发。",
 			.Event = {
 		        .Event      = "ManualGrowOtherOverTime",
 		        .Keys       = {"NUMPAD5"},
@@ -1487,8 +1487,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Shrink Folowers (Incremental)",
-			.UIDescription = "An incremental non animated shrink spurt.",
+			.UIName        = "追随者缩小（增量）",
+			.UIDescription = "一次非动画的增量缩小爆发。",
 			.Event = {
 		        .Event      = "ManualShrinkOtherOverTime",
 		        .Keys       = {"NUMPAD2"},
@@ -1498,8 +1498,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "Protect Small Ones",
-			.UIDescription = "Activate the \"Protect Small Ones\" perk granting size damage immunity to others around you.",
+			.UIName        = "保护小家伙",
+			.UIDescription = "激活“保护小家伙”Perk，使你周围的其他人免疫体型伤害。",
 			.Event = {
 		        .Event      = "ProtectSmallOnes",
 		        .Keys       = {"C"},

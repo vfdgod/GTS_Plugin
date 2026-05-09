@@ -102,12 +102,91 @@ namespace GTS {
             return {};
         }
 
-        std::string result;
-
-        // Remove a leading 'k', if present.
         if (name.front() == 'k') {
             name.remove_prefix(1);
         }
+
+        struct LocalizedName {
+            std::string_view key;
+            std::string_view value;
+        };
+
+        static constexpr LocalizedName localizedNames[] = {
+            { "None", "无" },
+            { "Grow", "成长" },
+            { "Shrink", "缩小" },
+            { "CombatGrowth", "战斗成长" },
+            { "SlowCombatGrowth", "缓慢战斗成长" },
+            { "CurseOfGrowth", "成长诅咒" },
+            { "CurseOfTheGiantess", "女巨人诅咒" },
+            { "CurseOfDiminishing", "衰减诅咒" },
+            { "SizeLocked", "体型锁定" },
+            { "LevelLocked", "等级锁定" },
+            { "Normal", "默认" },
+            { "MassBased", "质量模式" },
+            { "Metric", "公制" },
+            { "Imperial", "英制" },
+            { "Mammoth", "猛犸" },
+            { "Spine", "脊柱" },
+            { "Clavicle", "锁骨" },
+            { "Breasts", "胸部" },
+            { "Breasts_00", "胸部 00" },
+            { "Breasts_01", "胸部 01" },
+            { "Breasts_02", "胸部 02" },
+            { "Breasts_03", "胸部 03" },
+            { "Breasts_04", "胸部 04" },
+            { "Neck", "颈部" },
+            { "Butt", "臀部" },
+            { "Genitals", "私处" },
+            { "Belly", "腹部" },
+            { "Alternative", "备选" },
+            { "FootLeft", "左脚" },
+            { "FootRight", "右脚" },
+            { "FeetCenter", "双脚中心" },
+            { "Default", "默认" },
+            { "Menu", "菜单" },
+            { "Vore", "吞噬" },
+            { "Hugs", "拥抱" },
+            { "Thighs", "大腿" },
+            { "Grab", "抓取" },
+            { "Breats", "胸部" },
+            { "GrabPlay", "抓取互动" },
+            { "Stomp", "踩踏" },
+            { "KickSwipe", "踢击/挥扫" },
+            { "Movement", "移动" },
+            { "Crush", "碾压" },
+            { "Cleavage", "乳沟" },
+            { "Camera", "镜头" },
+            { "Ability", "能力" },
+            { "Misc", "杂项" },
+            { "Total", "总计" },
+            { "TopLeft", "左上" },
+            { "TopRight", "右上" },
+            { "Center", "中心" },
+            { "BottomLeft", "左下" },
+            { "BottomRight", "右下" },
+            { "Once", "单次" },
+            { "Continuous", "持续" },
+            { "Release", "松开时" },
+            { "Automatic", "自动" },
+            { "Always", "总是" },
+            { "Never", "从不" },
+            { "trace", "跟踪" },
+            { "debug", "调试" },
+            { "info", "信息" },
+            { "warn", "警告" },
+            { "err", "错误" },
+            { "critical", "严重" },
+            { "off", "关闭" },
+        };
+
+        for (const auto& entry : localizedNames) {
+            if (name == entry.key) {
+                return std::string(entry.value);
+            }
+        }
+
+        std::string result;
 
         // Process each character by index.
         for (size_t i = 0; i < name.size(); ++i) {

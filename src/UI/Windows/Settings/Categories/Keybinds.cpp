@@ -19,37 +19,37 @@
 
 namespace {
 
-    PSString T0 = "Disable this input event.\n"
-        "Disabled events are completely ignored by the game and will never trigger.";
+    PSString T0 = "禁用此输入事件。\n"
+        "禁用的事件会被游戏完全忽略，永远不会触发。";
 
-    PSString T1 = "When an action is marked as exclusive it means it will only activate if its exact key combination is being pressed.\n"
-        "(eg. If an action requires ALT+E to activate and you're also holding W while trying to trigger it with this flag set, nothing will happen unless you stop pressing W.)";
+    PSString T1 = "当动作标记为独占时，只有按下完全匹配的按键组合才会激活。\n"
+        "（例如：某动作需要 ALT+E 激活，而你在触发时还按着 W，则在此标记启用时不会发生任何事，除非先松开 W。）";
 
-    PSString T2 = "The action trigger type modifies the activation behavior for an action.\n\n"
-        "- Once: Trigger an action once upon pressing its key combo.\n"
-        "- Release: The action will only trigger when you release its keys after pressing them.\n"
-        "- Continuous: As long as you are holding down the key combination the action event will be fired every game frame.";
+    PSString T2 = "动作触发类型会改变动作的激活方式。\n\n"
+        "- Once：按下按键组合时触发一次动作。\n"
+        "- Release：按下后松开按键时才触发动作。\n"
+        "- Continuous：只要按住按键组合，每个游戏帧都会触发动作事件。";
 
-    PSString T3 = "Normaly when you press a key combo. whatever keys you are holding down are sent to the mod and the game at the same time\n"
-        "Depending on what keys you press this may have undesired effects. Which is why this option exists.\n\n"
-        "- Automatic: Prevent the game from reading the pressed action keys only when said GTS action would be valid. (eg. When you have the relevant perk/the action is possible to do).\n"
-        "  (NOTE: Some actions are not compatible with this setting. These are by default set to \"Never\" On purpose.)\n"
-        "- Never: Never prevent the game from reading the pressed keys for this action even if the action would be valid.\n"
-        "- Always: Will always prevent the game from reading this key combination regardless if the action would trigger/do something or not.";
+    PSString T3 = "通常按下按键组合时，当前按住的按键会同时发送给模组和游戏。\n"
+        "根据按键不同，这可能产生不想要的效果，所以需要此选项。\n\n"
+        "- Automatic：仅当对应 GTS 动作有效时，阻止游戏读取该动作按键。（例如你拥有相关 Perk/动作当前可执行。）\n"
+        "  （注意：部分动作与此设置不兼容，因此默认故意设为 \"Never\"。）\n"
+        "- Never：即使动作有效，也永不阻止游戏读取该动作按键。\n"
+        "- Always：无论动作是否会触发/执行，都始终阻止游戏读取此按键组合。";
 
-    PSString T4 = "This adds a time delay before an action gets triggerd if its keys are pressed.\n"
-        "(eg. if the trigger type is once and this value is set to 1.0 you'd need to hold the correct key combination for atleast 1 second before this event's action will fire.)";
+    PSString T4 = "按下按键后，为动作触发添加时间延迟。\n"
+        "（例如触发类型为 Once 且此值为 1.0 时，需要按住正确按键组合至少 1 秒，此事件动作才会触发。）";
 
-    PSString T5 = "Change the key combination to trigger this event.\n"
-        "You don't have to hold down the keys if creating a key combination. Pressing a key once will append it to the list\n"
-        "After entering the new key combination press this button again to save it.\n"
-        "Pressing ESC will cancel the keybind reassignment.";
+    PSString T5 = "修改触发此事件的按键组合。\n"
+        "创建按键组合时不需要一直按住按键；按下一次就会追加到列表中。\n"
+        "输入新的按键组合后，再次点击此按钮即可保存。\n"
+        "按 ESC 可取消重新绑定。";
 
-    PSString T6 = "Click to open advanced settings for this keybind.";
+    PSString T6 = "点击打开此按键绑定的高级设置。";
 
 
-    PSString TH0 = "Filter based on an actions' name.";
-    PSString TH1 = "Reset all keybinds and their settings to default.";
+    PSString TH0 = "按动作名称筛选。";
+    PSString TH1 = "将所有按键绑定及其设置重置为默认值。";
 
 }
 
@@ -126,19 +126,19 @@ namespace GTS {
             ImGui::BeginDisabled(RebindIndex > 0);
             {
                 {
-                    ImGui::InputText("Search", &SearchRes);
+                    ImGui::InputText("搜索", &SearchRes);
                     ImGuiEx::Tooltip(TH0);
                 }
 
                 ImGui::SameLine();
 
                 
-                ImGuiEx::CheckBox("Compact View", &singleColumn, "List all keybinds in a single column");
+                ImGuiEx::CheckBox("紧凑视图", &singleColumn, "在单列中列出所有按键绑定。");
                 Div = 1 + singleColumn;
 
                 ImGuiEx::SeperatorV();
 
-                if (ImGuiEx::ImageButton("Reset", ImageList::Generic_Reset, 18, TH1)) {
+                if (ImGuiEx::ImageButton("重置", ImageList::Generic_Reset, 18, TH1)) {
                     Keybinds::ResetKeybinds();
                 }
 
@@ -288,7 +288,7 @@ namespace GTS {
             });
 
             if (!any) {
-                ImGui::Text("No results matching search string.");
+                ImGui::Text("没有匹配搜索文本的结果。");
             }
 
             ImGui::PopStyleVar(3);
@@ -354,7 +354,7 @@ namespace GTS {
                         VisualKeyString += VisualKeyList[i];
                         if (i + 1 < VisualKeyList.size()) VisualKeyString += " + ";
                     }
-                    std::string InputText = VisualKeyString.empty() ? "Press any Key or ESC To Cancel" : VisualKeyString;
+                    std::string InputText = VisualKeyString.empty() ? "按任意键，或按 ESC 取消" : VisualKeyString;
 
                     ImGui::SetNextItemWidth(keysColWidth - ImGui::GetStyle().CellPadding.x * 2);
                     ImGui::BeginDisabled(Event.Disabled);
@@ -394,16 +394,16 @@ namespace GTS {
 
                     // Options Popup
                     if (ImGui::BeginPopup(("##Options" + std::to_string(CurEventIndex)).c_str())) {
-                        ImGui::Text("Extra Options: %s", a_name.c_str());
+                        ImGui::Text("额外选项：%s", a_name.c_str());
                         ImGui::Separator();
                         ImGui::PushItemWidth(250.0f);
-                        ImGuiEx::CheckBox("Disabled", &Event.Disabled, T0);
+                        ImGuiEx::CheckBox("禁用", &Event.Disabled, T0);
                         if (!Event.Disabled) {
                             ImGui::BeginDisabled(IsRebinding);
-                            ImGuiEx::CheckBox("Exclusive", &Event.Exclusive, T1);
-                            ImGuiEx::ComboEx<LTriggerType_t>("Trigger Type", Event.Trigger, T2);
-                            ImGuiEx::ComboEx<LBlockInputTypes_t>("Block Input", Event.BlockInput, T3);
-                            ImGui::InputFloat("Trigger After", &Event.Duration, 0.1f, 0.01f, "%.2f Seconds");
+                            ImGuiEx::CheckBox("独占", &Event.Exclusive, T1);
+                            ImGuiEx::ComboEx<LTriggerType_t>("触发类型", Event.Trigger, T2);
+                            ImGuiEx::ComboEx<LBlockInputTypes_t>("阻止输入", Event.BlockInput, T3);
+                            ImGui::InputFloat("触发延迟", &Event.Duration, 0.1f, 0.01f, "%.2f 秒");
                             ImGuiEx::Tooltip(T4);
                             Event.Duration = std::clamp(Event.Duration, 0.0f, 10.0f);
                             ImGui::EndDisabled();

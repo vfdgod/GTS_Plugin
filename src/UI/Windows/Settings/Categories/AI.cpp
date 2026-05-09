@@ -16,59 +16,59 @@ namespace {
 
     void DrawAIAction_Vore() {
 
-        PSString T0 = "Enable starting a vore action.";
-        PSString T1 = "Set the chance for a vore action to be started.";
+        PSString T0 = "允许开始吞噬动作。";
+        PSString T1 = "设置开始吞噬动作的概率。";
 
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.Vore.bEnableAction, T0);
-        ImGuiEx::SliderF("Start Chance", &Config::AI.Vore.fProbability, 1.0f, 100.0f, T1, "%.0f%%", !Config::AI.Vore.bEnableAction);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.Vore.bEnableAction, T0);
+        ImGuiEx::SliderF("开始概率", &Config::AI.Vore.fProbability, 1.0f, 100.0f, T1, "%.0f%%", !Config::AI.Vore.bEnableAction);
     }
 
     void DrawAIAction_Stomps() {
 
-        PSString T0 = "Enable foot stomps when standing or hand stomps when sneaking / crawling.";
-        PSString T1 = "Set the chance for a stomp action to be started.";
-        PSString T2 = "Set the chance to pefrom a grind animation when doing under stomps";
+        PSString T0 = "站立时启用脚踩踏，潜行/爬行时启用手部踩踏。";
+        PSString T1 = "设置开始踩踏动作的概率。";
+        PSString T2 = "设置执行脚下踩踏时触发碾磨动画的概率。";
 
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.Stomp.bEnableAction, T0);
-        ImGuiEx::SliderF("Start Chance", &Config::AI.Stomp.fProbability, 1.0f, 100.0f, T1, "%.0f%%",!Config::AI.Stomp.bEnableAction);
-        ImGuiEx::SliderF("Grind On Understomp Chance", &Config::AI.Stomp.fUnderstompGrindProbability, 0.0f, 100.0f, T2, "%.0f%%", !Config::AI.Stomp.bEnableAction);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.Stomp.bEnableAction, T0);
+        ImGuiEx::SliderF("开始概率", &Config::AI.Stomp.fProbability, 1.0f, 100.0f, T1, "%.0f%%",!Config::AI.Stomp.bEnableAction);
+        ImGuiEx::SliderF("脚下踩踏碾磨概率", &Config::AI.Stomp.fUnderstompGrindProbability, 0.0f, 100.0f, T2, "%.0f%%", !Config::AI.Stomp.bEnableAction);
             
     }
 
     void DrawAIAction_KickSwipe() {
 
-        PSString T0 = "Enable kicks when standing or hand swipes when sneaking / crawling.";
-        PSString T1 = "Set the chance for a kick or swipe action to be started.";
+        PSString T0 = "站立时启用踢击，潜行/爬行时启用手部挥击。";
+        PSString T1 = "设置开始踢击或挥击动作的概率。";
 
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.KickSwipe.bEnableAction, T0);
-        ImGuiEx::SliderF("Start Chance", &Config::AI.KickSwipe.fProbability, 1.0f, 100.0f, T1,"%.0f%%",!Config::AI.KickSwipe.bEnableAction);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.KickSwipe.bEnableAction, T0);
+        ImGuiEx::SliderF("开始概率", &Config::AI.KickSwipe.fProbability, 1.0f, 100.0f, T1,"%.0f%%",!Config::AI.KickSwipe.bEnableAction);
             
     }
 
     void DrawAIAction_ThighSandwich() {
 
-        PSString T0 = "Enable thigh sandwich actions.";
-        PSString T1 = "Set the chance for a thigh sandwich action to be started.";
+        PSString T0 = "启用大腿夹击动作。";
+        PSString T1 = "设置开始大腿夹击动作的概率。";
 
-        PSString T2 = "When a thigh sandwich action has started,\n"
-			          "modify the time interval for attack attempts.\n"
-			          "If an attack happens, it depends on the probabilities set below.";
+        PSString T2 = "大腿夹击动作开始后，\n"
+			          "调整尝试攻击的时间间隔。\n"
+			          "是否攻击取决于下方设置的概率。";
 
-        PSString T3 = "Modify the chance to start a heavy attack.";
-        PSString T4 = "Modify the chance to start a light attack.";
+        PSString T3 = "调整开始重攻击的概率。";
+        PSString T4 = "调整开始轻攻击的概率。";
 
         
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.ThighSandwich.bEnableAction, T0);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.ThighSandwich.bEnableAction, T0);
     
         ImGui::BeginDisabled(!Config::AI.ThighSandwich.bEnableAction);
         {
-            ImGuiEx::SliderF("Start Chance", &Config::AI.ThighSandwich.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
+            ImGuiEx::SliderF("开始概率", &Config::AI.ThighSandwich.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
 
             ImGui::Spacing();
 
-            ImGuiEx::SliderF("Action Interval", &Config::AI.ThighSandwich.fInterval, 1.0f, 5.0f, T2, "Every %.1f Second(s)");
-            ImGuiEx::SliderF("Heavy Attack Chance", &Config::AI.ThighSandwich.fProbabilityHeavy, 0.0f, 100.0f, T3, "%.0f%%");
-            ImGuiEx::SliderF("Light Attack Chance", &Config::AI.ThighSandwich.fProbabilityLight, 0.0f, 100.0f, T4, "%.0f%%");
+            ImGuiEx::SliderF("动作间隔", &Config::AI.ThighSandwich.fInterval, 1.0f, 5.0f, T2, "每 %.1f 秒");
+            ImGuiEx::SliderF("重攻击概率", &Config::AI.ThighSandwich.fProbabilityHeavy, 0.0f, 100.0f, T3, "%.0f%%");
+            ImGuiEx::SliderF("轻攻击概率", &Config::AI.ThighSandwich.fProbabilityLight, 0.0f, 100.0f, T4, "%.0f%%");
         }
         ImGui::EndDisabled();
 
@@ -76,25 +76,25 @@ namespace {
 
     void DrawAIAction_ThighCrush() {
 
-        PSString T0 = "Enable thigh crush actions.";
-        PSString T1 = "Set the chance for a thigh crush action to be started.";
+        PSString T0 = "启用大腿碾压动作。";
+        PSString T1 = "设置开始大腿碾压动作的概率。";
 
-        PSString T2 = "When a thigh crush action has started\n"
-                      "modify the time interval for attack attempts.\n"
-                      "If an attack happens, it depends on the probabilities set below.";
+        PSString T2 = "大腿碾压动作开始后，\n"
+                      "调整尝试攻击的时间间隔。\n"
+                      "是否攻击取决于下方设置的概率。";
 
-        PSString T3 = "Modify the chance to perform an attack.";
+        PSString T3 = "调整执行攻击的概率。";
 
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.ThighCrush.bEnableAction, T0);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.ThighCrush.bEnableAction, T0);
 
         ImGui::BeginDisabled(!Config::AI.ThighCrush.bEnableAction);
         {
-            ImGuiEx::SliderF("Start Chance", &Config::AI.ThighCrush.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
+            ImGuiEx::SliderF("开始概率", &Config::AI.ThighCrush.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
 
             ImGui::Spacing();
 
-            ImGuiEx::SliderF("Action Interval", &Config::AI.ThighCrush.fInterval, 1.0f, 10.0f, T2, "Every %.1f Second(s)");
-            ImGuiEx::SliderF("Attack Chance", &Config::AI.ThighCrush.fProbabilityHeavy, 0.0f, 100.0f, T3, "%.0f%%");
+            ImGuiEx::SliderF("动作间隔", &Config::AI.ThighCrush.fInterval, 1.0f, 10.0f, T2, "每 %.1f 秒");
+            ImGuiEx::SliderF("攻击概率", &Config::AI.ThighCrush.fProbabilityHeavy, 0.0f, 100.0f, T3, "%.0f%%");
 
         }
         ImGui::EndDisabled();
@@ -105,47 +105,47 @@ namespace {
 
         static const std::string HugsInfo = fmt::format(
             fmt::runtime(
-				 "Hugs have following conditions to occur:\n"
-	             "- Size Difference must be greater than x{:.2f}\n"
-	             "- Size Difference must be less than x2.5\n\n"
-	             "AI Hugs can happen only if these two conditions are met.\n"
-	             "Maximal Size Difference can be increased by Hug perks."
+				 "拥抱触发需要满足以下条件：\n"
+	             "- 体型差必须大于 x{:.2f}\n"
+	             "- 体型差必须小于 x2.5\n\n"
+	             "只有同时满足这两个条件，AI 才会执行拥抱。\n"
+	             "最大体型差可通过拥抱 Perk 提高。"
             ),
             GTS::Action_Hug
         );
 
-        PSString T0 = "Enable hug actions.";
-        PSString T1 = "Set the chance for a hug action to be started.";
-        PSString T2 = "Allow followers to perform the hug-crush action on other followers.";
-        PSString T3 = "Allow followers to perform the hug-crush action on friendly (not in combat) NPCs.";
-        PSString T5 = "Set the interval at which an attempt is made to do any of the following hug actions when hugging someone.";
-        PSString T6 = "Set the chance to perform a hug heal action.";
-        PSString T7 = "Set the chance to perform a hug crush action.";
-        PSString T8 = "Set the chance to perform a hug shrink action.";
-        PSString T9 = "Set the chance to perform a hug shrink action on a follower/teammate/player";
-        PSString T10 = "Should the hugged actor be let go if they can't be shrunk any further.\nApplies only to Followers/Player. Others will be always let go.";
+        PSString T0 = "启用拥抱动作。";
+        PSString T1 = "设置开始拥抱动作的概率。";
+        PSString T2 = "允许追随者对其他追随者执行拥抱碾压。";
+        PSString T3 = "允许追随者对友好（非战斗）NPC 执行拥抱碾压。";
+        PSString T5 = "设置拥抱某人时尝试执行下列拥抱动作的间隔。";
+        PSString T6 = "设置执行拥抱治疗的概率。";
+        PSString T7 = "设置执行拥抱碾压的概率。";
+        PSString T8 = "设置执行拥抱缩小的概率。";
+        PSString T9 = "设置对追随者/队友/玩家执行拥抱缩小的概率。";
+        PSString T10 = "如果被拥抱角色无法继续缩小，是否将其释放。\n仅适用于追随者/玩家。其他角色总会被释放。";
         PSString T11 = HugsInfo.c_str();
 
-        ImGuiEx::HelpText("Why aren't hugs starting", T11);
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.Hugs.bEnableAction, T0);
+        ImGuiEx::HelpText("为什么没有触发拥抱", T11);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.Hugs.bEnableAction, T0);
         
         ImGui::BeginDisabled(!Config::AI.Hugs.bEnableAction);
         {
-            ImGuiEx::SliderF("Start Chance", &Config::AI.Hugs.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
+            ImGuiEx::SliderF("开始概率", &Config::AI.Hugs.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
 
             ImGui::Spacing();
 
-            ImGuiEx::CheckBox("Allow Crushing (Followers & Player)", &Config::AI.Hugs.bKillFollowersOrPlayer, T2);
-            ImGuiEx::CheckBox("Allow Crushing (Friendly NPCs)", &Config::AI.Hugs.bKillFriendlies, T3);
-            ImGuiEx::CheckBox("Stop When Too Small (Followers & Player)", &Config::AI.Hugs.bStopIfCantShrink, T10);
+            ImGuiEx::CheckBox("允许碾压（追随者和玩家）", &Config::AI.Hugs.bKillFollowersOrPlayer, T2);
+            ImGuiEx::CheckBox("允许碾压（友好 NPC）", &Config::AI.Hugs.bKillFriendlies, T3);
+            ImGuiEx::CheckBox("过小时停止（追随者和玩家）", &Config::AI.Hugs.bStopIfCantShrink, T10);
 
             ImGui::Spacing();
 
-            ImGuiEx::SliderF("Action Interval", &Config::AI.Hugs.fInterval, 1.0f, 10.0f, T5, "Every %.1f Second(s)");
-            ImGuiEx::SliderF("Chance To Heal", &Config::AI.Hugs.fHealProb, 0.0f, 100.0f, T6, "%.0f%%");
-            ImGuiEx::SliderF("Chance To Crush", &Config::AI.Hugs.fKillProb, 0.0f, 100.0f, T7, "%.0f%%");
-            ImGuiEx::SliderF("Chance To Shrink", &Config::AI.Hugs.fShrinkProb, 0.0f, 100.0f, T8, "%.0f%%");
-            ImGuiEx::SliderF("Chance To Shrink Friendly", &Config::AI.Hugs.fFriendlyShrinkProb, 0.0f, 100.0f, T9, "%.0f%%");
+            ImGuiEx::SliderF("动作间隔", &Config::AI.Hugs.fInterval, 1.0f, 10.0f, T5, "每 %.1f 秒");
+            ImGuiEx::SliderF("治疗概率", &Config::AI.Hugs.fHealProb, 0.0f, 100.0f, T6, "%.0f%%");
+            ImGuiEx::SliderF("碾压概率", &Config::AI.Hugs.fKillProb, 0.0f, 100.0f, T7, "%.0f%%");
+            ImGuiEx::SliderF("缩小概率", &Config::AI.Hugs.fShrinkProb, 0.0f, 100.0f, T8, "%.0f%%");
+            ImGuiEx::SliderF("缩小友方概率", &Config::AI.Hugs.fFriendlyShrinkProb, 0.0f, 100.0f, T9, "%.0f%%");
         }
         ImGui::EndDisabled();
 
@@ -153,33 +153,33 @@ namespace {
 
     void DrawAIAction_ButtCrush() {
 
-        PSString T0 = "Enable butt crush actions.";
-        PSString T1 = "Set the chance for a butt crush action to be started.";
+        PSString T0 = "启用臀部碾压动作。";
+        PSString T1 = "设置开始臀部碾压动作的概率。";
 
-        PSString T2 = "If the AI decides to start a butt crush action, choose between a fast one or a targeted one.\n"
-		                              "Modify the chances here:\n"
-		                              "0%% -> Always perform a fast one.\n"
-		                              "100%% -> Always perform a targeted one.";
+        PSString T2 = "如果 AI 决定开始臀部碾压动作，可在快速碾压和锁定目标碾压之间选择。\n"
+		                              "在这里调整概率：\n"
+		                              "0%% -> 总是执行快速碾压。\n"
+		                              "100%% -> 总是执行锁定目标碾压。";
 
-        PSString T3 = "Set the interval at which an attempt is made to do any of the butt crush actions when doing a targeted one.";
-        PSString T4 = "Increase/decrease the chance to grow. You should probably keep this value high.";
-        PSString T5 = "Increase/decrease the chance to perform the butt crush.\n"
-		                              "Note: The chance to perform the crush is internally increased based on growth.\n"
-		                              "If you want the follower to grow often and only crush after a while, keep this value low.";
+        PSString T3 = "执行锁定目标碾压时，设置尝试执行臀部碾压动作的间隔。";
+        PSString T4 = "提高/降低成长概率。通常建议保持较高。";
+        PSString T5 = "提高/降低执行臀部碾压的概率。\n"
+		                              "注意：执行碾压的概率会根据成长情况在内部提高。\n"
+		                              "如果希望追随者经常成长、过一会儿再碾压，请把此值设低。";
 
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.ButtCrush.bEnableAction, T0);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.ButtCrush.bEnableAction, T0);
 
         
         ImGui::BeginDisabled(!Config::AI.ButtCrush.bEnableAction);
         {
-            ImGuiEx::SliderF("Start Chance", &Config::AI.ButtCrush.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
-            ImGuiEx::SliderF("Fast / Targeted Crush Chance", &Config::AI.ButtCrush.fButtCrushTypeProb, 0.0f, 100.0f, T2, "%.0f%%");
+            ImGuiEx::SliderF("开始概率", &Config::AI.ButtCrush.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
+            ImGuiEx::SliderF("快速/锁定目标碾压概率", &Config::AI.ButtCrush.fButtCrushTypeProb, 0.0f, 100.0f, T2, "%.0f%%");
 
             ImGui::Spacing();
 
-            ImGuiEx::SliderF("Targeted Action Interval", &Config::AI.ButtCrush.fInterval, 1.0f, 10.0f, T3, "Every %.1f Second(s)");
-            ImGuiEx::SliderF("Chance To Grow", &Config::AI.ButtCrush.fGrowProb, 0.0f, 100.0f, T4, "%.0f%%");
-            ImGuiEx::SliderF("Chance To Crush", &Config::AI.ButtCrush.fCrushProb, 0.0f, 100.0f, T5, "%.0f%%");
+            ImGuiEx::SliderF("锁定目标动作间隔", &Config::AI.ButtCrush.fInterval, 1.0f, 10.0f, T3, "每 %.1f 秒");
+            ImGuiEx::SliderF("成长概率", &Config::AI.ButtCrush.fGrowProb, 0.0f, 100.0f, T4, "%.0f%%");
+            ImGuiEx::SliderF("碾压概率", &Config::AI.ButtCrush.fCrushProb, 0.0f, 100.0f, T5, "%.0f%%");
         }
         ImGui::EndDisabled();
 
@@ -187,78 +187,78 @@ namespace {
 
     void DrawAIAction_Grab() {
 
-        PSString T0 = "Enable grab actions.";
-        PSString T1 = "Set the chance for the actor to grab someone if possible.";
-        PSString T2 = "Set the interval at which an attempt is made to do a grab action when the actor is holding someone.";
-        PSString T3 = "Set the chance for the actor to decide to throw the held NPC.";
-        PSString T4 = "Set the chance for the actor to vore the held NPC.";
-        PSString T5 = "Set the chance for the actor to crush the held NPC.";
-        PSString T6 = "Set the chance for the actor to place the held NPC between their breasts.";
+        PSString T0 = "启用抓取动作。";
+        PSString T1 = "设置角色在可能时抓取他人的概率。";
+        PSString T2 = "角色正抓着某人时，设置尝试执行抓取动作的间隔。";
+        PSString T3 = "设置角色决定扔出被抓 NPC 的概率。";
+        PSString T4 = "设置角色吞噬被抓 NPC 的概率。";
+        PSString T5 = "设置角色碾压被抓 NPC 的概率。";
+        PSString T6 = "设置角色把被抓 NPC 放入胸间的概率。";
 
-        PSString T7 = "If an NPC is between the actor's cleavage, set the chance for an absorb action to start.";
-        PSString T8 = "If an NPC is between the actor's' cleavage, set the chance for a vore action to start.";
-        PSString T9 = "If an NPC is between the actor's' cleavage, set the chance for a crush attack action to start.";
-        PSString T10 = "If an NPC is between the actor's' cleavage, set the chance for a suffocation action to start.";
+        PSString T7 = "如果 NPC 位于角色乳沟中，设置开始吸收动作的概率。";
+        PSString T8 = "如果 NPC 位于角色乳沟中，设置开始吞噬动作的概率。";
+        PSString T9 = "如果 NPC 位于角色乳沟中，设置开始碾压攻击的概率。";
+        PSString T10 = "如果 NPC 位于角色乳沟中，设置开始窒息动作的概率。";
 
-        PSString T11 = "Set the chance for the actor to be released when grabbed.";
-        PSString T12 = "Set the chance cleavage actions to stop.";
+        PSString T11 = "设置被抓角色被释放的概率。";
+        PSString T12 = "设置停止乳沟动作的概率。";
 
-		PSString T13 = "Set the chance for the actor to start a grab-play action.";
-		PSString T14 = "Set the chance for the actor to perform a heavy crush during grab-play.";
-		PSString T15 = "Set the chance for the actor to vore during grab-play.";
-		PSString T16 = "Set the chance for the actor to kiss during grab-play.";
-		PSString T17 = "Set the chance for the actor to vore while kissing during grab-play.";
-		PSString T18 = "Set the chance for the actor to poke during grab-play.";
-		PSString T19 = "Set the chance for the actor to flick during grab-play.";
-		PSString T20 = "Set the chance for the actor to sandwich during grab-play.";
-		PSString T21 = "Set the chance for the actor to start grinding during grab-play.";
-		PSString T22 = "Set the chance for the actor to stop grinding during grab-play.";
-		PSString T23 = "Set the chance for the actor to exit grab-play.";
+		PSString T13 = "设置角色开始抓取玩弄动作的概率。";
+		PSString T14 = "设置角色在抓取玩弄中执行重碾压的概率。";
+		PSString T15 = "设置角色在抓取玩弄中执行吞噬的概率。";
+		PSString T16 = "设置角色在抓取玩弄中亲吻的概率。";
+		PSString T17 = "设置角色在抓取玩弄亲吻时执行吞噬的概率。";
+		PSString T18 = "设置角色在抓取玩弄中戳弄的概率。";
+		PSString T19 = "设置角色在抓取玩弄中弹开的概率。";
+		PSString T20 = "设置角色在抓取玩弄中夹住对方的概率。";
+		PSString T21 = "设置角色在抓取玩弄中开始碾磨的概率。";
+		PSString T22 = "设置角色在抓取玩弄中停止碾磨的概率。";
+		PSString T23 = "设置角色退出抓取玩弄的概率。";
 
 
-        ImGuiEx::CheckBox("Enable Action", &Config::AI.Grab.bEnableAction, T0);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.Grab.bEnableAction, T0);
 
         ImGui::BeginDisabled(!Config::AI.Grab.bEnableAction);
         {
-            ImGuiEx::SliderF("Start Chance", &Config::AI.Grab.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
-            ImGuiEx::SliderF("Action Interval", &Config::AI.Grab.fInterval, 1.0f, 10.0f, T2, "Every %.1f Second(s)");
+            ImGuiEx::SliderF("开始概率", &Config::AI.Grab.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
+            ImGuiEx::SliderF("动作间隔", &Config::AI.Grab.fInterval, 1.0f, 10.0f, T2, "每 %.1f 秒");
 
             ImGui::Spacing();
-            ImGui::Text("Grab Actions");
-            ImGuiEx::SliderF("Chance To Throw", &Config::AI.Grab.fThrowProb, 0.0f, 100.0f, T3, "%.0f%%");
-            ImGuiEx::SliderF("Chance To Vore", &Config::AI.Grab.fVoreProb, 0.0f, 100.0f, T4, "%.0f%%");
-            ImGuiEx::SliderF("Chance To Crush", &Config::AI.Grab.fCrushProb, 0.0f, 100.0f, T5, "%.0f%%");
-            ImGuiEx::SliderF("Chance To Release", &Config::AI.Grab.fReleaseProb, 0.0f, 100.0f, T11, "%.0f%%");
+            ImGui::Text("抓取动作");
+            ImGuiEx::SliderF("扔出概率", &Config::AI.Grab.fThrowProb, 0.0f, 100.0f, T3, "%.0f%%");
+            ImGuiEx::SliderF("吞噬概率", &Config::AI.Grab.fVoreProb, 0.0f, 100.0f, T4, "%.0f%%");
+            ImGuiEx::SliderF("碾压概率", &Config::AI.Grab.fCrushProb, 0.0f, 100.0f, T5, "%.0f%%");
+            ImGuiEx::SliderF("释放概率", &Config::AI.Grab.fReleaseProb, 0.0f, 100.0f, T11, "%.0f%%");
 
-
-            ImGui::Spacing();
-
-            ImGui::Text("Cleavage Actions");
-            ImGuiEx::SliderF("Place in Cleavage Chance", &Config::AI.Grab.fCleavageProb, 0.0f, 100.0f, T6, "%.0f%%");
-            ImGui::Spacing();
-            ImGuiEx::SliderF("Cleavage Absorb Chance", &Config::AI.Grab.fCleavageAbsorbProb, 0.0f, 100.0f, T7, "%.0f%%");
-            ImGuiEx::SliderF("Cleavage Vore Chance", &Config::AI.Grab.fCleavageVoreProb, 0.0f, 100.0f, T8, "%.0f%%");
-            ImGuiEx::SliderF("Cleavage Crush Chance", &Config::AI.Grab.fCleavageAttackProb, 0.0f, 100.0f, T9, "%.0f%%");
-            ImGuiEx::SliderF("Cleavage Suffocate Chance", &Config::AI.Grab.fCleavageSuffocateProb, 0.0f, 100.0f, T10, "%.0f%%");
-            ImGuiEx::SliderF("Cleavage Stop Chance", &Config::AI.Grab.fCleavageStopProb, 0.0f, 100.0f, T12, "%.0f%%");
 
             ImGui::Spacing();
 
-            ImGui::Text("Grab-play Actions");
-            ImGuiEx::SliderF("GP Start Chance", &Config::AI.Grab.fGrabPlayStartProb, 0.0f, 100.0f, T13, "%.0f%%");
+            ImGui::Text("乳沟动作");
+            ImGuiEx::SliderF("放入乳沟概率", &Config::AI.Grab.fCleavageProb, 0.0f, 100.0f, T6, "%.0f%%");
             ImGui::Spacing();
-            ImGuiEx::SliderF("GP Heavy Crush Chance", &Config::AI.Grab.fGrabPlayHeavyCrushProb, 0.0f, 100.0f, T14, "%.0f%%");
-            ImGuiEx::SliderF("GP Vore Chance", &Config::AI.Grab.fGrabPlayVoreProb, 0.0f, 100.0f, T15, "%.0f%%");
-            ImGuiEx::SliderF("GP Kiss Chance", &Config::AI.Grab.fGrabPlayKissProb, 0.0f, 100.0f, T16, "%.0f%%");
-            ImGuiEx::SliderF("GP Kiss-Vore Chance", &Config::AI.Grab.fGrabPlayKissVoreProb, 0.0f, 100.0f, T17, "%.0f%%");
-            ImGuiEx::SliderF("GP Poke Chance", &Config::AI.Grab.fGrabPlayPokeProb, 0.0f, 100.0f, T18, "%.0f%%");
-            ImGuiEx::SliderF("GP Flick Chance", &Config::AI.Grab.fGrabPlayFlickProb, 0.0f, 100.0f, T19, "%.0f%%");
-            ImGuiEx::SliderF("GP Sandwich Chance", &Config::AI.Grab.fGrabPlaySandwichProb, 0.0f, 100.0f, T20, "%.0f%%");
+            ImGuiEx::SliderF("乳沟吸收概率", &Config::AI.Grab.fCleavageAbsorbProb, 0.0f, 100.0f, T7, "%.0f%%");
+            ImGuiEx::SliderF("乳沟吞噬概率", &Config::AI.Grab.fCleavageVoreProb, 0.0f, 100.0f, T8, "%.0f%%");
+            ImGuiEx::SliderF("乳沟碾压概率", &Config::AI.Grab.fCleavageAttackProb, 0.0f, 100.0f, T9, "%.0f%%");
+            ImGuiEx::SliderF("乳沟窒息概率", &Config::AI.Grab.fCleavageSuffocateProb, 0.0f, 100.0f, T10, "%.0f%%");
+            ImGuiEx::SliderF("乳沟停止概率", &Config::AI.Grab.fCleavageStopProb, 0.0f, 100.0f, T12, "%.0f%%");
 
-            ImGuiEx::SliderF("GP Grind Start Chance", &Config::AI.Grab.fGrabPlayGrindStartProb, 0.0f, 100.0f, T21, "%.0f%%");
-            ImGuiEx::SliderF("GP Grind Stop Chance", &Config::AI.Grab.fGrabPlayGrindStopProb, 0.0f, 100.0f, T22, "%.0f%%");
+            ImGui::Spacing();
 
-            ImGuiEx::SliderF("GP Exit Chance", &Config::AI.Grab.fGrabPlayExitProb, 0.0f, 100.0f, T23, "%.0f%%");
+            ImGui::Text("抓取玩弄动作");
+            ImGuiEx::SliderF("GP 开始概率", &Config::AI.Grab.fGrabPlayStartProb, 0.0f, 100.0f, T13, "%.0f%%");
+            ImGui::Spacing();
+            ImGuiEx::SliderF("GP 重碾压概率", &Config::AI.Grab.fGrabPlayHeavyCrushProb, 0.0f, 100.0f, T14, "%.0f%%");
+            ImGuiEx::SliderF("GP 吞噬概率", &Config::AI.Grab.fGrabPlayVoreProb, 0.0f, 100.0f, T15, "%.0f%%");
+            ImGuiEx::SliderF("GP 亲吻概率", &Config::AI.Grab.fGrabPlayKissProb, 0.0f, 100.0f, T16, "%.0f%%");
+            ImGuiEx::SliderF("GP 亲吻吞噬概率", &Config::AI.Grab.fGrabPlayKissVoreProb, 0.0f, 100.0f, T17, "%.0f%%");
+            ImGuiEx::SliderF("GP 戳弄概率", &Config::AI.Grab.fGrabPlayPokeProb, 0.0f, 100.0f, T18, "%.0f%%");
+            ImGuiEx::SliderF("GP 弹开概率", &Config::AI.Grab.fGrabPlayFlickProb, 0.0f, 100.0f, T19, "%.0f%%");
+            ImGuiEx::SliderF("GP 夹击概率", &Config::AI.Grab.fGrabPlaySandwichProb, 0.0f, 100.0f, T20, "%.0f%%");
+
+            ImGuiEx::SliderF("GP 开始碾磨概率", &Config::AI.Grab.fGrabPlayGrindStartProb, 0.0f, 100.0f, T21, "%.0f%%");
+            ImGuiEx::SliderF("GP 停止碾磨概率", &Config::AI.Grab.fGrabPlayGrindStopProb, 0.0f, 100.0f, T22, "%.0f%%");
+
+            ImGuiEx::SliderF("GP 退出概率", &Config::AI.Grab.fGrabPlayExitProb, 0.0f, 100.0f, T23, "%.0f%%");
 
         }
         ImGui::EndDisabled();
@@ -277,51 +277,51 @@ namespace GTS {
         ImUtil_Unique 
 		{
 
-            PSString T0 = "Globaly Enable/Disable the follower action AI.";
+            PSString T0 = "全局启用/禁用追随者动作 AI。";
 
-            PSString T1 = "Set the time interval followers should attempt to start a new GTS action.\n"
-                          "This does not guarantee a follower will do something every x seconds.\n"
-                          "It just changes the time interval an attempt is made to start something.\n"
-                          "If anything is done depends on the probabilities configured in each action on the right pane.";
+            PSString T1 = "设置追随者尝试开始新 GTS 动作的时间间隔。\n"
+                          "这不保证追随者每隔 x 秒一定会执行动作。\n"
+                          "它只改变尝试开始某个动作的间隔。\n"
+                          "是否实际执行取决于右侧各动作配置的概率。";
 
-            PSString T2 = "Allow the AI to target the player.";
-            PSString T3 = "Allow the AI to target other followers.";
-            PSString T4 = "Allow AI to perform actions only if NPC is hostile to performer.";
-            PSString T5 = "Only allow the action AI to be active when the follower is in combat.";
+            PSString T2 = "允许 AI 以玩家为目标。";
+            PSString T3 = "允许 AI 以其他追随者为目标。";
+            PSString T4 = "仅当 NPC 与执行者敌对时，才允许 AI 执行动作。";
+            PSString T5 = "仅在追随者处于战斗中时启用动作 AI。";
 
-            PSString T6 = "Prevent Followers from using regular attacks based on their size, when they're large.\n"
-                          "- The chance to not attack increases with size.\n"
-                          "- Works only if enemies are close to Follower";
+            PSString T6 = "当追随者体型较大时，按体型阻止其使用普通攻击。\n"
+                          "- 不攻击的概率会随体型增大而提高。\n"
+                          "- 仅在敌人接近追随者时生效。";
 
-            PSString T7 = "If on, always prevents Attacks of followers even if there's no enemies nearby";
+            PSString T7 = "启用后，即使附近没有敌人，也总是阻止追随者普通攻击。";
 
-            PSString THelp = "The GTS AI checks at a configurable time interval what GTS actions it can start.\n"
-                             "Whether the AI takes an action depends on said actions' probability settings.\n"
-                             "If its probability percentage is low, the action is less likely to be started.\n"
-                             "When all action chances are low, the AI is more likely to simply \"do nothing\".\n"
-                             "Some actions (like hugs or grabs) have their own actions (sub-actions) that work on the same idea but with their own settings\n"
-                             "whom you can modify on the right pane of this settings page.";
+            PSString THelp = "GTS AI 会按可配置的时间间隔检查可开始的 GTS 动作。\n"
+                             "AI 是否执行动作取决于对应动作的概率设置。\n"
+                             "如果概率较低，该动作就不太容易开始。\n"
+                             "当所有动作概率都较低时，AI 更可能什么都不做。\n"
+                             "部分动作（如拥抱或抓取）拥有自己的子动作，这些子动作也按同样逻辑工作，\n"
+                             "可在本设置页右侧面板调整。";
 
-            if (ImGui::CollapsingHeader("AI Settings",ImUtil::HeaderFlagsDefaultOpen)) {
+            if (ImGui::CollapsingHeader("AI 设置",ImUtil::HeaderFlagsDefaultOpen)) {
 
-                ImGuiEx::HelpText("How does this work", THelp);
-                ImGuiEx::CheckBox("Enable AI",&Config::AI.bEnableActionAI, T0);
+                ImGuiEx::HelpText("这是如何工作的", THelp);
+                ImGuiEx::CheckBox("启用 AI",&Config::AI.bEnableActionAI, T0);
 
                 {
                     ImGui::BeginDisabled(!Config::AI.bEnableActionAI);
 
-                    ImGuiEx::SliderF("Try To Start A New Action",&Config::AI.fMasterTimer, 2.0f, 15.0f, T1 ,"Every %.1f Seconds");
+                    ImGuiEx::SliderF("尝试开始新动作",&Config::AI.fMasterTimer, 2.0f, 15.0f, T1 ,"每 %.1f 秒");
                     ImGui::Spacing();
 
-                    ImGuiEx::CheckBox("Target Player", &Config::AI.bAllowPlayer, T2);
+                    ImGuiEx::CheckBox("目标包含玩家", &Config::AI.bAllowPlayer, T2);
                     ImGui::SameLine();
-                    ImGuiEx::CheckBox("Target Other Followers", &Config::AI.bAllowFollowers, T3);
+                    ImGuiEx::CheckBox("目标包含其他追随者", &Config::AI.bAllowFollowers, T3);
                     ImGui::SameLine();
-                    ImGuiEx::CheckBox("Target Only Hostiles", &Config::AI.bHostileOnly, T4);
+                    ImGuiEx::CheckBox("仅敌对目标", &Config::AI.bHostileOnly, T4);
 
-                    ImGuiEx::CheckBox("Enable AI Only During Combat",&Config::AI.bCombatOnly, T5);
-                    ImGuiEx::CheckBox("Disable Regular Attacks When Large", &Config::AI.bDisableAttacks, T6);
-                    ImGuiEx::CheckBox("Always Disable Regular Attacks When Large", &Config::AI.bAlwaysDisableAttacks, T7, !Config::AI.bDisableAttacks);
+                    ImGuiEx::CheckBox("仅战斗中启用 AI",&Config::AI.bCombatOnly, T5);
+                    ImGuiEx::CheckBox("体型较大时禁用普通攻击", &Config::AI.bDisableAttacks, T6);
+                    ImGuiEx::CheckBox("体型较大时总是禁用普通攻击", &Config::AI.bAlwaysDisableAttacks, T7, !Config::AI.bDisableAttacks);
 
                     ImGui::EndDisabled();
                 }
@@ -333,22 +333,22 @@ namespace GTS {
         ImUtil_Unique 
 		{
             
-            PSString T0 = "Toggle whether Followers should have movement speed further reduced past x1.25 size.\n"
-                            "- This toggle makes Follower Sprinting less likely based on size, so Followers will try to menacingly walk instead of sprinting\n"
-                            "- Alters SpeedMult Actor Value, can reduce it up to 15\n\n"
-                            "- This toggle requires Dynamic Animation Speed toggle in order to work";
-            PSString T2 = "Toggle whether Followers should have decreased rotation speed past x1.25 size.\n\n"
-                            "- This toggle requires Dynamic Animation Speed toggle in order to work";
-            PSString T3 = "Toggle whether Followers should record movement speed of their legs/hands\n"
-                             "- If on - followers won't push others away if just standing still\n"
-                             "- May affect fps in a negative way since it records data each frame for each follower";
-            PSString T4 = "Toggle whether other NPCs should panic when near a GTS.";
+            PSString T0 = "切换追随者超过 x1.25 体型后，是否进一步降低移动速度。\n"
+                            "- 此开关会根据体型降低追随者冲刺概率，使其更倾向于压迫感十足地行走而不是冲刺。\n"
+                            "- 会修改 SpeedMult Actor Value，最多可降低 15。\n\n"
+                            "- 此开关需要动态动画速度开关启用后才会生效。";
+            PSString T2 = "切换追随者超过 x1.25 体型后，是否降低转身速度。\n\n"
+                            "- 此开关需要动态动画速度开关启用后才会生效。";
+            PSString T3 = "切换追随者是否记录腿/手的移动速度。\n"
+                             "- 启用后，追随者只是站着不动时不会推开他人。\n"
+                             "- 由于会每帧为每个追随者记录数据，可能对 FPS 有负面影响。";
+            PSString T4 = "切换其他 NPC 接近 GTS 时是否会恐慌。";
 
-            if (ImGui::CollapsingHeader("Misc Settings",ImUtil::HeaderFlagsDefaultOpen)) {
-                ImGuiEx::CheckBox("Decrease Movement Speed AV", &Config::AI.bSlowMovementDown, T0);
-                ImGuiEx::CheckBox("Decrease Combat Rotation Speed", &Config::AI.bSlowRotationDown, T2);
-                ImGuiEx::CheckBox("Record Node Movement Speed Data", &Config::AI.bRecordBoneSpeedData, T3);
-                ImGuiEx::CheckBox("Actors Panic", &Config::AI.bPanic, T4);
+            if (ImGui::CollapsingHeader("杂项设置",ImUtil::HeaderFlagsDefaultOpen)) {
+                ImGuiEx::CheckBox("降低移动速度 AV", &Config::AI.bSlowMovementDown, T0);
+                ImGuiEx::CheckBox("降低战斗转身速度", &Config::AI.bSlowRotationDown, T2);
+                ImGuiEx::CheckBox("记录节点移动速度数据", &Config::AI.bRecordBoneSpeedData, T3);
+                ImGuiEx::CheckBox("角色恐慌", &Config::AI.bPanic, T4);
                 ImGui::Spacing();
             }
 		}
@@ -358,16 +358,16 @@ namespace GTS {
     void CategoryAI::DrawRight() {
 
 		static ImGuiEx::CollapsingTabHeader ActionHeader (
-            "AI Action Settings",
+            "AI 动作设置",
 			{
-				"Vore",
-				"Stomps",
-                "Kicks / Swipes",
-                "Thigh Sandwich",
-                "Thigh Crush",
-                "Hugs",
-                "Butt Crush",
-                "Grabs",
+				"吞噬",
+				"踩踏",
+                "踢击/挥击",
+                "大腿夹击",
+                "大腿碾压",
+                "拥抱",
+                "臀部碾压",
+                "抓取",
 			}
         );
 

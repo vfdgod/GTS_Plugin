@@ -19,13 +19,13 @@ namespace GTS {
 		ImUtil_Unique
 		{
 
-			PSString T0 = "Allow adjustments to the field of view during certain actions (e.g., Second Wind).";
-			PSString T1 = "Track biped skeleton bone positions during certain animated actions.";
+			PSString T0 = "允许在部分动作中调整视野（例如 Second Wind）。";
+			PSString T1 = "在部分动画动作期间追踪双足骨架节点位置。";
 
-			if (ImGui::CollapsingHeader("Misc", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("杂项", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::CheckBox("Enable FOV Edits", &Config::General.bEnableFOVEdits, T0);
-				if (ImGuiEx::CheckBox("Track Bones During Actions", &Config::General.bTrackBonesDuringAnim, T1)) {
+				ImGuiEx::CheckBox("启用 FOV 调整", &Config::General.bEnableFOVEdits, T0);
+				if (ImGuiEx::CheckBox("动作期间追踪骨骼", &Config::General.bTrackBonesDuringAnim, T1)) {
                     ConfigModHandler::DoCameraStateReset();
 				}
 
@@ -38,13 +38,13 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-            PSString T0 = "Show heart particle effects during certain actions.";
-            PSString T1 = "Show or hide icons above NPCs indicating which GTS actions can be performed on them.";
+            PSString T0 = "在部分动作中显示爱心粒子效果。";
+            PSString T1 = "在 NPC 头顶显示/隐藏可执行 GTS 动作的提示图标。";
 
-            if (ImGui::CollapsingHeader("Visuals", ImUtil::HeaderFlagsDefaultOpen)) {
-                ImGuiEx::CheckBox("Heart Effects",&Config::General.bShowHearts, T0);
+            if (ImGui::CollapsingHeader("视觉效果", ImUtil::HeaderFlagsDefaultOpen)) {
+                ImGuiEx::CheckBox("爱心效果",&Config::General.bShowHearts, T0);
                 ImGui::SameLine();
-                ImGuiEx::CheckBox("Show Action Icons",&Config::General.bShowIcons, T1);
+                ImGuiEx::CheckBox("显示动作图标",&Config::General.bShowIcons, T1);
                 ImGui::Spacing();
             }
         }
@@ -54,17 +54,17 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-            PSString T1 = "Replace sneaking with crawling for the player only.\n(Save specific setting)\n"
-						  "Note: If sneak/crawl transitions are off you wont automatically switch between crawl/sneak states.";
+            PSString T1 = "仅对玩家用爬行替换潜行。\n（存档独立设置）\n"
+						  "注意：如果潜行/爬行过渡动画关闭，将不会自动在爬行与潜行状态之间切换。";
 
-        	PSString T2 = "Replace sneaking with crawling for followers.\n(Save specific setting)\n"
-						  "Note: If sneak / crawl transitions are off you wont automatically switch between crawl / sneak states.";
+	PSString T2 = "对追随者用爬行替换潜行。\n（存档独立设置）\n"
+						  "注意：如果潜行/爬行过渡动画关闭，将不会自动在爬行与潜行状态之间切换。";
 
-            PSString T3 = "This mod introduces new subtle transition animations when entering/exiting sneak or crawl states.\n"
-						  "This toggle disables/enables them.\n";
+            PSString T3 = "本模组在进入/退出潜行或爬行状态时添加了细微的过渡动画。\n"
+						  "此开关用于启用或禁用这些过渡动画。\n";
 
 
-            if (ImGui::CollapsingHeader("Sneaking/Crawling", ImUtil::HeaderFlagsDefaultOpen)) {
+            if (ImGui::CollapsingHeader("潜行/爬行", ImUtil::HeaderFlagsDefaultOpen)) {
 
                 bool PlayerBusy = AnimationVars::General::IsTransitioning(PlayerCharacter::GetSingleton());
                 bool FollowersBusy = false;
@@ -78,17 +78,17 @@ namespace GTS {
                     }
                 }
 
-                ImGui::Text("Replace Sneaking With Crawling");
-                ImGuiEx::CheckBox("Player##CrawlToggle", &Persistent::EnableCrawlPlayer.value, T1, PlayerBusy);
+                ImGui::Text("用爬行替换潜行");
+                ImGuiEx::CheckBox("玩家##CrawlToggle", &Persistent::EnableCrawlPlayer.value, T1, PlayerBusy);
                 ImGui::SameLine();
-                ImGuiEx::CheckBox("Follower##CrawlToggle", &Persistent::EnableCrawlFollower.value, T2, FollowersBusy);
+                ImGuiEx::CheckBox("追随者##CrawlToggle", &Persistent::EnableCrawlFollower.value, T2, FollowersBusy);
 
                 ImGui::Spacing();
 
-                ImGui::Text("Sneak Transition Animations");
-                ImGuiEx::CheckBox("Player##STransToggle", &Config::Gameplay.ActionSettings.bSneakTransitions, T3);
+                ImGui::Text("潜行过渡动画");
+                ImGuiEx::CheckBox("玩家##STransToggle", &Config::Gameplay.ActionSettings.bSneakTransitions, T3);
                 ImGui::SameLine();
-                ImGuiEx::CheckBox("Follower##STransToggle", &Config::Gameplay.ActionSettings.bSneakTransitionsOther, T3);
+                ImGuiEx::CheckBox("追随者##STransToggle", &Config::Gameplay.ActionSettings.bSneakTransitionsOther, T3);
 
                 ImGui::Spacing();
             }
@@ -99,22 +99,21 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-        	PSString T0 = "Increase/lower the chance to start a foot grinding animation when doing understomps.";
+	PSString T0 = "提高/降低执行脚下踩踏时触发脚底碾磨动画的概率。";
 
-        	PSString T1 = "When enabled:\n"
-        				  "Replaces the light, non understomp stomp animations made by SonderBain with different\n"
-        				  "versions made by NickNack.";
+	PSString T1 = "启用后：\n"
+				  "将 SonderBain 制作的轻踩（非脚下踩踏）动画替换为 NickNack 制作的不同版本。";
 
-            PSString T3 = "Toggle whether actions like kicks ragdoll the player, if done by followers";
+            PSString T3 = "切换追随者执行踢击等动作时，是否会让玩家进入布娃娃状态。";
            
 
-			if (ImGui::CollapsingHeader("Stomps/Kicks", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("踩踏/踢击", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::SliderF("Foot Grind On Understomp Chance", &Config::Gameplay.ActionSettings.fPlayerUnderstompGrindChance, 0.0f, 100.0f, T0, "%.0f%%");
-                ImGuiEx::CheckBox("Alternative Stomp Player", &Config::Gameplay.ActionSettings.bStompAlternative, T1);
+				ImGuiEx::SliderF("脚下踩踏触发碾磨概率", &Config::Gameplay.ActionSettings.fPlayerUnderstompGrindChance, 0.0f, 100.0f, T0, "%.0f%%");
+                ImGuiEx::CheckBox("玩家替代踩踏动画", &Config::Gameplay.ActionSettings.bStompAlternative, T1);
 			    ImGui::SameLine();
-                ImGuiEx::CheckBox("Alternative Stomp NPCs", &Config::Gameplay.ActionSettings.bStomAlternativeOther, T1);
-                ImGuiEx::CheckBox("Follower Kicks Affect Player", &Config::Gameplay.ActionSettings.bEnablePlayerPushBack, T3);
+                ImGuiEx::CheckBox("NPC 替代踩踏动画", &Config::Gameplay.ActionSettings.bStomAlternativeOther, T1);
+                ImGuiEx::CheckBox("追随者踢击影响玩家", &Config::Gameplay.ActionSettings.bEnablePlayerPushBack, T3);
 			    ImGui::Spacing();
 			}
         }
@@ -127,29 +126,29 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-			PSString T1 = "Modify the amount of growth gained after vore.";
-            PSString T2 = "Enable Skyrim's free camera when doing any vore actions.";
-            PSString T3 = "Increase vanilla character weight after vore.";
-            PSString T4 = "Allow voring insects.";
-            PSString T5 = "Allow voring undead actors (like draugr).";
+			PSString T1 = "调整吞噬后获得的成长量。";
+            PSString T2 = "执行任何吞噬动作时启用 Skyrim 自由镜头。";
+            PSString T3 = "吞噬后提高原版角色体重。";
+            PSString T4 = "允许吞噬昆虫。";
+            PSString T5 = "允许吞噬亡灵角色（例如尸鬼）。";
 
-            PSString T6 = "Toggle whether the GTS should do DV's Endo on the player and teammates instead of doing lethal vore\n"
-			              "if devourment compatibility is enabled.";
+            PSString T6 = "启用 Devourment 兼容时，切换 GTS 是否对玩家和队友执行 DV 的 Endo，\n"
+			              "而不是致命吞噬。";
 
 
-            PSString T7 = "Set the base time duration for vore absorptions. The actual digestion time can be lower depending on perks.";
+            PSString T7 = "设置吞噬吸收的基础持续时间。实际消化时间可能因 Perk 而缩短。";
 						  
 
-            if (ImGui::CollapsingHeader("Vore Settings", ImUtil::HeaderFlagsDefaultOpen)) {
+            if (ImGui::CollapsingHeader("吞噬设置", ImUtil::HeaderFlagsDefaultOpen)) {
 
-                ImGuiEx::SliderF("Vore Gain Mult", &Config::Gameplay.ActionSettings.fVoreGainMult, 0.1f, 3.0f, T1, "%.1fx");
-                ImGuiEx::SliderU16("Base Digestion Time", &Config::Gameplay.ActionSettings.iVoreDigestSpeedTime, 40, 360, T7, "%d Seconds");
-                ImGuiEx::CheckBox("Allow Insects", &Config::Gameplay.ActionSettings.bAllowInsects, T4);
+                ImGuiEx::SliderF("吞噬成长倍率", &Config::Gameplay.ActionSettings.fVoreGainMult, 0.1f, 3.0f, T1, "%.1fx");
+                ImGuiEx::SliderU16("基础消化时间", &Config::Gameplay.ActionSettings.iVoreDigestSpeedTime, 40, 360, T7, "%d 秒");
+                ImGuiEx::CheckBox("允许昆虫", &Config::Gameplay.ActionSettings.bAllowInsects, T4);
                 ImGui::SameLine();
-                ImGuiEx::CheckBox("Allow Undead", &Config::Gameplay.ActionSettings.bAllowUndead, T5);
-                ImGuiEx::CheckBox("Enable FreeCam During Vore", &Config::Gameplay.ActionSettings.bVoreFreecam, T2);
-                ImGuiEx::CheckBox("Increase Character Weight After Vore", &Config::Gameplay.ActionSettings.bVoreWeightGain, T3);
-                ImGuiEx::CheckBox("Endo Vore Followers/Player", &Config::Gameplay.ActionSettings.bDVDoEndoOnTeam, T6);
+                ImGuiEx::CheckBox("允许亡灵", &Config::Gameplay.ActionSettings.bAllowUndead, T5);
+                ImGuiEx::CheckBox("吞噬期间启用自由镜头", &Config::Gameplay.ActionSettings.bVoreFreecam, T2);
+                ImGuiEx::CheckBox("吞噬后增加角色体重", &Config::Gameplay.ActionSettings.bVoreWeightGain, T3);
+                ImGuiEx::CheckBox("对追随者/玩家使用 Endo 吞噬", &Config::Gameplay.ActionSettings.bDVDoEndoOnTeam, T6);
 
                 ImGui::Spacing();
             }
@@ -160,22 +159,22 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-            PSString T1 = "Toggle whether initial grab is hostile\n"
-                          "- true = it will start combat on grab\n"
-                          "- false = npc won't start combat";
+            PSString T1 = "切换初始抓取是否视为敌对行为：\n"
+                          "- true = 抓取时会进入战斗\n"
+                          "- false = NPC 不会进入战斗";
             
 
-            PSString T2 = "Modify the placement of actors during Kiss Vore.\n"
-                          "Offset is affected by size difference.";
+            PSString T2 = "调整亲吻吞噬期间角色的位置。\n"
+                          "偏移会受到体型差影响。";
 
-            if (ImGui::CollapsingHeader("Grab Settings", ImUtil::HeaderFlagsDefaultOpen)) {
+            if (ImGui::CollapsingHeader("抓取设置", ImUtil::HeaderFlagsDefaultOpen)) {
 
-                ImGuiEx::CheckBox("Initial Grab is hostile", &Config::Gameplay.ActionSettings.bGrabStartIsHostile, T1);
+                ImGuiEx::CheckBox("初始抓取视为敌对", &Config::Gameplay.ActionSettings.bGrabStartIsHostile, T1);
 
                 ImGui::Spacing();
 
-                ImGui::Text("Grab-Play: Kiss Vore Offsets");
-                ImGuiEx::SliderF("Up/Down", &Config::Gameplay.ActionSettings.fGrabPlayVoreOffset_Z, -15.0f, 15.0f, T2, "%.2f");
+                ImGui::Text("抓取玩弄：亲吻吞噬偏移");
+                ImGuiEx::SliderF("上/下", &Config::Gameplay.ActionSettings.fGrabPlayVoreOffset_Z, -15.0f, 15.0f, T2, "%.2f");
 
                 ImGui::Spacing();
             }
@@ -187,32 +186,30 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-            PSString T0 = "Toggle whether non lethal hug actions\n"
-			              "like Hug-Heal or Hug-Shrink should start combat.";
+            PSString T0 = "切换非致命拥抱动作（如拥抱治疗或拥抱缩小）是否会进入战斗。";
 
-            PSString T1 = "Toggle whether after hug healing to full HP\n"
-                          "The held actor should be let go.\n"
-			              "Applies only to the player/followers.";
+            PSString T1 = "切换拥抱治疗到满血后是否释放被抱住的角色。\n"
+			              "仅适用于玩家/追随者。";
 
-            if (ImGui::CollapsingHeader("Hug Settings", ImUtil::HeaderFlagsDefaultOpen)) {
+            if (ImGui::CollapsingHeader("拥抱设置", ImUtil::HeaderFlagsDefaultOpen)) {
 
-                ImGuiEx::CheckBox("Non Lethal Hugs Are Hostile", &Config::Gameplay.ActionSettings.bNonLethalHugsHostile, T0);
+                ImGuiEx::CheckBox("非致命拥抱视为敌对", &Config::Gameplay.ActionSettings.bNonLethalHugsHostile, T0);
                 ImGui::SameLine();
-                ImGuiEx::CheckBox("Hug Heal Stops At Full HP", &Config::Gameplay.ActionSettings.bHugsStopAtFullHP, T1);
+                ImGuiEx::CheckBox("满血后停止拥抱治疗", &Config::Gameplay.ActionSettings.bHugsStopAtFullHP, T1);
 
-            	ImGui::Spacing();
+	ImGui::Spacing();
             }
         }
 
         ImUtil_Unique
 		{
 
-            if (ImGui::CollapsingHeader("Cleavage Settings", ImUtil::HeaderFlagsDefaultOpen)) {
+            if (ImGui::CollapsingHeader("乳沟设置", ImUtil::HeaderFlagsDefaultOpen)) {
 
-                PSString T1 = "Modify the placement of actors during cleavage actions.\n"
-                              "Up/Down | Forward/Back";
+                PSString T1 = "调整乳沟动作期间角色的位置。\n"
+                              "上/下 | 前/后";
 
-                ImGuiEx::SliderF2("Placement Offset", &Config::Gameplay.ActionSettings.f2CleavageOffset.at(0), -15.0f, 15.0f, T1, "%.2f");
+                ImGuiEx::SliderF2("位置偏移", &Config::Gameplay.ActionSettings.f2CleavageOffset.at(0), -15.0f, 15.0f, T1, "%.2f");
                 ImGui::Spacing();
             }
         }

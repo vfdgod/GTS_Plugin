@@ -163,10 +163,10 @@ namespace GTS {
 
 		// Extremes override everything
 		if (progress <= 1e-3f && !Configuring) {
-			sFmtTxt = "Far";
+			sFmtTxt = "过远";
 		}
 		else if (progress >= 1.0f - 1e-3f && !Configuring) {
-			sFmtTxt = "Under";
+			sFmtTxt = "脚下";
 		}
 
 		else {

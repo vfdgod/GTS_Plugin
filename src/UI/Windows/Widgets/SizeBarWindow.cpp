@@ -149,7 +149,7 @@ namespace GTS {
 		std::string sName;
 
 		if (Configuring) {
-			sName = "Name";
+			sName = "名称";
 		}
 		else {
 			Target = PlayerCharacter::GetSingleton();

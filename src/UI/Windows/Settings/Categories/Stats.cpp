@@ -75,7 +75,7 @@ namespace GTS {
                 }
 
                 // Paging controls
-                std::string text = fmt::format("Page {:d} / {:d}", currentPage + 1, totalPages);
+                std::string text = fmt::format("第 {:d} / {:d} 页", currentPage + 1, totalPages);
                 ImGui::SetCursorPosY(ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing());
                 float buttonWidth = ImGui::CalcTextSize("<").x + ImGui::GetStyle().FramePadding.x * 2;
                 float textWidth = ImGui::CalcTextSize(text.c_str()).x;

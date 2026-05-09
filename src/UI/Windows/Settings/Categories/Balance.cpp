@@ -143,7 +143,7 @@ namespace GTS {
             PSString T1 = "把部分玩家已获得的 Perk 分享给追随者（如果他们还没有）。\n"
                           "（影响最大体型的 Perk 不会共享）";
 
-            if (ImGui::CollapsingHeader("Perk", ImUtil::HeaderFlagsDefaultOpen)) {
+            if (ImGui::CollapsingHeader("Perk 设置", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("向追随者共享 Perk", &Config::Balance.bSharePerks, T1);
                 ImGui::Spacing();
             }
@@ -196,7 +196,7 @@ namespace GTS {
                 DisableReason += "平衡模式已启用";
             }
             else if (!HasPerk) {
-                DisableReason += "缺少 Perk：\"Colossal Growth\"";
+                DisableReason += "缺少 Perk：\"巨型成长\"";
             }
             else if (!Unlock) {
                 DisableReason += "需要先执行控制台命令：gts unlimited";

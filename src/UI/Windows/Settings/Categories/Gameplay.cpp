@@ -19,28 +19,28 @@ namespace GTS {
 
         PSString T0 = "选择游戏模式。\n\n"
                       "基础模式：\n"
-                      "- Growth：缓慢成长到你的体型上限。\n"
-                      "- Shrink：缓慢缩回自然体型。\n"
-                      "- Combat Growth：战斗中成长，脱战后缓慢缩回自然体型。\n"
-                      "- Slow Combat Growth：战斗中缓慢成长，并保留已经获得的体型。\n\n"
+                      "- 成长：缓慢成长到你的体型上限。\n"
+                      "- 缩小：缓慢缩回自然体型。\n"
+                      "- 战斗成长：战斗中成长，脱战后缓慢缩回自然体型。\n"
+                      "- 缓慢战斗成长：战斗中缓慢成长，并保留已经获得的体型。\n\n"
                       "诅咒模式：\n"
-                      "- Curse of Growth：像 \"Growth\" 一样持续成长，但会以不同强度的爆发方式成长，直到达到你在下方设定的上限。\n"
-                      "- Curse of the Giantess：当你低于指定体型时，会迅速成长到该体型；像 \"Restore Size\" 这类法术不会把你缩到这个值以下。\n"
-                      "- Curse of Diminishing：在非战斗状态或未执行巨化动作时，如果体型过大，会缓慢缩回目标值。\n"
-                      "- Size Locked：结合两种诅咒效果。你会成长到指定体型，并在超过时缓慢缩回该值。";
+                      "- 成长诅咒：像“成长”一样持续成长，但会以不同强度的爆发方式成长，直到达到你在下方设定的上限。\n"
+                      "- 女巨人诅咒：当你低于指定体型时，会迅速成长到该体型；像“恢复体型”这类法术不会把你缩到这个值以下。\n"
+                      "- 衰减诅咒：在非战斗状态或未执行巨化动作时，如果体型过大，会缓慢缩回目标值。\n"
+                      "- 体型锁定：结合两种诅咒效果。你会成长到指定体型，并在超过时缓慢缩回该值。";
 
         PSString T1 = "修改每次更新时的成长/缩小量。\n"
                       "成长速率 | 缩小速率";
 
-        PSString T3 = "设置 \"Curse of Growth\" 模式的最大体型。";
+        PSString T3 = "设置“成长诅咒”模式的最大体型。";
 
         PSString T4 = "按当前体型的 25% 去乘算成长速度。\n"
                       "这部分加成最多计算到 10x。";
 
         PSString T5 = "设置以下模式使用的目标体型：\n\n"
-                      "- Curse of the Giantess\n"
-                      "- Curse of Diminishing\n"
-                      "- Size Locked";
+                      "- 女巨人诅咒\n"
+                      "- 衰减诅咒\n"
+                      "- 体型锁定";
 
         PSString T6 = "调整诅咒效果的触发间隔。\n"
                       "实际每次会在你设定值基础上额外浮动 +/- 10%。";
@@ -84,7 +84,7 @@ namespace GTS {
             if (currentMode.value() == LActiveGamemode_t::kCurseOfTheGiantess ||
                 currentMode.value() == LActiveGamemode_t::kCurseOfDiminishing ||
                 currentMode.value() == LActiveGamemode_t::kSizeLocked){
-                ImGuiEx::SliderF("Growth 诅咒上限", &a_Settings->fCurseGrowthSizeLimit, 1.1f, 50.0f, T3, "%.2fx");
+                ImGuiEx::SliderF("成长诅咒上限", &a_Settings->fCurseGrowthSizeLimit, 1.1f, 50.0f, T3, "%.2fx");
                 ImGuiEx::SliderF("目标体型", &a_Settings->fCurseTargetScale, 0.1f, 5.0f, T5, "%.2fx");
             }
             else if (currentMode.value() == LActiveGamemode_t::kLevelLocked) {
@@ -123,7 +123,7 @@ namespace GTS {
         //----- Perk Settings
 
         ImUtil_Unique 
-    	{
+	{
 
             if (ImGui::CollapsingHeader("Perk 设置", ImUtil::HeaderFlagsDefaultOpen)) {
 
@@ -160,10 +160,10 @@ namespace GTS {
             }
         }
 
-    	//----- Armor Stripping
+	//----- Armor Stripping
 
         ImUtil_Unique 
-    	{
+	{
 
             if (ImGui::CollapsingHeader("装备破损/脱落", ImUtil::HeaderFlagsDefaultOpen)) {
 
@@ -186,10 +186,10 @@ namespace GTS {
             }
         }
 
-    	//----- Size Effects
+	//----- Size Effects
 
         ImUtil_Unique 
-    	{
+	{
 
             if (ImGui::CollapsingHeader("体型效果", ImUtil::HeaderFlagsDefaultOpen)) {
 
@@ -214,32 +214,32 @@ namespace GTS {
         //----- Random Growth
 
         ImUtil_Unique 
-    	{
+	{
 
             const bool HasPerk = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkRandomGrowth);
             const bool BalancedMode = Config::Balance.bBalanceMode;
-        	const char* Reason = "Requires \"Pleasurable Growth\" Perk";
+            const char* Reason = "需要 \"愉悦成长\" Perk";
 
-            if (ImGuiEx::ConditionalHeader("Random Growth", Reason, HasPerk)) {
+            if (ImGuiEx::ConditionalHeader("随机成长", Reason, HasPerk)) {
 
-                PSString T1 = "Change how often the random growth should trigger.\n"
-                              "Lower values = More often.\n"
-                              "Higher values = Less often.\n"
-                              "Set to 0.0 to disable it entirely.\n"
-							  "Note: If Balance Mode is enabled the multiplier is locked to 1.0x. It can still be disabled however by setting it to 0.0";
+                PSString T1 = "调整随机成长的触发频率。\n"
+                              "数值越低 = 触发越频繁。\n"
+                              "数值越高 = 触发越少。\n"
+                              "设为 0.0 可完全禁用。\n"
+							  "注意：启用平衡模式时倍率会锁定为 1.0x，但仍可通过设为 0.0 禁用。";
 
-                PSString THelp = "Random Growth chance is decreased if your size is > than x1.5, up to 4 times decreased chance\n"
-                                 "If you have 'Breaching Growth' perk, random growth has a chance to start 'Large Growth' animation";
+                PSString THelp = "当你的体型大于 1.5x 时，随机成长几率会降低，最多降低到原本的 1/4。\n"
+                                 "拥有 \"突破成长\" Perk 时，随机成长有几率触发 \"大型成长\" 动画。";
 
-                const char* FmtBalance = BalancedMode ? "Balance Mode (1.0x)" : "%.2fx";
+                const char* FmtBalance = BalancedMode ? "平衡模式 (1.0x)" : "%.2fx";
 
-                const char* Fmt1 = Config::Gameplay.GamemodePlayer.fRandomGrowthDelay != 0.0f ? FmtBalance : "Disabled";
-                const char* Fmt2 = Config::Gameplay.GamemodeFollower.fRandomGrowthDelay != 0.0f ? FmtBalance : "Disabled";
+                const char* Fmt1 = Config::Gameplay.GamemodePlayer.fRandomGrowthDelay != 0.0f ? FmtBalance : "已禁用";
+                const char* Fmt2 = Config::Gameplay.GamemodeFollower.fRandomGrowthDelay != 0.0f ? FmtBalance : "已禁用";
 
-                ImGuiEx::HelpText("About random growth", THelp);
+                ImGuiEx::HelpText("关于随机成长", THelp);
 
-                ImGuiEx::SliderF("Growth Delay Player", &Config::Gameplay.GamemodePlayer.fRandomGrowthDelay, 0.00f, 4.0f, T1, Fmt1);
-                ImGuiEx::SliderF("Growth Delay Followers", &Config::Gameplay.GamemodeFollower.fRandomGrowthDelay, 0.00f, 4.0f, T1, Fmt2);
+                ImGuiEx::SliderF("玩家随机成长间隔", &Config::Gameplay.GamemodePlayer.fRandomGrowthDelay, 0.00f, 4.0f, T1, Fmt1);
+                ImGuiEx::SliderF("追随者随机成长间隔", &Config::Gameplay.GamemodeFollower.fRandomGrowthDelay, 0.00f, 4.0f, T1, Fmt2);
 
                 ImGui::Spacing();
             }
@@ -249,10 +249,10 @@ namespace GTS {
     void CategoryGameplay::DrawRight() {
 
         static ImGuiEx::CollapsingTabHeader GameModeSettingsHeader(
-            "Alternative Gamemodes",
+            "替代游戏模式",
             {
-                "Player",
-                "Followers"
+                "玩家",
+                "追随者"
             }
         );
 
@@ -260,11 +260,11 @@ namespace GTS {
         std::string Reason = "";
         if (Config::Balance.bBalanceMode) {
             shouldDisable = true;
-            Reason = "Balance Mode Active";
+            Reason = "平衡模式已启用";
         }
         else if (!Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth)) {
             shouldDisable = true;
-            Reason = "Missing Perk: \"Colossal Growth\"";
+            Reason = "缺少 Perk：\"巨型成长\"";
         }
 
         {

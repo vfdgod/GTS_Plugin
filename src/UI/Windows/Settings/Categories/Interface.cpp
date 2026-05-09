@@ -34,29 +34,29 @@ namespace GTS {
 		ImUtil_Unique
 		{
 
-			PSString T0 = "Automatically handle positioning for this window.\n"
-						  "Disabling this allows you to move and resize the settings window manually.\n"
-						  "Otherwise, if left enabled you can adjust the position and window scale below.";
+			PSString T0 = "自动处理此窗口的位置。\n"
+						  "禁用后可手动移动并调整设置窗口大小。\n"
+						  "如果保持启用，则可在下方调整位置和窗口缩放。";
 
-			PSString T1 = "Adjust the window size as a percentage of the screen.";
-			PSString T2 = "Choose where to align the window on screen.";
-			PSString T3 = "Adjust the offset relative to the selected anchor point.\n"
-						  "Left/Right | Up/Down";
+			PSString T1 = "按屏幕百分比调整窗口大小。";
+			PSString T2 = "选择窗口在屏幕上的对齐位置。";
+			PSString T3 = "调整相对于所选锚点的偏移。\n"
+						  "左/右 | 上/下";
 
-			PSString T5 = "Adjust the opacity of the stats window.";
-			PSString T6 = "Adjust the opacity of the stats window's backround.";
+			PSString T5 = "调整设置窗口的不透明度。";
+			PSString T6 = "调整设置窗口背景的不透明度。";
 
-			if (ImGui::CollapsingHeader("Config Window", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("配置窗口", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::CheckBox("Lock Config Window Position", &Settings->bLock, T0);
+				ImGuiEx::CheckBox("锁定配置窗口位置", &Settings->bLock, T0);
 				ImGui::BeginDisabled(!Settings->bLock);
 
 				{
-					ImGuiEx::SliderF("Window Size", &Settings->fWindowSizePercent, 60.0f, 100.0f, T1,"%.0f%%");
-					ImGuiEx::ComboEx<ImWindow::WindowAnchor>("Anchor", Settings->sAnchor, T2);
+					ImGuiEx::SliderF("窗口大小", &Settings->fWindowSizePercent, 60.0f, 100.0f, T1,"%.0f%%");
+					ImGuiEx::ComboEx<ImWindow::WindowAnchor>("锚点", Settings->sAnchor, T2);
 					ImGui::BeginDisabled(Settings->sAnchor == "kCenter");
 
-					ImGuiEx::SliderF2("Anchor Offsets", &Settings->f2Position.at(0), 0.0f, 1280.f, T3, "%.1f");
+					ImGuiEx::SliderF2("锚点偏移", &Settings->f2Position.at(0), 0.0f, 1280.f, T3, "%.1f");
 
 
 					ImGui::EndDisabled();
@@ -66,8 +66,8 @@ namespace GTS {
 
 				ImGui::Spacing();
 
-				ImGuiEx::SliderF("Window Alpha", &Settings->fAlpha, 0.2f, 1.0f, T5, "%.2fx");
-				ImGuiEx::SliderF("Background Alpha", &Settings->fBGAlphaMult, 0.2f, 1.0f, T6, "%.2fx");
+				ImGuiEx::SliderF("窗口透明度", &Settings->fAlpha, 0.2f, 1.0f, T5, "%.2fx");
+				ImGuiEx::SliderF("背景透明度", &Settings->fBGAlphaMult, 0.2f, 1.0f, T6, "%.2fx");
 
 				ImGui::Spacing();
 			}
@@ -81,10 +81,10 @@ namespace GTS {
 	    ImUtil_Unique
 		{
 
-	        PSString T0 = "Choose which type of measurement units to display.";
+	        PSString T0 = "选择要显示的计量单位类型。";
 
-	        if(ImGui::CollapsingHeader("Misc Settings",ImUtil::HeaderFlagsDefaultOpen)){
-				ImGuiEx::ComboEx<LDisplayUnit_t>("Measurement Units",Config::UI.sDisplayUnits, T0);
+	        if(ImGui::CollapsingHeader("杂项设置",ImUtil::HeaderFlagsDefaultOpen)){
+				ImGuiEx::ComboEx<LDisplayUnit_t>("计量单位",Config::UI.sDisplayUnits, T0);
 	            ImGui::Spacing();
 	        }
 	    }
@@ -95,29 +95,29 @@ namespace GTS {
 	    ImUtil_Unique
 		{
 
-	        if(ImGui::CollapsingHeader("UI Settings",ImUtil::HeaderFlagsDefaultOpen)){
+	        if(ImGui::CollapsingHeader("UI 设置",ImUtil::HeaderFlagsDefaultOpen)){
 
-	            PSString T0 = "Adjust the scale of all elements and fonts.";
-	            PSString T1 = "Modify the width of UI controls";
-	            PSString T2 = "Set the accent color for the UI.";
-				PSString T3 = "Toggle whether to fully pause the game when a blocking menu (Like Settings) is open.\n"
-							  "It's heavily recomended that you don't disable this.\n"
-	        	              "Applies after closing and re-opening the menu.";
+	            PSString T0 = "调整所有元素和字体的缩放。";
+	            PSString T1 = "修改 UI 控件宽度。";
+	            PSString T2 = "设置 UI 强调色。";
+				PSString T3 = "切换打开阻塞菜单（如设置）时是否完全暂停游戏。\n"
+							  "强烈建议不要禁用此项。\n"
+		              "关闭并重新打开菜单后生效。";
 
-				PSString T4 = "Enable skyrim's backround blur effect if a blocking menu (Like Settings) is open.\n"
-							  "Applies after closing and re-opening the menu.";
+				PSString T4 = "打开阻塞菜单（如设置）时启用 Skyrim 的背景模糊效果。\n"
+							  "关闭并重新打开菜单后生效。";
 
-				PSString T5 = "Multiply game speed by this value when the settings menu is open.\n"
-				              "Only works if \"Pause game\" is disabled.";
+				PSString T5 = "设置菜单打开时，将游戏速度乘以此值。\n"
+				              "仅在“暂停游戏”禁用时生效。";
 
-				ImGuiEx::SliderF("UI Scale", &Config::UI.fScale, 0.5f, 2.0f, T0,"%.1fx");
+				ImGuiEx::SliderF("UI 缩放", &Config::UI.fScale, 0.5f, 2.0f, T0,"%.1fx");
 	            if (ImGui::IsItemDeactivatedAfterEdit()) {
 					ImStyleManager::ApplyStyle();
 	            }
 
-				ImGuiEx::SliderF("Item Width", &Config::UI.fItemWidth, 0.4f, 0.7f, T1,"%.2fx");
+				ImGuiEx::SliderF("项目宽度", &Config::UI.fItemWidth, 0.4f, 0.7f, T1,"%.2fx");
 
-	            ImGui::ColorEdit3("Accent Color", Config::UI.f3AccentColor.data(), ImGuiColorEditFlags_DisplayHSV);
+	            ImGui::ColorEdit3("强调色", Config::UI.f3AccentColor.data(), ImGuiColorEditFlags_DisplayHSV);
 	            if (ImGui::IsItemDeactivatedAfterEdit() || (ImGui::IsItemActive() && ImGui::GetIO().MouseDown[0])) {
 					ImStyleManager::ApplyStyle();
 	            }
@@ -127,20 +127,20 @@ namespace GTS {
 
 				ImGui::Spacing();
 
-				ImGuiEx::CheckBox("Pause Game", &Config::UI.bDoPause, T3);
+				ImGuiEx::CheckBox("暂停游戏", &Config::UI.bDoPause, T3);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("Blur Backround", &Config::UI.bDoBGBlur, T4);
-				ImGuiEx::SliderF("GameTime Mult", &Config::UI.fSGTMMult, 0.05f, 1.0f, T5, "%.2fx", Config::UI.bDoPause);
+				ImGuiEx::CheckBox("背景模糊", &Config::UI.bDoBGBlur, T4);
+				ImGuiEx::SliderF("游戏时间倍率", &Config::UI.fSGTMMult, 0.05f, 1.0f, T5, "%.2fx", Config::UI.bDoPause);
 
 	        }
 	    }
 
 		ImUtil_Unique
 		{
-			PSString T0 = "Enable/Disable the info window shown in the main menu.";
+			PSString T0 = "启用/禁用主菜单中显示的信息窗口。";
 
-			if (ImGui::CollapsingHeader("Miscelaneous" ,ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Show Splash Window", &Config::Persistent.bShowSplashScreen, T0);
+			if (ImGui::CollapsingHeader("杂项" ,ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("显示启动提示窗口", &Config::Persistent.bShowSplashScreen, T0);
 			}
 		}
 	}

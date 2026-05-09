@@ -27,47 +27,47 @@ namespace GTS {
 
 	static void DrawCameraSettings(CameraOffsets_t* a_set, const char* a_title) {
 
-	    PSString T0 = "Select which biped skeleton bone the camera should track.";
+	    PSString T0 = "选择镜头要追踪的双足骨架骨骼。";
 
 	    if (ImGui::CollapsingHeader(a_title, ImUtil::HeaderFlagsDefaultOpen)) {
-			ImGuiEx::ComboEx<LCameraTrackBone_t>("Center On Bone", a_set->sCenterOnBone, T0);
+			ImGuiEx::ComboEx<LCameraTrackBone_t>("居中骨骼", a_set->sCenterOnBone, T0);
 
 	        ImUtil_Unique 
-	    	{
+		{
 	            DrawCameraOffsets(
-	                "Offsets | Standing",
-	                "Adjust camera offsets when standing.\n"
-					"Left/Right | Forward/Back | Up/Down",
+	                "偏移 | 站立",
+	                "调整站立时的镜头偏移。\n"
+					"左/右 | 前/后 | 上/下",
 	                &a_set->f3NormalStand
 	            );
 	        }
 
 	        ImUtil_Unique 
-	    	{
+		{
 	            DrawCameraOffsets(
-	                "Offsets | Standing Combat",
-	                "Adjust camera offsets when standing and in combat.\n"
-					"Left/Right | Forward/Back | Up/Down",
+	                "偏移 | 站立战斗",
+	                "调整站立且处于战斗中时的镜头偏移。\n"
+					"左/右 | 前/后 | 上/下",
 	                &a_set->f3CombatStand
 	            );
 	        }
 
 	        ImUtil_Unique 
-	    	{
+		{
 	            DrawCameraOffsets(
-	                "Offsets | Crawling",
-	                "Adjust camera offsets while sneaking, crawling, or prone.\n"
-					"Left/Right | Forward/Back | Up/Down",
+	                "偏移 | 爬行",
+	                "调整潜行、爬行或趴伏时的镜头偏移。\n"
+					"左/右 | 前/后 | 上/下",
 	                &a_set->f3NormalCrawl
 	            );
 	        }
 
 	        ImUtil_Unique 
-	    	{
+		{
 	            DrawCameraOffsets(
-	                "Offsets | Crawling Combat",
-	                "Adjust camera offsets while sneaking, crawling, or prone and in combat.\n"
-					"Left/Right | Forward/Back | Up/Down",
+	                "偏移 | 爬行战斗",
+	                "调整潜行、爬行或趴伏且处于战斗中时的镜头偏移。\n"
+					"左/右 | 前/后 | 上/下",
 	                &a_set->f3CombatCrawl
 	            );
 	        }
@@ -85,14 +85,14 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Change the intensity of camera shakes when performing actions as a player.";
-			PSString T1 = "Change the intensity of first-person camera shakes caused by your own size or size actions";
-			PSString T2 = "Change the intensity of camera shakes for NPCs.";
+	        PSString T0 = "调整玩家执行动作时的镜头震动强度。";
+			PSString T1 = "调整由自身体型或体型动作造成的第一人称镜头震动强度。";
+			PSString T2 = "调整 NPC 造成的镜头震动强度。";
 
-	        if (ImGui::CollapsingHeader("Camera Shake", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::SliderF("Player Total Shake Power", &Config::Camera.fCameraShakePlayer, 0.1f, 3.0f, T0, "%.2fx");
-				ImGuiEx::SliderF("Player FP Shake Power", &Config::Camera.fCameraShakePlayerFP, 0.0f, 1.0f, T1, "%.2fx");
-				ImGuiEx::SliderF("NPC Total Shake Power", &Config::Camera.fCameraShakeOther, 0.1f, 3.0f, T2, "%.2fx");
+	        if (ImGui::CollapsingHeader("镜头震动", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::SliderF("玩家总震动强度", &Config::Camera.fCameraShakePlayer, 0.1f, 3.0f, T0, "%.2fx");
+				ImGuiEx::SliderF("玩家第一人称震动强度", &Config::Camera.fCameraShakePlayerFP, 0.0f, 1.0f, T1, "%.2fx");
+				ImGuiEx::SliderF("NPC 总震动强度", &Config::Camera.fCameraShakeOther, 0.1f, 3.0f, T2, "%.2fx");
 
 	            ImGui::Spacing();
 	        }
@@ -101,15 +101,15 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Change the height multiplier of the camera while crawling.\n"
-							 "1st Person | 3rd Person\n\n"
-							 "Note: 3rd Person wont't work correctly if you are using smoothcam.";
+	        PSString T0 = "调整爬行时的镜头高度倍率。\n"
+							 "第一人称 | 第三人称\n\n"
+							 "注意：如果使用 SmoothCam，第三人称可能无法正常工作。";
 
-			if (ImGui::CollapsingHeader("Crawl Height", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("爬行高度", ImUtil::HeaderFlagsDefaultOpen)) {
 				//Temp Store
 				static constexpr std::array Temp = { &Config::Camera.fFPCrawlHeightMult,  &Config::Camera.fTPCrawlHeightMult };
 
-				ImGuiEx::SliderF2("Crawl Height Mults.", Temp.at(0), 0.01f, 1.0f, T0, "%.1fx");
+				ImGuiEx::SliderF2("爬行高度倍率", Temp.at(0), 0.01f, 1.0f, T0, "%.1fx");
 	            ImGui::Spacing();
 	        }
 	    }
@@ -117,22 +117,22 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Enable camera collision with actors.";
-	        PSString T1 = "Enable camera collision with trees.";
-	        PSString T2 = "Enable camera collision with debris (physics-enabled objects).";
-	        PSString T3 = "Enable camera collision with terrain.";
-	        PSString T4 = "Enable camera collision with statics (basically any solid, non-movable object).";
-	        PSString T5 = "Change the scale at which the above collision settings should apply.";
+	        PSString T0 = "启用镜头与角色的碰撞。";
+	        PSString T1 = "启用镜头与树木的碰撞。";
+	        PSString T2 = "启用镜头与杂物（带物理的物体）的碰撞。";
+	        PSString T3 = "启用镜头与地形的碰撞。";
+	        PSString T4 = "启用镜头与静态物体的碰撞（基本指任何实体、不可移动物体）。";
+	        PSString T5 = "设置上述碰撞选项开始生效的体型。";
 
-	        if (ImGui::CollapsingHeader("Camera Collision", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Collide With Actors", &Config::Camera.bCamCollideActor, T0);
+	        if (ImGui::CollapsingHeader("镜头碰撞", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("与角色碰撞", &Config::Camera.bCamCollideActor, T0);
 	            ImGui::SameLine();
-				ImGuiEx::CheckBox("Collide With Trees", &Config::Camera.bCamCollideTree, T1);
-				ImGuiEx::CheckBox("Collide With Debris", &Config::Camera.bCamCollideDebris, T2);
+				ImGuiEx::CheckBox("与树木碰撞", &Config::Camera.bCamCollideTree, T1);
+				ImGuiEx::CheckBox("与杂物碰撞", &Config::Camera.bCamCollideDebris, T2);
 	            ImGui::SameLine();
-				ImGuiEx::CheckBox("Collide With Terrain", &Config::Camera.bCamCollideTerrain, T3);
-				ImGuiEx::CheckBox("Collide With Statics", &Config::Camera.bCamCollideStatics, T4);
-				ImGuiEx::SliderF("Apply at Scale", &Config::Camera.fModifyCamCollideAt, 0.0f, 50.0f, T5, "%.1fx");
+				ImGuiEx::CheckBox("与地形碰撞", &Config::Camera.bCamCollideTerrain, T3);
+				ImGuiEx::CheckBox("与静态物体碰撞", &Config::Camera.bCamCollideStatics, T4);
+				ImGuiEx::SliderF("生效体型", &Config::Camera.fModifyCamCollideAt, 0.0f, 50.0f, T5, "%.1fx");
 	            ImGui::Spacing();
 	        }
 	    }
@@ -140,48 +140,46 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Offsets the 3rd person camera's minimum zoom distance.\n"
-	    	              "Combined with the maximum distance this affects the distance from the player\n"
-	    	              "where the camera perspective switches to 1st person.";
+	        PSString T0 = "偏移第三人称镜头的最小缩放距离。\n"
+		              "结合最大距离一起，影响镜头视角切换到第一人称时与玩家的距离。";
 
-	        PSString T1 = "Offsets the 3rd person camera's maximum zoom distance.\n"
-	    	              "Higher values will zoom out the camera more.\n"
-	    	              "Combined with the minimum distance this affects the distance from the player\n"
-	    	              "where the camera perspective switches to 1st person.";
+	        PSString T1 = "偏移第三人称镜头的最大缩放距离。\n"
+		              "数值越高，镜头会拉得越远。\n"
+		              "结合最小距离一起，影响镜头视角切换到第一人称时与玩家的距离。";
 
-			PSString T2 = "Changes the transition speed between camera steps.";
+			PSString T2 = "调整镜头缩放步进之间的过渡速度。";
 
-	        PSString T3 = "Changes the camera's zoom step divisor.\n"
-						  "Lower values increase the ammount of zoom steps,\n"
-	    				  "whilst higher values decrease them.\n";
+	        PSString T3 = "调整镜头缩放步进除数。\n"
+						  "数值越低，缩放步数越多；\n"
+					  "数值越高，缩放步数越少。\n";
 
-			PSString T4 = "Toggle whether this mod should override skyrim's camera settings.\n"
-						  "Note: Requires a game restart after disabling for the original values to be reapplied.\n\n"
-						  "Its reccomended to leave this enabled.";
+			PSString T4 = "切换本模组是否覆盖 Skyrim 的镜头设置。\n"
+						  "注意：禁用后需要重启游戏，原始值才会重新应用。\n\n"
+						  "建议保持启用。";
 
-	        PSString THelp = "These are the same settings as can be found in skyrim.ini.\n"
-				             "They're added here for convenience.\n\n"
-				             "Note 1: The settings here will continiously override the game's settings,\n"
-				             "so no matter what values you set in any ini file or if another mod changes them, they will be overridden by the values set here.\n\n"
-							 "Note 2: Its heavily recommended that you do not change the distance settings. This mod's camera system works best if these are left at their default values.\n\n"
-	    					 "Defaults:\n"
-	    					 " - Min: 150.0\n"
-							 " - Max: 600.0\n"
-							 " - Zoom: 0.8\n"
-							 " - Step: 0.075\n";
+	        PSString THelp = "这些设置与 skyrim.ini 中的设置相同。\n"
+				             "添加到这里是为了方便调整。\n\n"
+				             "注意 1：这里的设置会持续覆盖游戏设置，\n"
+				             "无论你在任何 ini 文件中设置了什么值，或其他模组修改了它们，都会被这里的值覆盖。\n\n"
+							 "注意 2：强烈建议不要修改距离设置。本模组的镜头系统在这些值保持默认时效果最好。\n\n"
+						 "默认值：\n"
+						 " - 最小距离：150.0\n"
+							 " - 最大距离：600.0\n"
+							 " - 缩放速度：0.8\n"
+							 " - 缩放步进：0.075\n";
 
-	        if (ImGui::CollapsingHeader("Skyrim Camera Settings", ImUtil::HeaderFlagsDefaultOpen)) {
+	        if (ImGui::CollapsingHeader("Skyrim 镜头设置", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::HelpText("What is this", THelp);
+				ImGuiEx::HelpText("这是什么", THelp);
 
-				ImGuiEx::CheckBox("Enable Adjustments", &Config::Camera.bEnableSkyrimCameraAdjustments, T4);
+				ImGuiEx::CheckBox("启用调整", &Config::Camera.bEnableSkyrimCameraAdjustments, T4);
 
 				ImGui::BeginDisabled(!Config::Camera.bEnableSkyrimCameraAdjustments);
 
-				ImGuiEx::SliderF("Minimum Distance", &Config::Camera.fCameraDistMin, -100.0f, 300.0f, T0, "%.1f");
-				ImGuiEx::SliderF("Maximum Distance", &Config::Camera.fCameraDistMax, 50.0f, 1200.0f, T1, "%.1f");
-				ImGuiEx::SliderF("Zoom Speed", &Config::Camera.fCameraZoomSpeed, 0.1f, 10.0f, T2, "%.1f");
-				ImGuiEx::SliderF("Zoom Step", &Config::Camera.fCameraIncrement, 0.01f, 0.25f, T3, "%.3f");
+				ImGuiEx::SliderF("最小距离", &Config::Camera.fCameraDistMin, -100.0f, 300.0f, T0, "%.1f");
+				ImGuiEx::SliderF("最大距离", &Config::Camera.fCameraDistMax, 50.0f, 1200.0f, T1, "%.1f");
+				ImGuiEx::SliderF("缩放速度", &Config::Camera.fCameraZoomSpeed, 0.1f, 10.0f, T2, "%.1f");
+				ImGuiEx::SliderF("缩放步进", &Config::Camera.fCameraIncrement, 0.01f, 0.25f, T3, "%.3f");
 
 				ImGui::EndDisabled();
 
@@ -197,16 +195,16 @@ namespace GTS {
 	    ImUtil_Unique 
 		{
 
-	        PSString T0 = "Enable automatic camera.";
-			PSString T1 = "Change the third-person camera mode.";
+	        PSString T0 = "启用自动镜头。";
+			PSString T1 = "修改第三人称镜头模式。";
 
 			//Hack
             auto CamState = std::bit_cast<int*>(&Persistent::TrackedCameraState.value);
 
-	        if (ImGui::CollapsingHeader("Automatic Camera", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::CheckBox("Enable Automatic Camera", &Config::Camera.bAutomaticCamera, T0);
-				ImGuiEx::IComboEx<LCameraMode_t>("Camera Mode", CamState, T1, !Config::Camera.bAutomaticCamera);
-	        	ImGui::Spacing();
+	        if (ImGui::CollapsingHeader("自动镜头", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("启用自动镜头", &Config::Camera.bAutomaticCamera, T0);
+				ImGuiEx::IComboEx<LCameraMode_t>("镜头模式", CamState, T1, !Config::Camera.bAutomaticCamera);
+		ImGui::Spacing();
 	        }
 	    }
 
@@ -214,31 +212,31 @@ namespace GTS {
 
 	    ImUtil_Unique 
 		{
-	        DrawCameraSettings(&Config::Camera.OffsetsNormal, "Normal Camera");
+	        DrawCameraSettings(&Config::Camera.OffsetsNormal, "普通镜头");
 	    }
 
 	    ImUtil_Unique 
 		{
-	        DrawCameraSettings(&Config::Camera.OffsetsAlt, "Alternative Camera");
+	        DrawCameraSettings(&Config::Camera.OffsetsAlt, "替代镜头");
 	    }
 
 		ImGui::EndDisabled();
 
 		ImUtil_Unique
 		{
-			if (ImGui::CollapsingHeader("Camera Frustrum", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("镜头视锥", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				PSString T1 = "Dynamically change the camera's near distance frustrum value to fix clipping issues when small.\n"
-					          "May introduce visual issues such as moving/disappearing shadows.\n\n"
-					          "Starts applyng when smaller than 1.0x scale.\n"
-					          "Disables itself when past 1.0x scale\n\n"
-					          "Note: Can conflict with other mods that also change this value";
+				PSString T1 = "动态修改镜头近裁剪视锥距离，以修复体型很小时的穿模问题。\n"
+					          "可能引入阴影移动/消失等视觉问题。\n\n"
+					          "小于 1.0x 体型时开始生效。\n"
+					          "超过 1.0x 体型后会自动禁用。\n\n"
+					          "注意：可能与其他也修改此值的模组冲突。";
 
-				PSString T2 = "Dynamically change the camera's far distance frustrum value to fix actors/terrain/lod disapearing issues when extremely large.\n"
-					          "Note: Can conflict with other mods that also change this value";
+				PSString T2 = "动态修改镜头远裁剪视锥距离，以修复体型极大时角色/地形/LOD 消失的问题。\n"
+					          "注意：可能与其他也修改此值的模组冲突。";
 
-				ImGuiEx::CheckBox("Dynamic Frustrum - Near", &Config::Camera.bEnableAutoFNearDist, T1);
-				ImGuiEx::CheckBox("Dynamic Frustrum - Far", &Config::Camera.bEnableAutoFFarDist, T2);
+				ImGuiEx::CheckBox("动态视锥 - 近裁剪", &Config::Camera.bEnableAutoFNearDist, T1);
+				ImGuiEx::CheckBox("动态视锥 - 远裁剪", &Config::Camera.bEnableAutoFFarDist, T2);
 			}
 		}
 	}

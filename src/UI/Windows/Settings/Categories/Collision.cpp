@@ -18,18 +18,18 @@ namespace GTS {
 		ImUtil_Unique
 		{
 
-			PSString T0 = "Visualize collision shapes for debugging purposes.\n"
-						  "- Yellow: Capsule colliders\n"
-						  "- Magenta: Simple convex vertices colliders.\n"
-						  "- Cyan: Bone-driven convex vertices colliders.";
+			PSString T0 = "用于调试目的，可视化碰撞形状。\n"
+						  "- 黄色：胶囊碰撞体\n"
+						  "- 洋红色：简单凸顶点碰撞体。\n"
+						  "- 青色：骨骼驱动凸顶点碰撞体。";
 
-			PSString T1 = "Show bumper collision shapes.\n"
-				          "These are purely visual. Character bumper colission is disabled.";
+			PSString T1 = "显示 bumper 碰撞形状。\n"
+				          "这些仅用于可视化。角色 bumper 碰撞已禁用。";
 
-			if (ImGui::CollapsingHeader("Collider Debug", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("碰撞体调试", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::CheckBox("Draw Debug Shapes", &Config::Collision.bDrawDebugShapes, T0);
-				ImGuiEx::CheckBox("Draw Bumper Shapes", &Config::Collision.bDrawBumpers, T1);
+				ImGuiEx::CheckBox("绘制调试形状", &Config::Collision.bDrawDebugShapes, T0);
+				ImGuiEx::CheckBox("绘制 Bumper 形状", &Config::Collision.bDrawBumpers, T1);
 				ImGui::Spacing();
 			}
 
@@ -38,32 +38,32 @@ namespace GTS {
 		ImUtil_Unique
 		{
 
-			PSString T0 = "Enable bone-driven collision updates for followers.\n"
-						  "Note: It's reccomended that you don't enable this. (See the help tooltip for an explanation as to why.)";
+			PSString T0 = "为追随者启用骨骼驱动碰撞更新。\n"
+						  "注意：不建议启用此项。（原因见帮助提示。）";
 
-		    PSString THelp = "Bone-driven collision dynamically adjusts the collision shape by tracking specific bones (such as the head, arms, and legs).\n"
-						     "This results in more accurate collision but comes at a higher performance cost, so it is only enabled for the player by default.\n\n"
-						     "The simple collider uses uniform scaling: the original collision shape from the base game is scaled up or down as a whole.\n"
-						     "It does not change shape or follow individual bones, and only updates when the character's scale or state changes\n"
-						     "(for example when switching between walking, sneaking, or swimming).";
+		    PSString THelp = "骨骼驱动碰撞会追踪特定骨骼（如头部、手臂、腿部）来动态调整碰撞形状。\n"
+						     "这会让碰撞更准确，但性能开销更高，因此默认只对玩家启用。\n\n"
+						     "简单碰撞体使用统一缩放：基础游戏的原始碰撞形状会整体放大或缩小。\n"
+						     "它不会改变形状或跟随单个骨骼，只会在角色体型或状态变化时更新\n"
+						     "（例如在行走、潜行或游泳之间切换时）。";
 
-			PSString TDMax = "Maximum scale allowed for bone driven collision shape.\n\n"
-							 "Note: A cap for this exists for performance reasons.\n"
-							 "It's recomended that you leave this at 50.0x";
+			PSString TDMax = "骨骼驱动碰撞形状允许的最大体型。\n\n"
+							 "注意：出于性能原因，这里存在上限。\n"
+							 "建议保持在 50.0x。";
 
-			PSString TWidth = "Adjusts the horizontal width of the collision shape relative to the base size.";
+			PSString TWidth = "调整碰撞形状相对基础尺寸的水平宽度。";
 
-			if (ImGui::CollapsingHeader("Bone-Driven Collider", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("骨骼驱动碰撞体", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::HelpText("What it this", THelp);
+				ImGuiEx::HelpText("这是什么", THelp);
 
-				ImGuiEx::CheckBox("Enable Bone-Driven Collision Updates For Followers", &Config::Collision.bEnableBoneDrivenCollisionUpdatesFollowers, T0);
-				ImGuiEx::SliderF("Max Scale", &Config::Collision.fDynamicColliderMaxUpdateScale, 10.0f, 250.0f, TDMax, "%.2fx");
-				ImGuiEx::SliderF("Base Width", &Config::Collision.fBoneDrivenWidthMultBase, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Sneaking Width", &Config::Collision.fBoneDrivenWidthMultSneaking, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Crawling Width", &Config::Collision.fBoneDrivenWidthMultCrawling, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Proning Width", &Config::Collision.fBoneDrivenWidthMultProning, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Swimming Width", &Config::Collision.fBoneDrivenWidthMultSwimming, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::CheckBox("为追随者启用骨骼驱动碰撞更新", &Config::Collision.bEnableBoneDrivenCollisionUpdatesFollowers, T0);
+				ImGuiEx::SliderF("最大体型", &Config::Collision.fDynamicColliderMaxUpdateScale, 10.0f, 250.0f, TDMax, "%.2fx");
+				ImGuiEx::SliderF("基础宽度", &Config::Collision.fBoneDrivenWidthMultBase, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("潜行宽度", &Config::Collision.fBoneDrivenWidthMultSneaking, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("爬行宽度", &Config::Collision.fBoneDrivenWidthMultCrawling, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("趴伏宽度", &Config::Collision.fBoneDrivenWidthMultProning, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("游泳宽度", &Config::Collision.fBoneDrivenWidthMultSwimming, 0.5f, 3.0f, TWidth, "%.2fx");
 
 				ImGui::Spacing();
 			}
@@ -75,35 +75,35 @@ namespace GTS {
 		ImUtil_Unique
 		{
 
-			PSString TWidth = "Adjusts the character's collision width (left/right) relative to the base size.\n"
-							  "1.00x = default width. Higher values make the collider wider; lower values make it narrower.";
+			PSString TWidth = "调整角色碰撞宽度（左/右）相对基础尺寸的倍率。\n"
+							  "1.00x = 默认宽度。较高值会让碰撞体更宽，较低值会更窄。";
 
-			PSString THeight = "Adjusts the character's collision height multiplier (up/down) relative to the base size.\n"
-				               "1.00x = Standing height.";
+			PSString THeight = "调整角色碰撞高度（上/下）相对基础尺寸的倍率。\n"
+				               "1.00x = 站立高度。";
 
-			PSString TMax = "Maximum scale allowed for the simple (non bone driven) collision shape.\n\n"
-							"Note: NPC movement is navmesh-based, not true physics navigation. Very large colliders can increase the chance of getting stuck,\n"
-							"or trigger physics instability (which can lead to lag).\n\n"
-							"Note 2: This shape also affects projectile collision (ie. arrows and fireballs for example) and melee collision (if precision is not installed).\n"
-						    "If you don't plan on having GTS NPC's its best to leave this at 1.0 otherwise a max scale of around 50x is recommended.";
+			PSString TMax = "简单（非骨骼驱动）碰撞形状允许的最大体型。\n\n"
+							"注意：NPC 移动基于导航网格，而不是真正的物理导航。非常大的碰撞体会增加卡住的概率，\n"
+							"或触发物理不稳定（可能导致卡顿）。\n\n"
+							"注意 2：此形状也会影响投射物碰撞（例如箭矢、火球）以及近战碰撞（如果未安装 Precision）。\n"
+						    "如果不打算使用 GTS NPC，最好保持 1.0；否则建议最大体型约为 50x。";
 
-			PSString TMin = "Minimum scale allowed for the simple collision shape.\n"
-				            "Acts as a safety floor to prevent the collider from becoming too small and causing clipping or unstable behavior.";
+			PSString TMin = "简单碰撞形状允许的最小体型。\n"
+				            "作为安全下限，防止碰撞体过小导致穿模或不稳定行为。";
 
-			if (ImGui::CollapsingHeader("Simple Collider", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("简单碰撞体", ImUtil::HeaderFlagsDefaultOpen)) {
 
-				ImGuiEx::SliderF("Base Width", &Config::Collision.fSimpleDrivenWidthMultBase, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Sneaking Width", &Config::Collision.fSimpleDrivenWidthMultSneaking, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Crawling Width", &Config::Collision.fSimpleDrivenWidthMultCrawling, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Proning Width", &Config::Collision.fBoneDrivenWidthMultCrawling, 0.5f, 3.0f, TWidth, "%.2fx");
-				ImGuiEx::SliderF("Swimming Width", &Config::Collision.fBoneDrivenWidthMultSwimming, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("基础宽度", &Config::Collision.fSimpleDrivenWidthMultBase, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("潜行宽度", &Config::Collision.fSimpleDrivenWidthMultSneaking, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("爬行宽度", &Config::Collision.fSimpleDrivenWidthMultCrawling, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("趴伏宽度", &Config::Collision.fBoneDrivenWidthMultCrawling, 0.5f, 3.0f, TWidth, "%.2fx");
+				ImGuiEx::SliderF("游泳宽度", &Config::Collision.fBoneDrivenWidthMultSwimming, 0.5f, 3.0f, TWidth, "%.2fx");
 
-				ImGuiEx::SliderF("Max Scale", &Config::Collision.fMSimpleDrivenColliderMaxScale, Config::Collision.fMSimpleDrivenColliderMinScale, 250.0f, TMax, "%.2fx");
-				ImGuiEx::SliderF("Min Scale", &Config::Collision.fMSimpleDrivenColliderMinScale, 0.05f, Config::Collision.fMSimpleDrivenColliderMaxScale, TMin, "%.2fx");
+				ImGuiEx::SliderF("最大体型", &Config::Collision.fMSimpleDrivenColliderMaxScale, Config::Collision.fMSimpleDrivenColliderMinScale, 250.0f, TMax, "%.2fx");
+				ImGuiEx::SliderF("最小体型", &Config::Collision.fMSimpleDrivenColliderMinScale, 0.05f, Config::Collision.fMSimpleDrivenColliderMaxScale, TMin, "%.2fx");
 
-				ImGuiEx::SliderF("Swimming Height", &Config::Collision.fSimpleDrivenHeightMultSwimming, 0.1f, 1.0f, THeight, "%.2fx");
-				ImGuiEx::SliderF("Sneaking Height", &Config::Collision.fSimpleDrivenHeightMultSneaking, 0.1f, 1.0f, THeight, "%.2fx");
-				ImGuiEx::SliderF("Crawling Height", &Config::Collision.fSimpleDrivenHeightMultCrawling, 0.1f, 1.0f, THeight, "%.2fx");
+				ImGuiEx::SliderF("游泳高度", &Config::Collision.fSimpleDrivenHeightMultSwimming, 0.1f, 1.0f, THeight, "%.2fx");
+				ImGuiEx::SliderF("潜行高度", &Config::Collision.fSimpleDrivenHeightMultSneaking, 0.1f, 1.0f, THeight, "%.2fx");
+				ImGuiEx::SliderF("爬行高度", &Config::Collision.fSimpleDrivenHeightMultCrawling, 0.1f, 1.0f, THeight, "%.2fx");
 
 				ImGui::Spacing();
 			}
