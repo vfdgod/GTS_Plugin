@@ -7,6 +7,8 @@
 #include "Managers/Damage/LaunchActor.hpp"
 
 #include "Systems/Colliders/ActorCollisionData.hpp"
+#include "Systems/Misc/Time.hpp"
+#include "Utils/Actor/FindActor.hpp"
 #include <limits>
 #include <unordered_map>
 
@@ -40,12 +42,12 @@ namespace {
 
 	struct CharacterControllerCache {
 		std::uint64_t frame = std::numeric_limits<std::uint64_t>::max();
-		std::unordered_map<bhkCharacterController*, Actor*> actorByController;
+		std::unordered_map<RE::bhkCharacterController*, RE::Actor*> actorByController;
 	};
 
 	CharacterControllerCache& GetCharacterControllerCache() {
 		thread_local CharacterControllerCache cache;
-		const auto currentFrame = Time::FramesElapsed();
+		const auto currentFrame = GTS::Time::FramesElapsed();
 		if (cache.frame == currentFrame) {
 			return cache;
 		}
@@ -53,7 +55,7 @@ namespace {
 		cache.frame = currentFrame;
 		cache.actorByController.clear();
 
-		for (auto actor : find_actors()) {
+		for (auto actor : GTS::find_actors()) {
 			if (!actor) {
 				continue;
 			}
