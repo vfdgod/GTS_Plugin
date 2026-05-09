@@ -295,7 +295,7 @@ namespace GTS {
         RefreshDuration(giant);
     }
 
-    void TinyCalamity_SeekActors(Actor* giant) {
+    void TinyCalamity_SeekActors(Actor* giant, const std::vector<Actor*>& actors) {
        GTS_PROFILE_SCOPE("TinyCalamity: SeekActors");
         if (giant->IsPlayerRef()) {
             if (giant->AsActorState()->IsSprinting() && TinyCalamityActive(giant)) {
@@ -309,16 +309,17 @@ namespace GTS {
 
                 constexpr float BASE_DISTANCE = 48.0f;
                 float CheckDistance = BASE_DISTANCE*giantScale;
+                float searchDistance = BASE_DISTANCE * giantScale * 3;
 
                 if (DebugDraw::CanDraw(giant, DebugDraw::DrawTarget::kPlayerAndFollowers)) {
                     DebugDraw::DrawSphere(glm::vec3(NodePosition.x, NodePosition.y, NodePosition.z), CheckDistance, 100, {0.0f, 1.0f, 1.0f, 1.0f});
                 }
 
                 NiPoint3 giantLocation = giant->GetPosition();
-                for (auto otherActor: find_actors()) {
+                for (auto otherActor : actors) {
                     if (otherActor != giant) {
                         NiPoint3 actorLocation = otherActor->GetPosition();
-                        if ((actorLocation - giantLocation).Length() < BASE_DISTANCE*giantScale*3) {
+                        if ((actorLocation - giantLocation).Length() < searchDistance) {
                             int nodeCollisions = 0;
 
                             auto model = otherActor->GetCurrent3D();

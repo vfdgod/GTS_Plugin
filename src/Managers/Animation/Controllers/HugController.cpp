@@ -116,70 +116,9 @@ namespace GTS {
 			return {};
 		}
 
-		NiPoint3 predPos = pred->GetPosition();
-
-		auto preys = find_actors();
-
-		// Sort prey by distance
-		sort(preys.begin(), preys.end(),
-		     [predPos](const Actor* preyA, const Actor* preyB) -> bool
-		{
-			float distanceToA = (preyA->GetPosition() - predPos).Length();
-			float distanceToB = (preyB->GetPosition() - predPos).Length();
-			return distanceToA < distanceToB;
+		return SelectTargetsInFront(pred, numberOfPrey, GRAB_ANGLE, false, [pred, this](auto prey) {
+			return this->CanHug(pred, prey);
 		});
-
-		// Filter out invalid targets
-		preys.erase(std::remove_if(preys.begin(), preys.end(),[pred, this](auto prey)
-		{
-			return !this->CanHug(pred, prey);
-		}), preys.end());
-
-		// Filter out actors not in front
-		auto actorAngle = pred->data.angle.z;
-		RE::NiPoint3 forwardVector{ 0.f, 1.f, 0.f };
-		RE::NiPoint3 actorForward = RotateAngleAxis(forwardVector, -actorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 predDir = actorForward;
-		predDir = predDir / predDir.Length();
-		preys.erase(std::remove_if(preys.begin(), preys.end(),[predPos, predDir](auto prey)
-		{
-			NiPoint3 preyDir = prey->GetPosition() - predPos;
-			if (preyDir.Length() <= 1e-4) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= 0; // 180 degress
-		}), preys.end());
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-		float predWidth = 70 * get_visual_scale(pred);
-		float shiftAmount = fabs((predWidth / 2.0f) / tan(GRAB_ANGLE/2.0f));
-
-		NiPoint3 coneStart = predPos - predDir * shiftAmount;
-		preys.erase(std::remove_if(preys.begin(), preys.end(),[coneStart, predWidth, predDir](auto prey)
-		{
-			NiPoint3 preyDir = prey->GetPosition() - coneStart;
-			if (preyDir.Length() <= predWidth*0.4f) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= cos(GRAB_ANGLE*PI/180.0f);
-		}), preys.end());
-
-		// Reduce vector size
-		if (preys.size() > numberOfPrey) {
-			preys.resize(numberOfPrey);
-		}
-
-		return preys;
 	}
 
 	bool HugAnimationController::CanHug(Actor* pred, Actor* prey) {

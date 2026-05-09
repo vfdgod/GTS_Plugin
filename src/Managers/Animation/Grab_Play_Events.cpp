@@ -155,14 +155,17 @@ namespace Grab_Fixes {
 		auto& VoreData = VoreController::GetSingleton().GetVoreData(giant);
 		auto otherActor = Grab::GetHeldActor(giant);
 		if (otherActor) {
-			for (auto& tiny: VoreData.GetVories()) {
-				if (!IsDevourmentEnabled()) {
-					VoreData.Swallow();
-					if (AnimationVars::Crawl::IsCrawling(giant)) {
-						otherActor->SetAlpha(0.0f); // Hide Actor
+			auto tinies = VoreData.GetVories();
+			if (!IsDevourmentEnabled()) {
+				VoreData.Swallow();
+				if (AnimationVars::Crawl::IsCrawling(giant)) {
+					for (auto& tiny: tinies) {
+						tiny->SetAlpha(0.0f); // Hide Actor
 					}
-				} else {
-					CallDevourment(giant, otherActor);
+				}
+			} else {
+				for (auto& tiny: tinies) {
+					CallDevourment(giant, tiny);
 				}
 			}
 		}
@@ -173,9 +176,7 @@ namespace Grab_Fixes {
 		if (otherActor) {
 			SetBeingEaten(otherActor, false);
 			auto& VoreData = VoreController::GetSingleton().GetVoreData(giant);
-			for (auto& tiny: VoreData.GetVories()) {
-				VoreData.KillAll();
-			}
+			VoreData.KillAll();
 			AnimationVars::Grab::SetHasGrabbedTiny(giant, false);
 			AnimationVars::Grab::SetGrabState(giant, false);
 			

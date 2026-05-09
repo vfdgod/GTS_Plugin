@@ -2,7 +2,7 @@
 
 #include "Magic/Effects/Common.hpp"
 
-#include "Managers/AI/AIfunctions.hpp"
+#include "Managers/AI/AIFunctions.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Animation/TinyCalamity_Shrink.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
@@ -726,6 +726,9 @@ namespace GTS {
 		if (!giant) {
 			return;
 		}
+		auto distanceSquared = [](const NiPoint3& delta) {
+			return delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		};
 		auto node = find_node(giant, "NPC Root [Root]");
 		if (!node) {
 			return;
@@ -740,24 +743,26 @@ namespace GTS {
 		}
 
 		NiPoint3 giantLocation = giant->GetPosition();
+		float actorCheckDistance = maxDistance * giantScale * 3.0f;
+		float actorCheckDistanceSquared = actorCheckDistance * actorCheckDistance;
+		float totalDistanceSquared = totaldistance * totaldistance;
 
 		for (auto otherActor: find_actors()) {
 			if (otherActor != giant) {
 				NiPoint3 actorLocation = otherActor->GetPosition();
-				if ((actorLocation-giantLocation).Length() < (maxDistance*giantScale * 3.0f)) {
-					int nodeCollisions = 0;
+				if (distanceSquared(actorLocation - giantLocation) < actorCheckDistanceSquared) {
 					auto model = otherActor->GetCurrent3D();
+					bool collided = false;
 					if (model) {
-						VisitNodes(model, [&nodeCollisions, NodePosition, totaldistance](NiAVObject& a_obj) {
-							float distance = (NodePosition - a_obj.world.translate).Length();
-							if (distance < totaldistance) {
-								nodeCollisions += 1;
+						VisitNodes(model, [&](NiAVObject& a_obj) {
+							if (distanceSquared(NodePosition - a_obj.world.translate) < totalDistanceSquared) {
+								collided = true;
 								return false;
 							}
 							return true;
 						});
 					}
-					if (nodeCollisions > 0) {
+					if (collided) {
 						float sizedifference = giantScale/get_visual_scale(otherActor);
 						if (sizedifference <= 1.6f) {
 							StaggerActor(giant, otherActor, 0.75f);

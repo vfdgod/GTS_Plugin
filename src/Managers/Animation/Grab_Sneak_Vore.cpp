@@ -21,11 +21,14 @@ namespace {
 
     void GTS_GrabSneak_Eat(AnimationEventData& data) { 
 		auto& VoreData = VoreController::GetSingleton().GetVoreData(&data.giant);
-		for (auto& tiny: VoreData.GetVories()) {
+		auto tinies = VoreData.GetVories();
+		for (auto& tiny: tinies) {
             if (tiny) {
                 tiny->NotifyAnimationGraph("JumpFall");
 				tiny->Attacked(&data.giant);
             }
+		}
+		if (!tinies.empty()) {
 			VoreData.GrabAll(); // Switch to AnimObjectA attachment
 		}
 	}

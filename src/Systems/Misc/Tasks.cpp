@@ -42,6 +42,21 @@ namespace {
 			}
 		}
 	}
+
+	void UpdateTasksForKind(auto& taskings, std::mutex& taskingsLock, GTS::UpdateKind kind) {
+		auto queued = CollectTasksForUpdate(taskings, taskingsLock, kind);
+
+		std::vector<QueuedTask> toRemove;
+		toRemove.reserve(queued.size());
+
+		for (const auto& entry : queued) {
+			if (!entry.task->Update()) {
+				toRemove.push_back(entry);
+			}
+		}
+
+		RemoveCompletedTasks(taskings, taskingsLock, toRemove);
+	}
 }
 
 namespace GTS {
@@ -150,49 +165,32 @@ namespace GTS {
 		return std::format("UNNAMED_{}", reinterpret_cast<std::uintptr_t>(ptr));
 	}
 
-	void TaskManager::Update() {
-		std::vector<QueuedTask> queued = CollectTasksForUpdate(m_taskings, m_taskingsLock, UpdateKind::Main);
-		
-		std::vector<QueuedTask> toRemove;
-		toRemove.reserve(queued.size());
+	void TaskManager::UpdateTasks(UpdateKind kind) {
+		UpdateTasksForKind(m_taskings, m_taskingsLock, kind);
+	}
 
-		for (const auto& entry : queued) {
-			if (!entry.task->Update()) {
-				toRemove.push_back(entry);
-			}
+	void TaskManager::InsertTask(std::unique_ptr<BaseTask> task) {
+		InsertTask(GenerateName(task.get()), std::move(task));
+	}
+
+	void TaskManager::InsertTask(std::string_view name, std::unique_ptr<BaseTask> task) {
+		std::scoped_lock lock(m_taskingsLock);
+		auto [it, inserted] = m_taskings.try_emplace(std::string(name), std::move(task));
+		if (!inserted) {
+			//logger::warn("Task '{}' already exists", name);
 		}
+	}
 
-		RemoveCompletedTasks(m_taskings, m_taskingsLock, toRemove);
+	void TaskManager::Update() {
+		UpdateTasks(UpdateKind::Main);
 	}
 
 	void TaskManager::CameraUpdate() {
-		auto queued = CollectTasksForUpdate(m_taskings, m_taskingsLock, UpdateKind::Camera);
-
-		std::vector<QueuedTask> toRemove;
-		toRemove.reserve(queued.size());
-
-		for (const auto& entry : queued) {
-			if (!entry.task->Update()) {
-				toRemove.push_back(entry);
-			}
-		}
-
-		RemoveCompletedTasks(m_taskings, m_taskingsLock, toRemove);
+		UpdateTasks(UpdateKind::Camera);
 	}
 
 	void TaskManager::HavokUpdate() {
-		auto queued = CollectTasksForUpdate(m_taskings, m_taskingsLock, UpdateKind::Havok);
-
-		std::vector<QueuedTask> toRemove;
-		toRemove.reserve(queued.size());
-
-		for (const auto& entry : queued) {
-			if (!entry.task->Update()) {
-				toRemove.push_back(entry);
-			}
-		}
-
-		RemoveCompletedTasks(m_taskings, m_taskingsLock, toRemove);
+		UpdateTasks(UpdateKind::Havok);
 	}
 
 	void TaskManager::ChangeUpdate(std::string_view name, UpdateKind updateOn) {
@@ -210,66 +208,27 @@ namespace GTS {
 	}
 
 	void TaskManager::Run(const std::function<bool(const TaskUpdate&)>& tasking) {
-		auto task = std::make_unique<Task>(tasking);
-		std::string name = GenerateName(task.get());
-
-		std::scoped_lock lock(m_taskingsLock);
-		auto [it, inserted] = m_taskings.try_emplace(name, std::move(task));
-		if (!inserted) {
-			//logger::warn("Task '{}' already exists", name);
-		}
+		InsertTask(std::make_unique<Task>(tasking));
 	}
 
 	void TaskManager::Run(std::string_view name, const std::function<bool(const TaskUpdate&)>& tasking) {
-		auto task = std::make_unique<Task>(tasking);
-
-		std::scoped_lock lock(m_taskingsLock);
-		auto [it, inserted] = m_taskings.try_emplace(std::string(name), std::move(task));
-		if (!inserted) {
-			//logger::warn("Task '{}' already exists", name);
-		}
+		InsertTask(name, std::make_unique<Task>(tasking));
 	}
 
 	void TaskManager::RunFor(float duration, const std::function<bool(const TaskForUpdate&)>& tasking) {
-		auto task = std::make_unique<TaskFor>(duration, tasking);
-		std::string name = GenerateName(task.get());
-
-		std::scoped_lock lock(m_taskingsLock);
-		auto [it, inserted] = m_taskings.try_emplace(name, std::move(task));
-		if (!inserted) {
-			//logger::warn("Task '{}' already exists", name);
-		}
+		InsertTask(std::make_unique<TaskFor>(duration, tasking));
 	}
 
 	void TaskManager::RunFor(std::string_view name, float duration, const std::function<bool(const TaskForUpdate&)>& tasking) {
-		auto task = std::make_unique<TaskFor>(duration, tasking);
-
-		std::scoped_lock lock(m_taskingsLock);
-		auto [it, inserted] = m_taskings.try_emplace(std::string(name), std::move(task));
-		if (!inserted) {
-			//logger::warn("Task '{}' already exists", name);
-		}
+		InsertTask(name, std::make_unique<TaskFor>(duration, tasking));
 	}
 
 	void TaskManager::RunOnce(const std::function<void(const OneshotUpdate&)>& tasking) {
-		auto task = std::make_unique<Oneshot>(tasking);
-		std::string name = GenerateName(task.get());
-
-		std::scoped_lock lock(m_taskingsLock);
-		auto [it, inserted] = m_taskings.try_emplace(name, std::move(task));
-		if (!inserted) {
-			//logger::warn("Task '{}' already exists", name);
-		}
+		InsertTask(std::make_unique<Oneshot>(tasking));
 	}
 
 	void TaskManager::RunOnce(std::string_view name, const std::function<void(const OneshotUpdate&)>& tasking) {
-		auto task = std::make_unique<Oneshot>(tasking);
-
-		std::scoped_lock lock(m_taskingsLock);
-		auto [it, inserted] = m_taskings.try_emplace(std::string(name), std::move(task));
-		if (!inserted) {
-			//logger::warn("Task '{}' already exists", name);
-		}
+		InsertTask(name, std::make_unique<Oneshot>(tasking));
 	}
 
 	void TaskManager::CancelAllTasks() {

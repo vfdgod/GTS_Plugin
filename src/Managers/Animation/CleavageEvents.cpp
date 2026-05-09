@@ -311,13 +311,16 @@ namespace {
             if (!IsDevourmentEnabled()) {
                 Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundSwallow, &data.giant, 1.0f, "NPC Head [Head]"); // Play sound
             }
-			for (auto& tinyit: VoreData.GetVories()) {
-				if (!IsDevourmentEnabled()) {
-					VoreData.Swallow();
-					if (AnimationVars::Crawl::IsCrawling(&data.giant)) {
+			auto tinies = VoreData.GetVories();
+			if (!IsDevourmentEnabled()) {
+				VoreData.Swallow();
+				if (AnimationVars::Crawl::IsCrawling(&data.giant)) {
+					for (auto& tinyit: tinies) {
 						tinyit->SetAlpha(0.0f); // Hide Actor
 					}
-				} else {
+				}
+			} else {
+				for (auto& tinyit: tinies) {
 					CallDevourment(&data.giant, tinyit);
 				}
 			}
@@ -333,9 +336,7 @@ namespace {
 		if (tiny) {
 			SetBeingEaten(tiny, false);
 			auto& VoreData = VoreController::GetSingleton().GetVoreData(&data.giant);
-			for ([[maybe_unused]] auto& _: VoreData.GetVories()) {
-				VoreData.KillAll();
-			}
+			VoreData.KillAll();
 
             AnimationVars::Grab::SetHasGrabbedTiny(giant, false);
             AnimationVars::Grab::SetGrabState(giant, false);

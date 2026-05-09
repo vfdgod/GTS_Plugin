@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config/Config.hpp"
+#include "Config/Config.hpp"
 
 #include "Managers/HighHeel.hpp"
 #include "Systems/Rays/Raycast.hpp"

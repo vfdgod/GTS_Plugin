@@ -1,5 +1,7 @@
 #include "Managers/AI/AIManager.hpp"
 
+#include <limits>
+
 #include "Grab/GrabAI.hpp"
 
 #include "Hug/HugAI.hpp"
@@ -43,19 +45,27 @@ namespace {
 
 		if (a_ValidPreyList.empty()) return;
 
-		auto PredPos = a_Performer->GetPosition();
-		auto PreyList = a_ValidPreyList;
+		auto distanceSquared = [](const NiPoint3& delta) {
+			return delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		};
 
-		// Presort by distance
-		std::ranges::sort(PreyList, [PredPos](const Actor* a_PreyA, const Actor* a_PreyB) -> bool {
-			float DistToA = (a_PreyA->GetPosition() - PredPos).Length();
-			float DistToB = (a_PreyB->GetPosition() - PredPos).Length();
-			return DistToA < DistToB;
-		});
+		const NiPoint3 PredPos = a_Performer->GetPosition();
+		Actor* closestPrey = nullptr;
+		float closestDistanceSquared = std::numeric_limits<float>::max();
 
+		for (auto prey : a_ValidPreyList) {
+			if (!prey) {
+				continue;
+			}
 
-		//Disable attack based on the closest valid prey actor
-		AttackManager::PreventAttacks(a_Performer, PreyList.front());
+			float preyDistanceSquared = distanceSquared(prey->GetPosition() - PredPos);
+			if (preyDistanceSquared < closestDistanceSquared) {
+				closestDistanceSquared = preyDistanceSquared;
+				closestPrey = prey;
+			}
+		}
+
+		AttackManager::PreventAttacks(a_Performer, closestPrey);
 	}
 
 	void ResetAttackBlocking(Actor* a_Performer) {

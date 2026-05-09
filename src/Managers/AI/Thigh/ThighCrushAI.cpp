@@ -2,6 +2,7 @@
 #include "Config/Config.hpp"
 #include "Managers/HighHeel.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
+#include "Utils/Actions/ActionUtils.hpp"
 
 using namespace GTS;
 
@@ -9,7 +10,6 @@ namespace {
 
 	constexpr float MINIMUM_THIGH_DISTANCE = 58.0f;
 	constexpr float THIGH_ANGLE = 75;
-	constexpr float PI = std::numbers::pi_v<float>;
 	constexpr bool ALLOW_DEAD = false;
 
 
@@ -119,61 +119,9 @@ namespace GTS {
 			return {};
 		}
 
-		NiPoint3 PredPos = a_Performer->GetPosition();
-
-		auto PreyList = a_PreyList;
-
-		// Sort prey by distance
-		std::ranges::sort(PreyList,[PredPos](const Actor* a_PreyA, const Actor* a_PreyB) -> bool {
-			float DistToA = (a_PreyA->GetPosition() - PredPos).Length();
-			float DistToB = (a_PreyB->GetPosition() - PredPos).Length();
-			return DistToA < DistToB;
+		return SelectTargetsInFront(a_Performer, a_PreyList, a_PreyList.size(), THIGH_ANGLE, true, [a_Performer](auto prey) {
+			return CanThighCrush(a_Performer, prey);
 		});
-
-		// Filter out invalid targets
-		std::erase_if(PreyList, [a_Performer](auto idxPrey) {
-			return !CanThighCrush(a_Performer, idxPrey);
-		});
-
-		// Filter out actors not in front
-		auto ActorAngle = a_Performer->data.angle.z;
-		constexpr NiPoint3 FWDVector { 0.f, 1.f, 0.f };
-		NiPoint3 ActorForward = RotateAngleAxis(FWDVector, -ActorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 PredDirection = ActorForward;
-		PredDirection = PredDirection / PredDirection.Length();
-		std::erase_if(PreyList, [PredPos, PredDirection](auto idxPrey) {
-			NiPoint3 PreyDir = idxPrey->GetPosition() - PredPos;
-			if (PreyDir.Length() <= 1e-4) {
-				return false;
-			}
-			PreyDir = PreyDir / PreyDir.Length();
-			float CosineTheta = PredDirection.Dot(PreyDir);
-			return CosineTheta <= 0; // 180 degress
-		});
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-
-		float PredConeWidth = 70 * get_visual_scale(a_Performer);
-		float ShiftAmount = fabs((PredConeWidth / 2.0f) / tan(THIGH_ANGLE / 2.0f));
-
-		NiPoint3 ConeStart = PredPos - PredDirection * ShiftAmount;
-		std::erase_if(PreyList, [ConeStart, PredConeWidth, PredDirection](auto idxPrey) {
-			NiPoint3 PreyDir = idxPrey->GetPosition() - ConeStart;
-			if (PreyDir.Length() <= PredConeWidth * 0.4f) {
-				return false;
-			}
-			PreyDir = PreyDir / PreyDir.Length();
-			float CosineTheta = PredDirection.Dot(PreyDir);
-			return CosineTheta <= cos(THIGH_ANGLE * PI / 180.0f);
-		});
-
-		return PreyList;
 	}
 
 	void ThighCrushAI_Start(Actor* a_Performer) {

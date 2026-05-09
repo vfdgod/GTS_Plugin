@@ -1,6 +1,6 @@
 #include "Managers/Animation/Vore_Standing.hpp"
 
-#include "config/Config.hpp"
+#include "Config/Config.hpp"
 
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Animation/Controllers/VoreController.hpp"

@@ -37,14 +37,17 @@ namespace {
 		auto otherActor = Grab::GetHeldActor(&data.giant);
 		auto& VoreData = VoreController::GetSingleton().GetVoreData(&data.giant);
 		if (otherActor) {
-			for (auto& tiny: VoreData.GetVories()) {
-				if (!IsDevourmentEnabled()) {
-					VoreData.Swallow();
-					if (AnimationVars::Crawl::IsCrawling(&data.giant)) {
-						otherActor->SetAlpha(0.0f); // Hide Actor
+			auto tinies = VoreData.GetVories();
+			if (!IsDevourmentEnabled()) {
+				VoreData.Swallow();
+				if (AnimationVars::Crawl::IsCrawling(&data.giant)) {
+					for (auto& tiny: tinies) {
+						tiny->SetAlpha(0.0f); // Hide Actor
 					}
-				} else {
-					CallDevourment(&data.giant, otherActor);
+				}
+			} else {
+				for (auto& tiny: tinies) {
+					CallDevourment(&data.giant, tiny);
 				}
 			}
 		}
@@ -59,9 +62,7 @@ namespace {
 		if (otherActor) {
 			SetBeingEaten(otherActor, false);
 			auto& VoreData = VoreController::GetSingleton().GetVoreData(&data.giant);
-			for (auto& tiny: VoreData.GetVories()) {
-				VoreData.KillAll();
-			}
+			VoreData.KillAll();
 			AnimationVars::Grab::SetHasGrabbedTiny(giant, false);
 			AnimationVars::Grab::SetGrabState(giant, false);
 			Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundSwallow, &data.giant, 1.0f, "NPC Head [Head]"); // Play sound

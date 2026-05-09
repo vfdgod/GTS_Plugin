@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Systems/Events/EventData.hpp"
+#include <utility>
 
 namespace GTS {
 
@@ -67,25 +68,47 @@ namespace GTS {
             }
         };
 
-        static inline std::mutex m_lock;
+		static inline std::mutex m_lock;
         static inline tbb::concurrent_vector<ListenerEntry> m_listeners;
+		static inline tbb::concurrent_vector<ListenerEntry> m_actorUpdateListeners;
+		static inline tbb::concurrent_vector<ListenerEntry> m_actorAnimEventListeners;
 
-        template <typename Func>
-        static void ForEachListener(Func&& func) {
-            for (auto& entry : m_listeners) {
+		static void AddListenerTo(tbb::concurrent_vector<ListenerEntry>& listeners, EventListener* a_listener);
+		static bool RemoveListenerFrom(tbb::concurrent_vector<ListenerEntry>& listeners, EventListener* a_listener);
+		static void CompactListeners(tbb::concurrent_vector<ListenerEntry>& listeners);
+		static void CompactUnlocked();
+
+		template <typename Container, typename Func>
+		static void ForEachListenerIn(Container& listeners, Func&& func) {
+            for (auto& entry : listeners) {
                 if (EventListener* listener = entry.ptr.load(std::memory_order_acquire)) {
                     func(listener);
                 }
             }
         }
 
-        template <typename Func>
-        static void ForEachListenerConcurrent(Func&& func) {
-            tbb::parallel_for_each(m_listeners.begin(), m_listeners.end(), [&](auto& entry) {
-                if (EventListener* listener = entry.ptr.load(std::memory_order_acquire)) {
-                    func(listener);
-                }
-            });
-        }
+		template <typename Func>
+		static void ForEachListener(Func&& func) {
+			ForEachListenerIn(m_listeners, std::forward<Func>(func));
+		}
+
+		template <typename Func>
+		static void ForEachActorUpdateListener(Func&& func) {
+			ForEachListenerIn(m_actorUpdateListeners, std::forward<Func>(func));
+		}
+
+		template <typename Func>
+		static void ForEachActorAnimEventListener(Func&& func) {
+			ForEachListenerIn(m_actorAnimEventListeners, std::forward<Func>(func));
+		}
+
+		template <typename Func>
+		static void ForEachListenerConcurrent(Func&& func) {
+			tbb::parallel_for_each(m_listeners.begin(), m_listeners.end(), [&](auto& entry) {
+				if (EventListener* listener = entry.ptr.load(std::memory_order_acquire)) {
+					func(listener);
+				}
+			});
+		}
 	};
 }

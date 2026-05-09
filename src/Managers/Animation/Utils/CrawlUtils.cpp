@@ -117,6 +117,9 @@ namespace GTS {
 		if (!giant) {
 			return;
 		}
+		auto distanceSquared = [](const NiPoint3& delta) {
+			return delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		};
 		float giantScale = get_visual_scale(giant);
 
 		float SCALE_RATIO = 1.25f;
@@ -128,7 +131,10 @@ namespace GTS {
 		NiPoint3 NodePosition = node->world.translate;
 
 		float maxDistance = radius * giantScale;
+		float maxNodeDistance = maxDistance + Collision_Distance_Override;
+		float maxNodeDistanceSquared = maxNodeDistance * maxNodeDistance;
 		float CheckDistance = 220 * giantScale;
+		float CheckDistanceSquared = CheckDistance * CheckDistance;
 		// Make a list of points to check
 
 		if (DebugDraw::CanDraw(giant, DebugDraw::DrawTarget::kAnyGTS)) {
@@ -142,23 +148,20 @@ namespace GTS {
 				float tinyScale = get_visual_scale(otherActor);
 				if (giantScale / tinyScale > SCALE_RATIO) {
 					NiPoint3 actorLocation = otherActor->GetPosition();
-					if ((actorLocation-giantLocation).Length() <= CheckDistance) {
-						
-						int nodeCollisions = 0;
-
+					if (distanceSquared(actorLocation - giantLocation) <= CheckDistanceSquared) {
 						auto model = otherActor->GetCurrent3D();
 
+						bool collided = false;
 						if (model) {
-							VisitNodes(model, [&nodeCollisions, NodePosition, maxDistance](NiAVObject& a_obj) {
-								float distance = (NodePosition - a_obj.world.translate).Length() - Collision_Distance_Override;
-								if (distance <= maxDistance) {
-									nodeCollisions += 1;
+							VisitNodes(model, [&](NiAVObject& a_obj) {
+								if (distanceSquared(NodePosition - a_obj.world.translate) <= maxNodeDistanceSquared) {
+									collided = true;
 									return false;
 								}
 								return true;
 							});
 						}
-						if (nodeCollisions > 0) {
+						if (collided) {
 							Utils_PushCheck(giant, otherActor, Get_Bone_Movement_Speed(giant, Cause)); 
 
 							if (AnimationVars::ButtCrush::IsButtCrushing(giant) && !IsBeingEaten(otherActor) && get_scale_difference(giant, otherActor, SizeType::VisualScale, false, true) > 1.2f) {

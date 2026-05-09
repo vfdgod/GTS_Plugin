@@ -5,6 +5,7 @@
 #include "Managers/Animation/Grab.hpp"
 #include "Managers/Animation/Controllers/ButtCrushController.hpp"
 #include "Managers/Animation/Utils/CooldownManager.hpp"
+#include "Utils/Actions/ActionUtils.hpp"
 #include "Utils/Actions/ButtCrushUtils.hpp"
 
 using namespace GTS;
@@ -13,7 +14,6 @@ namespace {
 
 	constexpr float MINIMUM_BUTTCRUSH_DISTANCE = 95.0f;
 	constexpr float BUTTCRUSH_ANGLE = 70;
-	constexpr float PI = std::numbers::pi_v<float>;
 	constexpr bool ALLOW_DEAD = false;
 
 	bool CanButtCrush(Actor* a_Performer, Actor* a_Prey) {
@@ -131,61 +131,10 @@ namespace GTS {
 			return {};
 		}
 
-		NiPoint3 PredPos = a_Performer->GetPosition();
-
-		auto PreyList = a_ViablePreyList;
-
-		// Sort prey by distance
-		std::ranges::sort(PreyList,[PredPos](const Actor* a_PreyA, const Actor* a_PreyB) -> bool {
-			const float DistToA = (a_PreyA->GetPosition() - PredPos).Length();
-			const float DistToB = (a_PreyB->GetPosition() - PredPos).Length();
-			return DistToA < DistToB;
+		auto preys = SelectTargetsInFront(a_Performer, a_ViablePreyList, a_ViablePreyList.size(), BUTTCRUSH_ANGLE, true, [a_Performer](auto prey) {
+			return CanButtCrush(a_Performer, prey);
 		});
-
-		// Filter out invalid targets
-		std::erase_if(PreyList, [a_Performer](auto idxPrey) {
-			return !CanButtCrush(a_Performer, idxPrey);
-		});
-
-		// Filter out actors not in front
-		const auto ActorAngle = a_Performer->data.angle.z;
-		constexpr RE::NiPoint3 FWDVector{ 0.f, 1.f, 0.f };
-		const RE::NiPoint3 ActorForward = RotateAngleAxis(FWDVector, -ActorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 PredDirection = ActorForward;
-		PredDirection = PredDirection / PredDirection.Length();
-		std::erase_if(PreyList, [PredPos, PredDirection](auto idxPrey) {
-			NiPoint3 PreyDirection = idxPrey->GetPosition() - PredPos;
-			if (PreyDirection.Length() <= 1e-4) {
-				return false;
-			}
-			PreyDirection = PreyDirection / PreyDirection.Length();
-			const float CosineTheta = PredDirection.Dot(PreyDirection);
-			return CosineTheta <= 0; // 180 degress
-		});
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-
-		const float PredConeWidth = 70 * get_visual_scale(a_Performer);
-		const float ShiftAmount = fabs((PredConeWidth / 2.0f) / tan(BUTTCRUSH_ANGLE / 2.0f));
-
-		const NiPoint3 ConeStart = PredPos - PredDirection * ShiftAmount;
-		std::erase_if(PreyList, [ConeStart, PredConeWidth, PredDirection](auto idxPrey) {
-			NiPoint3 PreyDirection = idxPrey->GetPosition() - ConeStart;
-			if (PreyDirection.Length() <= PredConeWidth * 0.4f) {
-				return false;
-			}
-			PreyDirection = PreyDirection / PreyDirection.Length();
-			const float CosineTheta = PredDirection.Dot(PreyDirection);
-			return CosineTheta <= cos(BUTTCRUSH_ANGLE * PI / 180.0f);
-		});
-
-		return GetMaxActionableTinyCount(a_Performer, PreyList);
+		return GetMaxActionableTinyCount(a_Performer, preys);
 
 	}
 

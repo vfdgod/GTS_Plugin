@@ -15,7 +15,7 @@ namespace GTS {
 	void ConfigModHandler::DoCameraStateReset() {
 
 		if (!Config::General.bTrackBonesDuringAnim) {
-			auto actors = find_actors();
+			const auto& actors = find_actors();
 			for (auto actor : actors) {
 				if (actor) {
 					ResetCameraTracking(actor);
@@ -28,11 +28,11 @@ namespace GTS {
 
 		if (!Config::General.bHighheelsFurniture) {
 
-			auto actors = find_actors();
+			const auto& actors = find_actors();
 
 			for (auto actor : actors) {
 				if (!actor) {
-					return;
+					continue;
 				}
 
 				for (bool person : {false, true}) {
@@ -91,6 +91,9 @@ namespace GTS {
 	}
 
 	void ConfigModHandler::MenuChange(const RE::MenuOpenCloseEvent* menu_event) {
+		if (!menu_event) {
+			return;
+		}
 
 		//Run Reset if the main menu is loaded
 		if (menu_event->menuName == RE::MainMenu::MENU_NAME && menu_event->opening) {

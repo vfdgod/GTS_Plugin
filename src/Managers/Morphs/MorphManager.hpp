@@ -32,6 +32,7 @@ namespace GTS {
 		static const char* GetMorphKey(Category a_type);
 
 		virtual std::string DebugName() override;
+		virtual bool WantsActorUpdate() const override { return true; }
 		virtual void ResetActor(RE::Actor* a_actor) override;
 		virtual void ActorLoaded(RE::Actor* a_actor) override;
 		virtual void ActorUpdate(RE::Actor* a_actor) override;

@@ -3,6 +3,7 @@
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Animation/Stomp_Under.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
+#include "Utils/Actions/ActionUtils.hpp"
 
 using namespace GTS;
 
@@ -11,8 +12,6 @@ namespace {
 	constexpr float MINIMUM_STOMP_DISTANCE = 50.0f;
 	constexpr float MINIMUM_STOMP_SCALE_RATIO = 1.5f;
 	constexpr float STOMP_ANGLE = 50;
-	constexpr float PI = std::numbers::pi_v<float>;
-
 	//Light Kick/Swipe
 	const std::vector<std::string> light_kicks = {
 		"SwipeLight_Left",                  // 0
@@ -170,61 +169,10 @@ namespace GTS {
 			return {};
 		}
 
-		NiPoint3 PredPosition = a_Pred->GetPosition();
-		auto PreyList = a_PotentialPrey;
-
-		// Sort prey by distance
-		std::ranges::sort(PreyList,[PredPosition](const Actor* preyA, const Actor* preyB) -> bool {
-			const float DistToA = (preyA->GetPosition() - PredPosition).Length();
-			const float DistToB = (preyB->GetPosition() - PredPosition).Length();
-			return DistToA < DistToB;
+		auto preys = SelectTargetsInFront(a_Pred, a_PotentialPrey, a_PotentialPrey.size(), STOMP_ANGLE, true, [a_Pred](auto prey) {
+			return CanStomp(a_Pred, prey);
 		});
-
-		// Filter out invalid targets
-		std::erase_if(PreyList, [a_Pred](auto idxPrey) {
-			return !CanStomp(a_Pred, idxPrey);
-		});
-
-		// Filter out actors not in front
-		auto ActorAngle = a_Pred->data.angle.z;
-		constexpr RE::NiPoint3 FWDVector{ 0.f, 1.f, 0.f };
-		RE::NiPoint3 ActorFWD = RotateAngleAxis(FWDVector, -ActorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 PredDir = ActorFWD;
-		PredDir = PredDir / PredDir.Length();
-		PreyList.erase(std::ranges::remove_if(PreyList, [PredPosition, PredDir](auto prey) {
-			NiPoint3 PreyDir = prey->GetPosition() - PredPosition;
-			if (PreyDir.Length() <= 1e-4) {
-				return false;
-			}
-			PreyDir = PreyDir / PreyDir.Length();
-			const float CosineTheta = PredDir.Dot(PreyDir);
-			return CosineTheta <= 0; // 180 degress
-		}).begin(), PreyList.end());
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-
-		const float PredConeWidth = 70 * get_visual_scale(a_Pred);
-		float ShiftAmmount = fabs((PredConeWidth / 2.0f) / tan(STOMP_ANGLE / 2.0f));
-		const NiPoint3 ConeStart = PredPosition - PredDir * ShiftAmmount;
-
-		PreyList.erase(std::ranges::remove_if(PreyList, [ConeStart, PredConeWidth, PredDir](auto prey) {
-			NiPoint3 PreyDirection = prey->GetPosition() - ConeStart;
-			if (PreyDirection.Length() <= PredConeWidth * 0.4f) {
-				return false;
-			}
-			PreyDirection = PreyDirection / PreyDirection.Length();
-			const float CosineTheta = PredDir.Dot(PreyDirection);
-			return CosineTheta <= cos(STOMP_ANGLE * PI / 180.0f);
-		}).begin(), PreyList.end());
-		// Reduce vector size
-
-		return GetMaxActionableTinyCount(a_Pred, PreyList);
+		return GetMaxActionableTinyCount(a_Pred, preys);
 	}
 
 

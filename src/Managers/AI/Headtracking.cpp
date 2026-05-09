@@ -158,12 +158,14 @@ namespace GTS {
 		return "::Headtracking";
 	}
 
-	void Headtracking::Update() {
-		for (auto actor: find_actors()) {
+	void Headtracking::ActorUpdate(RE::Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
+		if (actor->IsPlayerRef() || IsTeammate(actor)) {
 			this->data.try_emplace(actor->formID);
-			if (actor->IsPlayerRef() || IsTeammate(actor)) {
-				SpineUpdate(actor);
-			}
+			SpineUpdate(actor);
 		}
 	}
 
@@ -184,7 +186,7 @@ namespace GTS {
 				}
 			}
 		}
-		this->data.try_emplace(me->formID);
-		RotateSpine(me, tiny, this->data.at(me->formID));
+		auto [it, inserted] = this->data.try_emplace(me->formID);
+		RotateSpine(me, tiny, it->second);
 	}
 }

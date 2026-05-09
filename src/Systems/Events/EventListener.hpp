@@ -12,6 +12,9 @@ namespace GTS {
 		EventListener& operator=(EventListener const&) = delete;
 
 		virtual std::string DebugName() = 0;
+		// Hot-path events opt in explicitly so dispatch can skip no-op virtual calls.
+		virtual bool WantsActorUpdate() const;
+		virtual bool WantsActorAnimEvent() const;
 
 		virtual void ActorUpdate(RE::Actor* actor);
 		virtual void Update();

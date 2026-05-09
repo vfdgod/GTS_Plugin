@@ -10,7 +10,8 @@ namespace GTS {
 	class Headtracking : public EventListener, public CInitSingleton <Headtracking> {
 		public:
 		virtual std::string DebugName() override;
-		virtual void Update() override;
+		virtual bool WantsActorUpdate() const override { return true; }
+		virtual void ActorUpdate(RE::Actor* actor) override;
 		void SpineUpdate(Actor* me);
 
 		protected:

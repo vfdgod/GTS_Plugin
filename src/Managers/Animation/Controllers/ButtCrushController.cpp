@@ -169,67 +169,12 @@ namespace GTS {
 			return {};
 		}
 
-		NiPoint3 predPos = pred->GetPosition();
-
-		auto preys = find_actors();
-
-		// Sort prey by distance
-		std::ranges::sort(preys,[predPos](const Actor* preyA, const Actor* preyB) -> bool {
-			float distanceToA = (preyA->GetPosition() - predPos).Length();
-			float distanceToB = (preyB->GetPosition() - predPos).Length();
-			return distanceToA < distanceToB;
+		auto preys = SelectTargetsInFront(pred, numberOfPrey, BUTTCRUSH_ANGLE, numberOfPrey == 1 && NeedsFullActionTargetOrdering(pred), [pred, this](auto prey) {
+			return this->CanButtCrush(pred, prey);
 		});
-
-		// Filter out invalid targets
-		std::erase_if(preys,[pred, this](auto prey){
-			return !this->CanButtCrush(pred, prey);
-		});
-
-		// Filter out actors not in front
-		auto actorAngle = pred->data.angle.z;
-		RE::NiPoint3 forwardVector{ 0.f, 1.f, 0.f };
-		RE::NiPoint3 actorForward = RotateAngleAxis(forwardVector, -actorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 predDir = actorForward;
-		predDir = predDir / predDir.Length();
-		std::erase_if(preys,[predPos, predDir](auto prey) {
-			NiPoint3 preyDir = prey->GetPosition() - predPos;
-			if (preyDir.Length() <= 1e-4) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= 0; // 180 degress
-		});
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-		float predWidth = 70 * get_visual_scale(pred);
-		float shiftAmount = fabs((predWidth / 2.0f) / tan(BUTTCRUSH_ANGLE/2.0f));
-
-		NiPoint3 coneStart = predPos - predDir * shiftAmount;
-		preys.erase(std::remove_if(preys.begin(), preys.end(),[coneStart, predWidth, predDir](auto prey)
-		{
-			NiPoint3 preyDir = prey->GetPosition() - coneStart;
-			if (preyDir.Length() <= predWidth*0.4f) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= cos(BUTTCRUSH_ANGLE*PI/180.0f);
-		}), preys.end());
 
 		if (numberOfPrey == 1) {
 			return GetMaxActionableTinyCount(pred, preys);
-		}
-
-		// Reduce vector size
-		if (preys.size() > numberOfPrey) {
-			preys.resize(numberOfPrey);
 		}
 
 		return preys;

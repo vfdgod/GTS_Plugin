@@ -1054,6 +1054,10 @@ namespace GTS {
 			return;
 		}
 
+		auto distanceSquared = [](const NiPoint3& delta) {
+			return delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		};
+
 		float giantScale = get_visual_scale(actor);
 		float perk = GetPerkBonus_Thighs(actor);
 		constexpr float BASE_CHECK_DISTANCE = 90.0f;
@@ -1094,6 +1098,8 @@ namespace GTS {
 		}
 
 		float maxFootDistance = radius * giantScale;
+		float maxNodeDistance = maxFootDistance + Collision_Distance_Override;
+		float maxNodeDistanceSquared = maxNodeDistance * maxNodeDistance;
 
 		// Debug visualization
 		if (DebugDraw::CanDraw(actor, DebugDraw::DrawTarget::kAnyGTS)) {
@@ -1104,10 +1110,7 @@ namespace GTS {
 
 		NiPoint3 giantLocation = actor->GetPosition();
 		float checkDistance = BASE_CHECK_DISTANCE * giantScale;
-
-		// Cache relevant nodes to avoid repeated allocation
-		std::vector<NiAVObject*> relevantNodes;
-		relevantNodes.reserve(64);
+		float checkDistanceSquared = checkDistance * checkDistance;
 
 		for (auto otherActor : find_actors()) {
 			if (otherActor == actor) {
@@ -1122,7 +1125,7 @@ namespace GTS {
 			}
 
 			NiPoint3 actorLocation = otherActor->GetPosition();
-			if ((actorLocation - giantLocation).Length() >= checkDistance) {
+			if (distanceSquared(actorLocation - giantLocation) >= checkDistanceSquared) {
 				continue;
 			}
 
@@ -1136,29 +1139,32 @@ namespace GTS {
 				continue;
 			}
 
-			// Collect relevant nodes in single pass
-			relevantNodes.clear();
-			VisitNodes(model, [&relevantNodes](NiAVObject& a_obj) {
-				relevantNodes.push_back(&a_obj);
+			bool collided = false;
+			float maxForce = 0.0f;
+
+			VisitNodes(model, [&](NiAVObject& a_obj) {
+				for (auto& point : ThighPoints) {
+					NiPoint3 delta = point - a_obj.world.translate;
+					float rawDistanceSquared = distanceSquared(delta);
+					if (rawDistanceSquared <= maxNodeDistanceSquared) {
+						collided = true;
+						if (!CooldownCheck) {
+							return false;
+						}
+
+						float distance = std::sqrt(rawDistanceSquared) - Collision_Distance_Override;
+						maxForce = std::max(maxForce, GetForceFromDistance(distance, maxFootDistance));
+
+						// Cooldown path clamps force to 0.10f, so higher hits cannot change the outcome.
+						if (maxForce >= 0.10f) {
+							return false;
+						}
+					}
+				}
 				return true;
 			});
 
-			// Check all points against all nodes
-			int nodeCollisions = 0;
-			float maxForce = 0.0f;
-
-			for (auto node : relevantNodes) {
-				for (auto& point : ThighPoints) {
-					float distance = (point - node->world.translate).Length() - Collision_Distance_Override;
-					if (distance <= maxFootDistance) {
-						nodeCollisions += 1;
-						float force = GetForceFromDistance(distance, maxFootDistance);
-						maxForce = std::max(maxForce, force);
-					}
-				}
-			}
-
-			if (nodeCollisions > 0) {
+			if (collided) {
 				if (CooldownCheck) {
 					float pushForce = std::clamp(maxForce, 0.04f, 0.10f);
 					float pushCalc = 0.06f * pushForce * speed;

@@ -7,6 +7,8 @@
 #include "Managers/Damage/LaunchActor.hpp"
 
 #include "Systems/Colliders/ActorCollisionData.hpp"
+#include <limits>
+#include <unordered_map>
 
 /* Actor Utils
  * Contains general helper functions
@@ -35,6 +37,33 @@ namespace {
 	"NPC R MagicNode [RMag]",
 	*/
 	};
+
+	struct CharacterControllerCache {
+		std::uint64_t frame = std::numeric_limits<std::uint64_t>::max();
+		std::unordered_map<bhkCharacterController*, Actor*> actorByController;
+	};
+
+	CharacterControllerCache& GetCharacterControllerCache() {
+		thread_local CharacterControllerCache cache;
+		const auto currentFrame = Time::FramesElapsed();
+		if (cache.frame == currentFrame) {
+			return cache;
+		}
+
+		cache.frame = currentFrame;
+		cache.actorByController.clear();
+
+		for (auto actor : find_actors()) {
+			if (!actor) {
+				continue;
+			}
+			if (auto* controller = actor->GetCharController()) {
+				cache.actorByController.try_emplace(controller, actor);
+			}
+		}
+
+		return cache;
+	}
 }
 
 namespace GTS {
@@ -70,10 +99,13 @@ namespace GTS {
 	}
 
 	Actor* GetCharContActor(bhkCharacterController* a_charController) {
-		for (auto actor : find_actors()) {
-			if (a_charController == actor->GetCharController()) {
-				return actor;
-			}
+		if (!a_charController) {
+			return nullptr;
+		}
+
+		auto& cache = GetCharacterControllerCache();
+		if (auto it = cache.actorByController.find(a_charController); it != cache.actorByController.end()) {
+			return it->second;
 		}
 		return nullptr;
 	}
@@ -258,7 +290,7 @@ namespace GTS {
 	}
 
 	void SetMove(Actor* a_actor) {
-		CallVMFunctionOn(a_actor, "Actor", "SetDontMove", true);
+		CallVMFunctionOn(a_actor, "Actor", "SetDontMove", false);
 	}
 
 	void KnockAreaEffect(TESObjectREFR* a_sourceRef, float a_magnitude, float a_radius) {

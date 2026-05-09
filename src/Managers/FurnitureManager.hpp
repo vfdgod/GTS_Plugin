@@ -21,6 +21,7 @@ namespace GTS {
 	class FurnitureManager : public EventListener, public CInitSingleton<FurnitureManager> {
 		public:
 		virtual std::string DebugName() override;
+		virtual bool WantsActorUpdate() const override { return true; }
         virtual void FurnitureEvent(RE::Actor* activator, TESObjectREFR* object, bool enter) override;
 		virtual void ActorLoaded(RE::Actor* actor) override;
 		virtual void ActorUpdate(RE::Actor* actor) override;

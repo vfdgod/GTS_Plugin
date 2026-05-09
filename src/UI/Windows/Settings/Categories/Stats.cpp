@@ -3,7 +3,7 @@
 
 #include "UI/GTSMenu.hpp"
 
-#include "config/Config.hpp"
+#include "Config/Config.hpp"
 
 #include "UI/Controls/ActorInfoCard.hpp"
 #include "UI/Controls/Misc.hpp"

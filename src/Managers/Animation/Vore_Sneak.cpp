@@ -23,12 +23,16 @@ namespace {
 
     void GTS_Sneak_Vore_Grab(AnimationEventData& data) {
 		auto& VoreData = VoreController::GetSingleton().GetVoreData(&data.giant);
+		bool shouldGrabAll = false;
 		for (auto& tiny: VoreData.GetVories()) {
 			if (!Vore_ShouldAttachToRHand(&data.giant, tiny)) {
-				VoreData.GrabAll();
+				shouldGrabAll = true;
 			}
 			tiny->NotifyAnimationGraph("JumpFall");
 			tiny->Attacked(&data.giant);
+		}
+		if (shouldGrabAll) {
+			VoreData.GrabAll();
 		}
 		if (AnimationVars::Grab::HasGrabbedTiny(&data.giant)) {
 			ManageCamera(&data.giant, true, CameraTracking::ObjectA);
@@ -51,33 +55,34 @@ namespace {
         Actor* giant = &data.giant;
 
         auto& VoreData = VoreController::GetSingleton().GetVoreData(giant);
+		auto tinies = VoreData.GetVories();
 
 		if (!IsDevourmentEnabled()) {
 			Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundSwallow, giant, 1.0f, "NPC Head [Head]"); // Play sound
 		}
 
-		for (auto& tiny: VoreData.GetVories()) {
+		for (auto& tiny: tinies) {
 			AllowToBeCrushed(tiny, true);
 			if (tiny->IsPlayerRef()) {
 				PlayerCamera::GetSingleton()->cameraTarget = giant->CreateRefHandle();
 			}
-			if (IsDevourmentEnabled()) {
+		}
+
+		if (IsDevourmentEnabled()) {
+			for (auto& tiny: tinies) {
 				CallDevourment(giant, tiny);
 				SetBeingHeld(tiny, false);
-				VoreData.AllowToBeVored(true);
-			} else {
-				VoreData.Swallow();
-				tiny->SetAlpha(0.0f);
-
-				auto& VoreData = VoreController::GetSingleton().GetVoreData(giant);
-				if (tiny) {
-					AllowToBeCrushed(tiny, true);
-					EnableCollisions(tiny);
-				}
-				VoreData.AllowToBeVored(true);
-				VoreData.KillAll();
-				VoreData.ReleaseAll();
 			}
+			VoreData.AllowToBeVored(true);
+		} else {
+			VoreData.Swallow();
+			for (auto& tiny: tinies) {
+				tiny->SetAlpha(0.0f);
+				EnableCollisions(tiny);
+			}
+			VoreData.AllowToBeVored(true);
+			VoreData.KillAll();
+			VoreData.ReleaseAll();
 		}
 
 		ManageCamera(giant, false, CameraTracking::ObjectA);

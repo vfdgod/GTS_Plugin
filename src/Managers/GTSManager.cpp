@@ -1,4 +1,4 @@
-#include "Managers/GtsManager.hpp"
+#include "Managers/GTSManager.hpp"
 
 #include "Managers/Animation/Utils/CrawlUtils.hpp"
 #include "Managers/Gamemode/GameModeManager.hpp"
@@ -79,6 +79,10 @@ namespace {
 		GTS_PROFILE_SCOPE("GTSManager: ManageActorControl");
 
 		Actor* target = GetPlayerOrControlled();
+		if (!target) {
+			return;
+		}
+
 		if (!target->IsPlayerRef()) {
 			auto grabbed = Grab::GetHeldActor(target);
 			if (grabbed && grabbed->IsPlayerRef()) {
@@ -91,26 +95,33 @@ namespace {
 	}
 
 	void UpdateFalling() {
-		Actor* player = PlayerCharacter::GetSingleton(); 
-		if (player && player->IsInMidair()) {
-			auto transient = Transient::GetActorData(player);
-			if (Runtime::HasPerkTeam(player, Runtime::PERK.GTSPerkCruelFall)) {
-				auto charCont = player->GetCharController();
-				if (charCont) {
-					if (transient) {
-						float scale = std::clamp(get_visual_scale(player), 0.06f, 2.0f);
-						float CalcFall = 1.0f + (charCont->fallTime * (4.0f / scale) - 4.0f);
-						float FallTime = std::clamp(CalcFall, 1.0f, 3.0f);
-						transient->FallTimer = FallTime;
-					}
-				}
-			} else {
-				transient->FallTimer = 1.0f;
-			}
+		Actor* player = PlayerCharacter::GetSingleton();
+		if (!player || !player->IsInMidair()) {
+			return;
 		}
+
+		auto transient = Transient::GetActorData(player);
+		if (!transient) {
+			return;
+		}
+
+		if (!Runtime::HasPerkTeam(player, Runtime::PERK.GTSPerkCruelFall)) {
+			transient->FallTimer = 1.0f;
+			return;
+		}
+
+		auto charCont = player->GetCharController();
+		if (!charCont) {
+			return;
+		}
+
+		float scale = std::clamp(get_visual_scale(player), 0.06f, 2.0f);
+		float CalcFall = 1.0f + (charCont->fallTime * (4.0f / scale) - 4.0f);
+		float FallTime = std::clamp(CalcFall, 1.0f, 3.0f);
+		transient->FallTimer = FallTime;
 	}
 
-	void FixActorFade() {
+	void FixActorFade(const std::vector<Actor*>& actors) {
 		GTS_PROFILE_SCOPE("GTSManager: FixActorFade");
 		// No fix: 
 		// -Followers fade away at ~x1000 scale, may even fade earlier than that
@@ -122,27 +133,38 @@ namespace {
 		// -At this point only draw distance limit of the game hides the characters at such gigantic scales
 
 		static Timer ApplyTimer = Timer(1.00);
-		bool reset = false;
 
-		if (ApplyTimer.ShouldRunFrame()) {
-			for (auto actor: find_actors()) {
-				if (actor) {
-					for (auto fp : {true, false}) {
-						auto model = actor->Get3D(fp);
-						if (model) {
-							get_visual_scale(actor) < 1.5f ? reset = true : reset = false; 
+		if (!ApplyTimer.ShouldRunFrame()) {
+			return;
+		}
 
-							if (!reset || AnimationVars::General::IsGTSBusy(actor) || actor->IsPlayerRef()) {
-								model->GetFlags().set(RE::NiAVObject::Flag::kIgnoreFade);
-								if (auto par = model->parent) {
-									par->GetFlags().set(RE::NiAVObject::Flag::kIgnoreFade);
-								}
-							} else {
-								model->GetFlags().reset(RE::NiAVObject::Flag::kIgnoreFade);
-								// do NOT enable kAlwaysDraw and other flags, it leads to lighting bugs
-							}
-						}
+		for (auto actor : actors) {
+			if (!actor) {
+				continue;
+			}
+
+			const bool shouldIgnoreFade =
+				actor->IsPlayerRef() ||
+				AnimationVars::General::IsGTSBusy(actor) ||
+				get_visual_scale(actor) >= 1.5f;
+
+			for (bool firstPerson : {true, false}) {
+				auto model = actor->Get3D(firstPerson);
+				if (!model) {
+					continue;
+				}
+
+				if (shouldIgnoreFade) {
+					model->GetFlags().set(RE::NiAVObject::Flag::kIgnoreFade);
+					if (auto parent = model->parent) {
+						parent->GetFlags().set(RE::NiAVObject::Flag::kIgnoreFade);
 					}
+				} else {
+					model->GetFlags().reset(RE::NiAVObject::Flag::kIgnoreFade);
+					if (auto parent = model->parent) {
+						parent->GetFlags().reset(RE::NiAVObject::Flag::kIgnoreFade);
+					}
+					// do NOT enable kAlwaysDraw and other flags, it leads to lighting bugs
 				}
 			}
 		}
@@ -346,21 +368,17 @@ namespace {
 		persi_actor_data->fAnimSpeed = GetAnimationSlowdown(actor); // else behave as usual
 	}
 
-	void update_actor(Actor* actor) {
+	void update_actor(Actor* actor, PersistentActorData* saved_data, TransientActorData* temp_data) {
 
 		GTS_PROFILE_SCOPE("GTSManager: UpdateActor");
 
-		auto temp_data = Transient::GetActorData(actor);
-		auto saved_data = Persistent::GetActorData(actor);
 		update_height(actor, saved_data, temp_data);
 	}
 
-	void apply_actor(Actor* actor, bool force = false) {
+	void apply_actor(Actor* actor, PersistentActorData* saved_data, TransientActorData* temp_data, bool force = false) {
 
 		GTS_PROFILE_SCOPE("GTSManager: ApplyActor");
 
-		auto temp_data = Transient::GetActorData(actor);
-		auto saved_data = Persistent::GetActorData(actor);
 		apply_height(actor, saved_data, temp_data, force);
 		apply_speed(actor, saved_data, temp_data, force);
 	}
@@ -383,46 +401,53 @@ void GTSManager::Update() {
 	ApplyTalkToActor();
 	UpdateFalling();              // Update player size damage when falling down
 	CheckTalkPerk();
-	FixActorFade();               // Self explanatory
 
-	const auto& ActorList = find_actors();
+	const auto& actorList = find_actors();
+	FixActorFade(actorList);      // Self explanatory
 
 #ifdef GTS_PROFILER_ENABLED
-	GTSManager::LoadedActorCount = static_cast<uint32_t>(ActorList.size());
+	GTSManager::LoadedActorCount = static_cast<uint32_t>(actorList.size());
 #endif
 
-	for (auto actor : ActorList) {
-
-		if (actor) {
-
-			UpdateGlobalSizeLimit(actor);
-			UpdateMaxScale(actor);
-
-			if (actor->IsPlayerRef() || IsTeammate(actor)) {
-
-				ClothManager::CheckClothingRip(actor);
-				GameModeManager::GameMode(actor);    // Handle Game Modes
-
-				Foot_PerformIdleEffects_Main(actor); // Just idle zones for pushing away/dealing minimal damage
-				UpdateBoneMovementData(actor);       // Records movement force of Player/Follower Legs/Hands
-				TinyCalamity_SeekActors(actor);      // Active only on Player
-				SpawnActionIcon(actor);              // Icons for interactions with others, Player only
-				ScareActors(actor);
-
-				//Ported from papyrus
-				UpdateCrawlState(actor);
-				UpdateFootStompType(actor);
-				UpdateSneakTransition(actor);
-
-				if (AnimationVars::Crawl::IsCrawling(actor)) {
-					ApplyAllCrawlingDamage(actor, 1000, 0.25f);
-				}
-			}
-
-			Foot_PerformIdle_Headtracking_Effects_Others(actor); // Just idle zones for pushing away/dealing minimal damage, but this one is for others as well
-			update_actor(actor);
-			apply_actor(actor);
+	for (auto actor : actorList) {
+		if (!actor) {
+			continue;
 		}
+
+		UpdateGlobalSizeLimit(actor);
+		UpdateMaxScale(actor);
+
+		const bool isPlayer = actor->IsPlayerRef();
+		const bool isPlayerOrTeammate = isPlayer || IsTeammate(actor);
+
+		if (isPlayerOrTeammate) {
+			ClothManager::CheckClothingRip(actor);
+			GameModeManager::GameMode(actor);    // Handle Game Modes
+
+			Foot_PerformIdleEffects_Main(actor); // Just idle zones for pushing away/dealing minimal damage
+			UpdateBoneMovementData(actor);       // Records movement force of Player/Follower Legs/Hands
+			if (isPlayer) {
+				TinyCalamity_SeekActors(actor, actorList); // Active only on Player
+				SpawnActionIcon(actor, actorList);         // Icons for interactions with others, Player only
+			}
+			ScareActors(actor);
+
+			//Ported from papyrus
+			UpdateCrawlState(actor);
+			UpdateFootStompType(actor);
+			UpdateSneakTransition(actor);
+
+			if (AnimationVars::Crawl::IsCrawling(actor)) {
+				ApplyAllCrawlingDamage(actor, 1000, 0.25f);
+			}
+		}
+
+		Foot_PerformIdle_Headtracking_Effects_Others(actor); // Just idle zones for pushing away/dealing minimal damage, but this one is for others as well
+
+		auto temp_data = Transient::GetActorData(actor);
+		auto saved_data = Persistent::GetActorData(actor);
+		update_actor(actor, saved_data, temp_data);
+		apply_actor(actor, saved_data, temp_data);
 	}
 }
 
@@ -469,9 +494,11 @@ void GTSManager::reapply_actor(Actor* actor, bool force) {
 	GTS_PROFILE_SCOPE("GTSManager: ReApplyActor");
 
 	// Reapply just this actor
-	if (actor) {
-		if (actor->Is3DLoaded()) {
-			apply_actor(actor, force);
-		}
+	if (!actor || !actor->Is3DLoaded()) {
+		return;
 	}
+
+	auto temp_data = Transient::GetActorData(actor);
+	auto saved_data = Persistent::GetActorData(actor);
+	apply_actor(actor, saved_data, temp_data, force);
 }

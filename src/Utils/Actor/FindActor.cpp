@@ -6,28 +6,60 @@ namespace GTS {
 	 * Find actors using the AIManager process lists.
 	 */
 
-	inline std::vector<Actor*> find_actors() {
+	namespace {
+		struct ActorCache {
+			std::uint64_t frame = std::numeric_limits<std::uint64_t>::max();
+			std::vector<Actor*> actors;
+			std::vector<Actor*> teammates;
+			std::vector<Actor*> femaleTeammates;
+		};
+
+		ActorCache& GetActorCache() {
+			thread_local ActorCache cache;
+			const auto currentFrame = Time::FramesElapsed();
+			if (cache.frame == currentFrame) {
+				return cache;
+			}
+
+			cache.frame = currentFrame;
+			cache.actors.clear();
+			cache.teammates.clear();
+			cache.femaleTeammates.clear();
+
+			const ProcessLists* const process_list = ProcessLists::GetSingleton();
+			if (!process_list) {
+				return cache;
+			}
+
+			const auto& handles = process_list->highActorHandles;
+			cache.actors.reserve(handles.size() + 1);
+
+			for (const auto& handle : handles) {
+				if (const auto actorPtr = handle.get(); actorPtr && actorPtr->Get3D1(false)) {
+					auto* actor = actorPtr.get();
+					cache.actors.emplace_back(actor);
+					if (IsTeammate(actor)) {
+						cache.teammates.emplace_back(actor);
+						if (IsFemale(actor)) {
+							cache.femaleTeammates.emplace_back(actor);
+						}
+					}
+				}
+			}
+
+			if (Actor* player = PlayerCharacter::GetSingleton(); player && player->Get3D1(false)) {
+				cache.actors.emplace_back(player);
+			}
+
+			return cache;
+		}
+	}
+
+	const std::vector<Actor*>& find_actors() {
 
 		GTS_PROFILE_SCOPE("FindActor: FindActors");
 
-		const ProcessLists* const process_list = ProcessLists::GetSingleton();
-		const auto& handles = process_list->highActorHandles;
-		const std::size_t n = handles.size();
-
-		std::vector<Actor*> result;
-		result.reserve(n + 1);
-
-		for (std::size_t i = 0; i < n; ++i) {
-			if (const auto& a = handles[i].get(); a && a->Get3D1(false)) {
-				result.emplace_back(a.get());
-			}
-		}
-
-		if (Actor* player = PlayerCharacter::GetSingleton(); player && player->Get3D1(false)) {
-			result.emplace_back(player);
-		}
-
-		return result;
+		return GetActorCache().actors;
 	}
 
 
@@ -42,15 +74,18 @@ namespace GTS {
 	std::vector<Actor*> FindSomeActors(std::string_view tag, uint32_t howMany) {
 
 		static absl::flat_hash_map<std::string, FindActorData> allData;
-		allData.try_emplace(std::string(tag));
-		auto& data = allData.at(std::string(tag));
+		auto [it, inserted] = allData.try_emplace(std::string(tag));
+		auto& data = it->second;
 
 		//log::info("Looking for actor for {} up to a count of {}", tag, howMany);
+		const auto& actors = find_actors();
 		std::vector<Actor*> finalActors;
-		std::vector<Actor*> notAddedAcrors;
+		finalActors.reserve(std::min<std::size_t>(actors.size(), static_cast<std::size_t>(howMany) + 2));
+		std::vector<Actor*> notAddedActors;
+		notAddedActors.reserve(actors.size());
 		uint32_t addedCount = 0;
 
-		for (const auto actor: find_actors()) {
+		for (const auto actor : actors) {
 			// Player or teammate are always updated
 			if (actor->IsPlayerRef() || IsTeammate(actor)) {
 				finalActors.push_back(actor);
@@ -66,7 +101,7 @@ namespace GTS {
 
 			}
 			else {
-				notAddedAcrors.push_back(actor);
+				notAddedActors.push_back(actor);
 			}
 		}
 		// Reached the end of all actor
@@ -74,7 +109,7 @@ namespace GTS {
 			// We need more. Reset the used list and add from
 			// those not added set
 			data.previousActors.clear();
-			for (auto actor: notAddedAcrors) {
+			for (auto actor : notAddedActors) {
 				if (addedCount < howMany) {
 					finalActors.push_back(actor);
 					data.previousActors.insert(actor->formID);
@@ -89,23 +124,11 @@ namespace GTS {
 
 	// Find player teammates
 	// But not the player themselves
-	std::vector<Actor*> FindTeammates() {
-		std::vector<Actor*> finalActors;
-		for (auto actor: find_actors()) {
-			if (IsTeammate(actor)) {
-				finalActors.push_back(actor);
-			}
-		}
-		return finalActors;
+	const std::vector<Actor*>& FindTeammates() {
+		return GetActorCache().teammates;
 	}
 
-	std::vector<Actor*> FindFemaleTeammates() {
-		std::vector<Actor*> finalActors;
-		for (auto actor : find_actors()) {
-			if (IsTeammate(actor) && IsFemale(actor)) {
-				finalActors.push_back(actor);
-			}
-		}
-		return finalActors;
+	const std::vector<Actor*>& FindFemaleTeammates() {
+		return GetActorCache().femaleTeammates;
 	}
 }

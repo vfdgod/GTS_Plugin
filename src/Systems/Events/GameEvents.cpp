@@ -35,11 +35,7 @@ namespace GTS {
 	}
 
 	BSEventNotifyControl GameEvents::ProcessEvent(const TESObjectLoadedEvent* evn, BSTEventSource<TESObjectLoadedEvent>* dispatcher) {
-		if (evn) {
-			if (auto* actor = TESForm::LookupByID<Actor>(evn->formID)){
-				//EventDispatcher::DoActorLoaded(actor);
-			}
-		}
+		// Actor load events are dispatched from the 3D load hook instead, which fires after persistent data is ready.
 		return BSEventNotifyControl::kContinue;
 	}
 
@@ -55,7 +51,7 @@ namespace GTS {
 	}
 
 	BSEventNotifyControl GameEvents::ProcessEvent(const TESEquipEvent* evn, BSTEventSource<TESEquipEvent>* dispatcher) {
-		if (evn) {
+		if (evn && evn->actor) {
 			if (auto* actor = TESForm::LookupByID<Actor>(evn->actor->formID)) {
 				EventDispatcher::DoActorEquip(actor);
 			}

@@ -1,6 +1,6 @@
 #include "Managers/RipClothManager.hpp"
 
-#include "config/Config.hpp"
+#include "Config/Config.hpp"
 
 #include "Managers/Rumble.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
@@ -71,13 +71,13 @@ namespace GTS {
 		for (const auto& [item, invData] : inv) {
 			const auto& [count, entry] = invData;
 			if (count > 0) {
-				if (item->As<RE::TESObjectARMO>()) {
-					if (!entry->extraLists) {
-						return;
-					}
-					for (const auto& xList : *entry->extraLists) {
-						equipmgr->EquipObject(a_actor, item, xList, 1, nullptr, false, false, false);
-					}
+					if (item->As<RE::TESObjectARMO>()) {
+						if (!entry || !entry->extraLists) {
+							continue;
+						}
+						for (const auto& xList : *entry->extraLists) {
+							equipmgr->EquipObject(a_actor, item, xList, 1, nullptr, false, false, false);
+						}
 				}
 			}
 		}

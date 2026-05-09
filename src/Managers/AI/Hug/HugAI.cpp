@@ -5,6 +5,7 @@
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Animation/HugShrink.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
+#include "Utils/Actions/ActionUtils.hpp"
 
 using namespace GTS;
 
@@ -12,8 +13,6 @@ namespace {
 
 	constexpr float MINIMUM_HUG_DISTANCE = 110.0f;
 	constexpr float GRAB_ANGLE = 70.0f;
-	constexpr float PI = std::numbers::pi_v<float>;
-
 	void RecordSneakingState(Actor* a_Performer, Actor* a_Prey) {
 		bool Crawling = AnimationVars::Crawl::IsCrawling(a_Performer);
 		bool Sneaking = a_Performer->IsSneaking();
@@ -258,62 +257,9 @@ namespace GTS {
 			return {};
 		}
 
-		const NiPoint3 PredPos = a_Performer->GetPosition();
-
-		auto PreyList = a_PotentialPrey;
-
-		// Sort prey by distance
-		std::ranges::sort(PreyList,[PredPos](const Actor* a_PreyA, const Actor* a_PreyB) -> bool {
-			float DistToA = (a_PreyA->GetPosition() - PredPos).Length();
-			float DistToB = (a_PreyB->GetPosition() - PredPos).Length();
-			return DistToA < DistToB;
+		return SelectTargetsInFront(a_Performer, a_PotentialPrey, a_PotentialPrey.size(), GRAB_ANGLE, true, [a_Performer](auto prey) {
+			return CanHug(a_Performer, prey);
 		});
-
-		// Filter out invalid targets
-		std::erase_if(PreyList, [a_Performer](auto idxPrey) {
-			return !CanHug(a_Performer, idxPrey);
-		});
-
-		// Filter out actors not in front
-		const auto ActorAngle = a_Performer->data.angle.z;
-		constexpr NiPoint3 FWDVector{ 0.f, 1.f, 0.f };
-		const NiPoint3 ActorForward = RotateAngleAxis(FWDVector, -ActorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 PredDirection = ActorForward;
-		PredDirection = PredDirection / PredDirection.Length();
-		std::erase_if(PreyList, [PredPos, PredDirection](auto idxPrey) {
-			NiPoint3 PreyDirection = idxPrey->GetPosition() - PredPos;
-			if (PreyDirection.Length() <= 1e-4) {
-				return false;
-			}
-			PreyDirection = PreyDirection / PreyDirection.Length();
-			const float CosineTheta = PredDirection.Dot(PreyDirection);
-			return CosineTheta <= 0; // 180 degress
-		});
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-
-		const float PredConeWidth = 70 * get_visual_scale(a_Performer);
-		const float ShiftAmount = fabs((PredConeWidth / 2.0f) / tan(GRAB_ANGLE / 2.0f));
-
-		NiPoint3 ConeStart = PredPos - PredDirection * ShiftAmount;
-		std::erase_if(PreyList, [ConeStart, PredConeWidth, PredDirection](auto idxPrey) {
-			NiPoint3 PreyDirection = idxPrey->GetPosition() - ConeStart;
-			if (PreyDirection.Length() <= PredConeWidth * 0.4f) {
-				return false;
-			}
-			PreyDirection = PreyDirection / PreyDirection.Length();
-			const float CosineTheta = PredDirection.Dot(PreyDirection);
-			return CosineTheta <= cos(GRAB_ANGLE * PI / 180.0f);
-		});
-
-
-		return PreyList;
 	}
 
 	void HugAI_Start(Actor* a_Performer, Actor* a_Prey) {

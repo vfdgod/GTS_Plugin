@@ -7,9 +7,9 @@ namespace GTS {
 		absl::flat_hash_set<FormID> previousActors;
 	};
 
-	[[nodiscard]] std::vector<Actor*> __forceinline inline find_actors();
+	[[nodiscard]] const std::vector<Actor*>& find_actors();
 	[[nodiscard]] std::vector<Actor*> FindSomeActors(std::string_view tag, uint32_t howMany);
-	[[nodiscard]] std::vector<Actor*> FindTeammates();
-	[[nodiscard]] std::vector<Actor*> FindFemaleTeammates();
+	[[nodiscard]] const std::vector<Actor*>& FindTeammates();
+	[[nodiscard]] const std::vector<Actor*>& FindFemaleTeammates();
 
 }

@@ -1,5 +1,5 @@
 #include "Managers/AI/AIFunctions.hpp"
-#include "config/Config.hpp"
+#include "Config/Config.hpp"
 #include "Managers/Animation/Utils/CooldownManager.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 
@@ -231,6 +231,12 @@ namespace GTS {
 		SetAV(tiny, ActorValue::kConfidence, 0.0f);
 
 		TaskManager::Run(name, [=](auto& progressData) {
+			auto restoreConfidence = [oldConfidence](Actor* actorRef) {
+				if (actorRef) {
+					SetAV(actorRef, ActorValue::kConfidence, oldConfidence);
+				}
+			};
+
 			if (!tinyHandle) {
 				return false;
 			}
@@ -242,13 +248,20 @@ namespace GTS {
 			auto tinyRef = tinyHandle.get().get();
 			auto giantRef = giantHandle.get().get();
 
-			if (!tinyRef || !tinyRef->Is3DLoaded()) {
-				SetAV(tinyRef, ActorValue::kConfidence, oldConfidence);
+			if (!tinyRef) {
+				return false;
+			}
+			if (!giantRef) {
+				restoreConfidence(tinyRef);
+				return false;
+			}
+			if (!tinyRef->Is3DLoaded()) {
+				restoreConfidence(tinyRef);
 				return false;
 			}
 
 			if (tinyRef->IsDead()) {
-				SetAV(tinyRef, ActorValue::kConfidence, oldConfidence);
+				restoreConfidence(tinyRef);
 				return false; // To be safe
 			}
 
@@ -263,7 +276,7 @@ namespace GTS {
 			}
 			
 			if (timepassed >= static_cast<float>(duration)) {
-				SetAV(tinyRef, ActorValue::kConfidence, oldConfidence);
+				restoreConfidence(tinyRef);
 				return false; // end it
 			}
 			return true;
@@ -278,10 +291,10 @@ namespace GTS {
 		for (auto tiny: FindSomeActors("AiActors", 2)) {
 			if (tiny != giant && !tiny->IsPlayerRef() && !IsTeammate(tiny)) {
 				if (tiny->IsDead() || IsInSexlabAnim(tiny, giant)) {
-					return;
+					continue;
 				}
 				if (IsBeingHeld(giant, tiny)) {
-					return;
+					continue;
 				}
 				float get_difference = get_scale_difference(giant, tiny, SizeType::VisualScale, false, true); // Apply HH difference as well
 				float sizedifference = std::clamp(get_difference, 0.10f, 12.0f);

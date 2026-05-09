@@ -69,6 +69,8 @@ namespace GTS {
 		
 		public:
 		virtual std::string DebugName() override;
+		virtual bool WantsActorUpdate() const override { return true; }
+		virtual void ActorUpdate(RE::Actor* actor) override;
 		virtual void Update() override;
 		virtual void Reset() override;
 		virtual void DataReady() override;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 namespace GTS {
 
 	bool IsEscapingInteraction(Actor* tiny);
@@ -18,7 +20,7 @@ namespace GTS {
 	void SetProneState(Actor* giant, bool enable);
 	float GetProneAdjustment();
 
-	void SpawnActionIcon(Actor* giant);
+	void SpawnActionIcon(Actor* giant, const std::vector<Actor*>& actors);
 
 	void SetBeingHeld(Actor* tiny, bool enable);
 	void SetBetweenBreasts(Actor* actor, bool enable);
@@ -34,6 +36,9 @@ namespace GTS {
 	bool IsGrowthSpurtActive(Actor* actor);
 	bool HasGrowthSpurt(Actor* actor);
 
+	bool NeedsFullActionTargetOrdering(Actor* giant);
+	std::vector<Actor*> SelectTargetsInFront(Actor* pred, const std::vector<Actor*>& actors, std::size_t numberOfPrey, float coneAngleDegrees, bool keepFullOrdering, const std::function<bool(Actor*)>& canSelect);
+	std::vector<Actor*> SelectTargetsInFront(Actor* pred, std::size_t numberOfPrey, float coneAngleDegrees, bool keepFullOrdering, const std::function<bool(Actor*)>& canSelect);
 	std::vector<Actor*> GetMaxActionableTinyCount(Actor* giant, const std::vector<Actor*>& actors);
 	bool CanPerformActionOn(Actor* giant, Actor* tiny, bool HugCheck);
 }

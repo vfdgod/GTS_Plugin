@@ -1,5 +1,5 @@
 #include "Managers/GameMode/GameModeManager.hpp"
-#include "config/Config.hpp"
+#include "Config/Config.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/GTSSizeManager.hpp"
 #include "Managers/Rumble.hpp"

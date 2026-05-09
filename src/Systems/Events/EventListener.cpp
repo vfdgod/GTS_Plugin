@@ -3,6 +3,14 @@
 
 namespace GTS {
 
+	bool EventListener::WantsActorUpdate() const {
+		return false;
+	}
+
+	bool EventListener::WantsActorAnimEvent() const {
+		return false;
+	}
+
 	// Called per frame for each currently loaded actor
 	void EventListener::ActorUpdate(RE::Actor* actor) {}
 

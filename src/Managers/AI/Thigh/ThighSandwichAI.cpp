@@ -2,6 +2,7 @@
 #include "Config/Config.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Animation/Controllers/ThighSandwichController.hpp"
+#include "Utils/Actions/ActionUtils.hpp"
 
 using namespace GTS;
 
@@ -9,7 +10,6 @@ namespace {
 
 	constexpr float MINIMUM_SANDWICH_DISTANCE = 70.0f;
 	constexpr float SANDWICH_ANGLE = 60;
-	constexpr float PI = std::numbers::pi_v<float>;
 	constexpr bool ALLOW_DEAD = false;
 
 	bool CanSandwich(Actor* a_Performer, Actor* a_Prey) {
@@ -63,61 +63,10 @@ namespace GTS {
 			return {};
 		}
 
-		const NiPoint3 PredPosition = a_Performer->GetPosition();
-
-		auto PreyList = a_PotentialPrey;
-
-		// Sort prey by distance
-		std::ranges::sort(PreyList,[PredPosition](const Actor* a_PreyA, const Actor* a_PreyB) -> bool {
-			const float DistToA = (a_PreyA->GetPosition() - PredPosition).Length();
-			const float DistToB = (a_PreyB->GetPosition() - PredPosition).Length();
-			return DistToA < DistToB;
+		auto preys = SelectTargetsInFront(a_Performer, a_PotentialPrey, a_PotentialPrey.size(), SANDWICH_ANGLE, true, [a_Performer](auto prey) {
+			return CanSandwich(a_Performer, prey);
 		});
-
-		// Filter out invalid targets
-		std::erase_if(PreyList, [a_Performer](auto idxPrey) {
-			return !CanSandwich(a_Performer, idxPrey);
-		});
-
-		// Filter out actors not in front
-		const auto ActorAngle = a_Performer->data.angle.z;
-		constexpr NiPoint3 FWDVector{ 0.f, 1.f, 0.f };
-		const NiPoint3 ActorForward = RotateAngleAxis(FWDVector, -ActorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 PredDirection = ActorForward;
-		PredDirection = PredDirection / PredDirection.Length();
-		std::erase_if(PreyList, [PredPosition, PredDirection](auto idxPrey) {
-			NiPoint3 PreyDirection = idxPrey->GetPosition() - PredPosition;
-			if (PreyDirection.Length() <= 1e-4) {
-				return false;
-			}
-			PreyDirection = PreyDirection / PreyDirection.Length();
-			const float CosineTheta = PredDirection.Dot(PreyDirection);
-			return CosineTheta <= 0; // 180 degress
-		});
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-
-		const float PredConeWidth = 70 * get_visual_scale(a_Performer);
-		float ShiftAmount = fabs((PredConeWidth / 2.0f) / tan(SANDWICH_ANGLE / 2.0f));
-
-		const NiPoint3 ConeStart = PredPosition - PredDirection * ShiftAmount;
-		std::erase_if(PreyList, [ConeStart, PredConeWidth, PredDirection](auto prey) {
-			NiPoint3 PreyDirection = prey->GetPosition() - ConeStart;
-			if (PreyDirection.Length() <= PredConeWidth * 0.4f) {
-				return false;
-			}
-			PreyDirection = PreyDirection / PreyDirection.Length();
-			const float CosineTheta = PredDirection.Dot(PreyDirection);
-			return CosineTheta <= cos(SANDWICH_ANGLE * PI / 180.0f);
-		});
-
-		return GetMaxActionableTinyCount(a_Performer, PreyList);
+		return GetMaxActionableTinyCount(a_Performer, preys);
 	}
 
 
@@ -136,10 +85,12 @@ namespace GTS {
 
 				case 0: {
 					AnimationManager::StartAnim("ThighAttack", a_Performer);
+					return;
 				}
 
 				case 1: {
 					AnimationManager::StartAnim("ThighAttack_Heavy", a_Performer);
+					return;
 				}
 				default:{}
 

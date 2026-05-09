@@ -102,7 +102,9 @@ namespace GTS {
 		std::vector<Actor*> result;
 		for (auto& actorref : this->tinies | std::views::values) {
 			auto actor = actorref.get().get();
-			result.push_back(actor);
+			if (actor) {
+				result.push_back(actor);
+			}
 		}
 		return result;
 	}
@@ -148,21 +150,23 @@ namespace GTS {
 
 					if (!State::Live()) return;
 
-					if (GetPlayerOrControlled()->IsPlayerRef() && AITransientData->ActionTimer.ShouldRunFrame()) {
+					auto controlled = GetPlayerOrControlled();
+					if (controlled && controlled->IsPlayerRef() && AITransientData->ActionTimer.ShouldRunFrame()) {
 						ThighSandwichAI_DecideAction(GiantRef, tinies.size() > 0);
 					}
 				}
 			}
 
-			for (auto& tinyref : this->tinies | std::views::values) {
+			for (auto tinyit = this->tinies.begin(); tinyit != this->tinies.end();) {
 
 				if (!MoveTinies) {
 					return;
 				}
 
-				auto tiny = tinyref.get().get();
+				auto tiny = tinyit->second.get().get();
 				if (!tiny) {
-					return;
+					tinyit = this->tinies.erase(tinyit);
+					continue;
 				}
 
 				Actor* tiny_is_actor = skyrim_cast<Actor*>(tiny);
@@ -175,15 +179,17 @@ namespace GTS {
 				float tinyScale = get_visual_scale(tiny);
 				float sizedifference = get_scale_difference(GiantRef, tiny, SizeType::VisualScale, true, false);
 				float threshold = Action_Sandwich;
+				bool removeTiny = false;
+				bool triggerTinyDiedAnimation = false;
 
 				if (GiantRef->IsDead() || sizedifference < threshold || !AnimationVars::Action::IsThighSandwiching(GiantRef)) {
 					Attachment_SetTargetNode(GiantRef, AttachToNode::None);
 					RestartTinyPhysics(GiantRef, tiny);
 					Cprint("{} slipped out of {} thighs", tiny->GetDisplayFullName(), GiantRef->GetDisplayFullName());
-					this->tinies.erase(tiny->formID); // Disallow button abuses to keep tiny when on low scale
+					removeTiny = true; // Disallow button abuses to keep tiny when on low scale
 				}
 
-				if (this->Suffocate && CanDoDamage(GiantRef, tiny, false) && !AnimationVars::Action::IsThighGrinding(GiantRef)) {
+				if (!removeTiny && this->Suffocate && CanDoDamage(GiantRef, tiny, false) && !AnimationVars::Action::IsThighGrinding(GiantRef)) {
 					sizedifference = giantScale/tinyScale;
 					float damage = Damage_ThighSandwich_DOT * sizedifference * TimeScale();
 					damage *= this->SuffocateMult;
@@ -194,13 +200,20 @@ namespace GTS {
 						ReportDeath(GiantRef, tiny, DamageSource::ThighSuffocated);
 						Attachment_SetTargetNode(GiantRef, AttachToNode::None);
 						RestartTinyPhysics(GiantRef, tiny);
-						this->Remove(tiny);
-
-						if (AnimationVars::Action::IsInSecondSandwichBranch(GiantRef) && this->tinies.empty()) {
-							AnimationManager::StartAnim("TinyDied", GiantRef);
-						}
+						removeTiny = true;
+						triggerTinyDiedAnimation = AnimationVars::Action::IsInSecondSandwichBranch(GiantRef);
 					}
 				}
+
+				if (removeTiny) {
+					tinyit = this->tinies.erase(tinyit);
+					if (triggerTinyDiedAnimation && this->tinies.empty()) {
+						AnimationManager::StartAnim("TinyDied", GiantRef);
+					}
+					continue;
+				}
+
+				++tinyit;
 			}
 		}
 	}
@@ -228,66 +241,12 @@ namespace GTS {
 			return {};
 		}
 
-		NiPoint3 predPos = pred->GetPosition();
-
-		auto preys = find_actors();
-
-		// Sort prey by distance
-		std::ranges::sort(preys,[predPos](const Actor* preyA, const Actor* preyB) -> bool{
-			float distanceToA = (preyA->GetPosition() - predPos).Length();
-			float distanceToB = (preyB->GetPosition() - predPos).Length();
-			return distanceToA < distanceToB;
-		});
-
-		// Filter out invalid targets
-		std::erase_if(preys,[pred, this](auto prey){
-			return !this->CanSandwich(pred, prey);
-		});
-
-		// Filter out actors not in front
-		auto actorAngle = pred->data.angle.z;
-		RE::NiPoint3 forwardVector{ 0.f, 1.f, 0.f };
-		RE::NiPoint3 actorForward = RotateAngleAxis(forwardVector, -actorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 predDir = actorForward;
-		predDir = predDir / predDir.Length();
-		std::erase_if(preys,[predPos, predDir](auto prey){
-			NiPoint3 preyDir = prey->GetPosition() - predPos;
-			if (preyDir.Length() <= 1e-4) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= 0; // 180 degress
-		});
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-		float predWidth = 70 * get_visual_scale(pred);
-		float shiftAmount = fabs((predWidth / 2.0f) / tan(SANDWICH_ANGLE/2.0f));
-
-		NiPoint3 coneStart = predPos - predDir * shiftAmount;
-		std::erase_if(preys,[coneStart, predWidth, predDir](auto prey){
-			NiPoint3 preyDir = prey->GetPosition() - coneStart;
-			if (preyDir.Length() <= predWidth*0.4f) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= cos(SANDWICH_ANGLE*PI/180.0f);
+		auto preys = SelectTargetsInFront(pred, numberOfPrey, SANDWICH_ANGLE, numberOfPrey == 1 && NeedsFullActionTargetOrdering(pred), [pred, this](auto prey) {
+			return this->CanSandwich(pred, prey);
 		});
 
 		if (numberOfPrey == 1) {
 			return GetMaxActionableTinyCount(pred, preys);
-		}
-		
-		// Reduce vector size
-		if (preys.size() > numberOfPrey) {
-			preys.resize(numberOfPrey);
 		}
 
 		return preys;

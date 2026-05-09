@@ -59,6 +59,7 @@ namespace GTS {
 	class AnimationManager : public EventListener, public CInitSingleton <AnimationManager> {
 		public:
 		virtual std::string DebugName() override;
+		virtual bool WantsActorAnimEvent() const override { return true; }
 		virtual void DataReady() override;
 		virtual void Update() override;
 		virtual void ActorAnimEvent(Actor* actor,  const std::string_view& tag, const std::string_view& payload) override;

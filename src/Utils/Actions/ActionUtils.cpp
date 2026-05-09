@@ -9,6 +9,38 @@
 #include "Config/Config.hpp"
 
 namespace GTS {
+	namespace {
+		struct TargetCandidate {
+			Actor* actor = nullptr;
+			float distanceSquared = 0.0f;
+		};
+
+		float DistanceSquared(const NiPoint3& delta) {
+			return delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+		}
+
+		bool IsTargetInsideFrontCone(Actor* prey, const NiPoint3& predPos, const NiPoint3& predDir, const NiPoint3& coneStart, float predWidth, float minCosTheta) {
+			NiPoint3 preyDir = prey->GetPosition() - predPos;
+			float preyDistanceSquared = DistanceSquared(preyDir);
+			if (preyDistanceSquared > 1e-8f) {
+				preyDir = preyDir / std::sqrt(preyDistanceSquared);
+				if (predDir.Dot(preyDir) <= 0.0f) {
+					return false;
+				}
+			}
+
+			NiPoint3 coneDir = prey->GetPosition() - coneStart;
+			float coneDistanceSquared = DistanceSquared(coneDir);
+			float safeDistance = predWidth * 0.4f;
+			if (coneDistanceSquared <= safeDistance * safeDistance) {
+				return true;
+			}
+
+			coneDir = coneDir / std::sqrt(coneDistanceSquared);
+			return predDir.Dot(coneDir) > minCosTheta;
+		}
+	}
+
 	bool IsEscapingInteraction(Actor* tiny) { // It is player exclusive, only Player can escape interactions
 		if (!tiny->IsPlayerRef()) { // Not player, always false
 			return false;
@@ -33,6 +65,10 @@ namespace GTS {
 			return transient->BeingHeld && !tiny->IsDead();
 		}
 		return false;
+	}
+
+	bool NeedsFullActionTargetOrdering(Actor* giant) {
+		return giant && Runtime::HasPerkTeam(giant, Runtime::PERK.GTSPerkMassActions);
 	}
 
 	bool IsBetweenBreasts(Actor* actor) {
@@ -109,6 +145,83 @@ namespace GTS {
 		return vories;
 	}
 
+	std::vector<Actor*> SelectTargetsInFront(Actor* pred, const std::vector<Actor*>& actors, std::size_t numberOfPrey, float coneAngleDegrees, bool keepFullOrdering, const std::function<bool(Actor*)>& canSelect) {
+		if (!pred || numberOfPrey == 0) {
+			return {};
+		}
+
+		auto predPos = pred->GetPosition();
+		RE::NiPoint3 forwardVector{ 0.f, 1.f, 0.f };
+		RE::NiPoint3 predDir = RotateAngleAxis(forwardVector, -pred->data.angle.z, { 0.f, 0.f, 1.f });
+		float predDirLength = predDir.Length();
+		if (predDirLength <= 1e-4f) {
+			return {};
+		}
+
+		predDir = predDir / predDirLength;
+
+		float predWidth = 70.0f * get_visual_scale(pred);
+		float shiftAmount = std::fabs((predWidth / 2.0f) / std::tan(coneAngleDegrees/2.0f));
+		NiPoint3 coneStart = predPos - predDir * shiftAmount;
+		float minCosTheta = std::cos(coneAngleDegrees * std::numbers::pi_v<float> / 180.0f);
+
+		std::vector<TargetCandidate> candidates;
+
+		if (keepFullOrdering) {
+			candidates.reserve(actors.size());
+		} else {
+			candidates.reserve(std::min<std::size_t>(actors.size(), numberOfPrey));
+		}
+
+		auto farther = [](const TargetCandidate& lhs, const TargetCandidate& rhs) {
+			return lhs.distanceSquared < rhs.distanceSquared;
+		};
+
+		for (auto prey : actors) {
+			if (!canSelect(prey)) {
+				continue;
+			}
+			if (!IsTargetInsideFrontCone(prey, predPos, predDir, coneStart, predWidth, minCosTheta)) {
+				continue;
+			}
+
+			NiPoint3 preyOffset = prey->GetPosition() - predPos;
+			TargetCandidate candidate;
+			candidate.actor = prey;
+			candidate.distanceSquared = DistanceSquared(preyOffset);
+
+			if (keepFullOrdering) {
+				candidates.push_back(candidate);
+				continue;
+			}
+
+			if (candidates.size() < numberOfPrey) {
+				candidates.push_back(candidate);
+				std::push_heap(candidates.begin(), candidates.end(), farther);
+				continue;
+			}
+
+			if (candidate.distanceSquared < candidates.front().distanceSquared) {
+				std::pop_heap(candidates.begin(), candidates.end(), farther);
+				candidates.back() = candidate;
+				std::push_heap(candidates.begin(), candidates.end(), farther);
+			}
+		}
+
+		std::ranges::sort(candidates, std::ranges::less{}, &TargetCandidate::distanceSquared);
+
+		std::vector<Actor*> result;
+		result.reserve(candidates.size());
+		for (const auto& candidate : candidates) {
+			result.push_back(candidate.actor);
+		}
+		return result;
+	}
+
+	std::vector<Actor*> SelectTargetsInFront(Actor* pred, std::size_t numberOfPrey, float coneAngleDegrees, bool keepFullOrdering, const std::function<bool(Actor*)>& canSelect) {
+		return SelectTargetsInFront(pred, find_actors(), numberOfPrey, coneAngleDegrees, keepFullOrdering, canSelect);
+	}
+
 	float GetProneAdjustment() {
 		auto player = PlayerCharacter::GetSingleton();
 		float value = 1.0f;
@@ -122,7 +235,7 @@ namespace GTS {
 		return value;
 	}
 
-	void SpawnActionIcon(Actor* giant) {
+	void SpawnActionIcon(Actor* giant, const std::vector<Actor*>& actors) {
 		if (!giant) {
 			return;
 		}
@@ -137,11 +250,15 @@ namespace GTS {
 
 			float giantScale = get_visual_scale(giant);
 			auto huggedActor = HugShrink::GetHuggiesActor(giant);
+			const bool giantBusy = AnimationVars::General::IsGTSBusy(giant);
+			const bool giantCrawling = AnimationVars::Crawl::IsCrawling(giant);
+			const bool canDoVore = CanDoActionBasedOnQuestProgress(giant, QuestAnimationType::kVore);
+			const bool canDoGrabAndSandwich = CanDoActionBasedOnQuestProgress(giant, QuestAnimationType::kGrabAndSandwich);
 
 			constexpr float BASE_DISTANCE = 124.0f;
 			float CheckDistance = BASE_DISTANCE * giantScale;
 
-			if (AnimationVars::Crawl::IsCrawling(giant)) {
+			if (giantCrawling) {
 				CheckDistance *= 1.5f;
 			}
 
@@ -149,7 +266,7 @@ namespace GTS {
 				DebugDraw::DrawSphere(glm::vec3(NodePosition.x, NodePosition.y, NodePosition.z), CheckDistance, 60, { 0.5f, 1.0f, 0.0f, 0.5f });
 			}
 
-			for (auto otherActor : find_actors()) {
+			for (auto otherActor : actors) {
 				if (otherActor != giant) {
 					if (otherActor->Is3DLoaded() && !otherActor->IsDead()) {
 						float tinyScale = get_visual_scale(otherActor) * GetSizeFromBoundingBox(otherActor);
@@ -191,7 +308,7 @@ namespace GTS {
 										NiPoint3 Position = node->world.translate;
 										float bounding_z = get_bounding_box_z(otherActor);
 										if (bounding_z > 0.0f) {
-											if (AnimationVars::Crawl::IsCrawling(giant) && AnimationVars::Tiny::IsBeingHugged(otherActor)) {
+											if (giantCrawling && AnimationVars::Tiny::IsBeingHugged(otherActor)) {
 												bounding_z *= 0.25f; // Move the icon down
 											}
 											Position.z += (bounding_z * get_visual_scale(otherActor) * 2.35f); // 2.25 to be slightly above the head
@@ -218,12 +335,12 @@ namespace GTS {
 												SpawnParticle(otherActor, 3.00f, "GTS/UI/Icon_Hug_Crush.nif", NiMatrix3(), Position, iconScale, 7, node); // Spawn 'can be hug crushed'
 											}
 										}
-										else if (!AnimationVars::General::IsGTSBusy(giant) && IsEssential(giant, otherActor)) {
+										else if (!giantBusy && IsEssential(giant, otherActor)) {
 											SpawnParticle(otherActor, 3.00f, "GTS/UI/Icon_Essential.nif", NiMatrix3(), Position, iconScale, 7, node);
 											// Spawn Essential icon
 										}
-										else if (!AnimationVars::General::IsGTSBusy(giant) && difference >= Action_Crush) {
-											if (CanDoActionBasedOnQuestProgress(giant, QuestAnimationType::kVore)) {
+										else if (!giantBusy && difference >= Action_Crush) {
+											if (canDoVore) {
 												SpawnParticle(otherActor, 3.00f, "GTS/UI/Icon_Crush_All.nif", NiMatrix3(), Position, iconScale, 7, node);
 												// Spawn 'can be crushed and any action can be done'
 											}
@@ -232,17 +349,17 @@ namespace GTS {
 												// just spawn can be crushed, can happen at any quest stage
 											}
 										}
-										else if (!AnimationVars::General::IsGTSBusy(giant) && difference >= Action_Grab) {
-											if (CanDoActionBasedOnQuestProgress(giant, QuestAnimationType::kVore)) {
+										else if (!giantBusy && difference >= Action_Grab) {
+											if (canDoVore) {
 												SpawnParticle(otherActor, 3.00f, "GTS/UI/Icon_Vore_Grab.nif", NiMatrix3(), Position, iconScale, 7, node);
 												// Spawn 'Can be grabbed/vored'
 											}
-											else if (CanDoActionBasedOnQuestProgress(giant, QuestAnimationType::kGrabAndSandwich)) {
+											else if (canDoGrabAndSandwich) {
 												SpawnParticle(otherActor, 3.00f, "GTS/UI/Icon_Grab.nif", NiMatrix3(), Position, iconScale, 7, node);
 												// Spawn 'Can be grabbed'
 											}
 										}
-										else if (!AnimationVars::General::IsGTSBusy(giant) && difference >= Action_Sandwich && CanDoActionBasedOnQuestProgress(giant, QuestAnimationType::kGrabAndSandwich)) {
+										else if (!giantBusy && difference >= Action_Sandwich && canDoGrabAndSandwich) {
 											SpawnParticle(otherActor, 3.00f, "GTS/UI/Icon_Sandwich.nif", NiMatrix3(), Position, iconScale, 7, node); // Spawn 'Can be sandwiched'
 										}
 										// 1 = stomps and kicks

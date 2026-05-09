@@ -14,6 +14,7 @@ namespace GTS {
 
 	class BaseTask {
 		public:
+		virtual ~BaseTask() = default;
 		virtual bool Update() = 0;
 
 		__forceinline UpdateKind UpdateOn() const {
@@ -107,6 +108,9 @@ namespace GTS {
 
 		private:
 		static std::string GenerateName(void* ptr);
+		static void UpdateTasks(UpdateKind kind);
+		static void InsertTask(std::unique_ptr<BaseTask> task);
+		static void InsertTask(std::string_view name, std::unique_ptr<BaseTask> task);
 		static inline absl::flat_hash_map<std::string, std::unique_ptr<BaseTask>> m_taskings;
 		static inline std::mutex m_taskingsLock;
 	};

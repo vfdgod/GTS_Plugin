@@ -68,12 +68,16 @@ namespace {
 	void GTSCrawlVore_Grab(AnimationEventData& data) {
 		auto giant = &data.giant;
 		auto& VoreData = VoreController::GetSingleton().GetVoreData(giant);
+		bool shouldGrabAll = false;
 		for (auto& tiny: VoreData.GetVories()) {
 			if (!Vore_ShouldAttachToRHand(giant, tiny)) {
-				VoreData.GrabAll();
+				shouldGrabAll = true;
 			}
 			tiny->NotifyAnimationGraph("JumpFall");
 			tiny->Attacked(giant);
+		}
+		if (shouldGrabAll) {
+			VoreData.GrabAll();
 		}
 		if (AnimationVars::Grab::HasGrabbedTiny(giant)) {
 			ManageCamera(giant, true, CameraTracking::ObjectA);
@@ -136,22 +140,28 @@ namespace {
 	void GTSCrawlVore_Swallow(AnimationEventData& data) {
 		auto giant = &data.giant;
 		auto& VoreData = VoreController::GetSingleton().GetVoreData(giant);
+		auto tinies = VoreData.GetVories();
 
 		if (!IsDevourmentEnabled()) {
 			Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundSwallow, giant, 1.0f, "NPC Head [Head]"); // Play sound
 		}
 
-		for (auto& tiny: VoreData.GetVories()) {
+		for (auto& tiny: tinies) {
 			AllowToBeCrushed(tiny, true);
 			if (tiny->IsPlayerRef()) {
 				PlayerCamera::GetSingleton()->cameraTarget = giant->CreateRefHandle();
 			}
-			if (IsDevourmentEnabled()) {
+		}
+
+		if (IsDevourmentEnabled()) {
+			for (auto& tiny: tinies) {
 				CallDevourment(&data.giant, tiny);
 				SetBeingHeld(tiny, false);
-				VoreData.AllowToBeVored(true);
-			} else {
-				VoreData.Swallow();
+			}
+			VoreData.AllowToBeVored(true);
+		} else {
+			VoreData.Swallow();
+			for (auto& tiny: tinies) {
 				tiny->SetAlpha(0.0f);
 			}
 		}

@@ -139,7 +139,7 @@ namespace GTS {
 						SelectVoiceBank(Player);
 					}
 
-					const auto ActiveTeammates = FindFemaleTeammates();
+					const auto& ActiveTeammates = FindFemaleTeammates();
 
 					if (!ActiveTeammates.empty()) {
 						for (const auto Teammate : ActiveTeammates) {

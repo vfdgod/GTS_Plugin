@@ -34,9 +34,16 @@ namespace GTS {
 
 	void VoreData::Swallow() {
 		std::unique_lock lock(_lock);
+		auto giant = this->giant.get().get();
+		if (!giant) {
+			return;
+		}
+
 		for (auto& tinyref : this->tinies | std::views::values) {
 			auto tiny = tinyref.get().get();
-			auto giant = this->giant.get().get();
+			if (!tiny) {
+				continue;
+			}
 			
 			if (giant->IsPlayerRef()) {
 				if (IsLiving(tiny) && IsHuman(tiny)) {
@@ -47,7 +54,7 @@ namespace GTS {
 				float DefaultScale = get_natural_scale(tiny);
 				ModSizeExperience(giant, 0.08f + (DefaultScale*0.025f));
 
-				SurvivalMode_AdjustHunger(this->giant.get().get(), VoreController::ReadOriginalScale(tiny) * GetSizeFromBoundingBox(tiny), Living, false);
+				SurvivalMode_AdjustHunger(giant, VoreController::ReadOriginalScale(tiny) * GetSizeFromBoundingBox(tiny), Living, false);
 			}
 
 			Task_Vore_StartVoreBuff(giant, tiny, static_cast<int>(this->tinies.size()));
@@ -56,29 +63,39 @@ namespace GTS {
 	}
 	void VoreData::KillAll() {
 		std::unique_lock lock(_lock);
+		auto giantref = this->giant;
+		auto giant = giantref.get().get();
+		if (!giant) {
+			this->tinies.clear();
+			return;
+		}
+
 		if (!IsDevourmentEnabled()) {
 
 			for (auto& tinyref : this->tinies | std::views::values) {
 				auto tiny = tinyref.get().get();
-				auto giantref = this->giant;
+				if (!tiny) {
+					continue;
+				}
+
 				SetBeingHeld(tiny, false);
-				AddSMTDuration(giantref.get().get(), 6.0f);
+				AddSMTDuration(giant, 6.0f);
 
 				const auto& MuteVore = Config::Audio.bMuteVoreDeathScreams;
 
 				if (!tiny->IsPlayerRef()) {
-					KillActor(giantref.get().get(), tiny, MuteVore);
-					PerkHandler::UpdatePerkValues(giantref.get().get(), PerkUpdate::Perk_LifeForceAbsorption);
+					KillActor(giant, tiny, MuteVore);
+					PerkHandler::UpdatePerkValues(giant, PerkUpdate::Perk_LifeForceAbsorption);
 				}
 				else if (tiny->IsPlayerRef()) {
-					InflictSizeDamage(giantref.get().get(), tiny, 900000);
-					KillActor(giantref.get().get(), tiny, MuteVore);
+					InflictSizeDamage(giant, tiny, 900000);
+					KillActor(giant, tiny, MuteVore);
 					TriggerScreenBlood(50);
 					tiny->SetAlpha(0.0f); // Player can't be disintegrated: simply nothing happens. So we Just make player Invisible instead.
 				}
 
-				Vore_AdvanceQuest(giantref.get().get(), tiny, IsDragon(tiny), IsGiant(tiny)); // Progress quest
-				DecreaseShoutCooldown(giantref.get().get());
+				Vore_AdvanceQuest(giant, tiny, IsDragon(tiny), IsGiant(tiny)); // Progress quest
+				DecreaseShoutCooldown(giant);
 
 				std::string taskname = std::format("VoreAbsorb_{}", tiny->formID);
 
@@ -91,6 +108,9 @@ namespace GTS {
 					}
 					auto giant = giantref.get().get();
 					auto smoll = tinyref.get().get();
+					if (!giant || !smoll) {
+						return;
+					}
 
 					if (!smoll->IsPlayerRef()) {
 						Disintegrate(smoll);
@@ -99,9 +119,11 @@ namespace GTS {
 				});
 			}
 		} else { // If Devourment enabled
-			auto giant = this->giant.get().get();
 			for (auto& tinyref : this->tinies | std::views::values) { // just clear the data
 				auto tiny = tinyref.get().get();
+				if (!tiny) {
+					continue;
+				}
 				Anims_FixAnimationDesync(giant, tiny, true); // Reset anim speed override
 				PushActorAway(giant, tiny, 1.0f);
 				SetBetweenBreasts(tiny, false);
@@ -116,6 +138,9 @@ namespace GTS {
 		std::unique_lock lock(_lock);
 		for (auto& tinyref : this->tinies | std::views::values) {
 			auto tiny = tinyref.get().get();
+			if (!tiny) {
+				continue;
+			}
 			auto transient = Transient::GetActorData(tiny);
 			if (transient) {
 				transient->CanBeVored = allow;
@@ -140,7 +165,9 @@ namespace GTS {
 		std::vector<Actor*> result;
 		for (auto& actorref : this->tinies | std::views::values) {
 			auto actor = actorref.get().get();
-			result.push_back(actor);
+			if (actor) {
+				result.push_back(actor);
+			}
 		}
 		return result;
 	}
@@ -149,15 +176,15 @@ namespace GTS {
 		GTS_PROFILE_SCOPE("VoreData: Update");
 		if (this->giant) {
 			auto giant = this->giant.get().get();
-			float giantScale = get_visual_scale(giant);
+			if (!giant) {
+				return;
+			}
+
 			// Stick them to the AnimObjectA
 			for (auto& tinyref : this->tinies | std::views::values) {
 				auto tiny = tinyref.get().get();
 				if (!tiny) {
-					return;
-				}
-				if (!giant) {
-					return;
+					continue;
 				}
 
 				if (this->allGrabbed && !giant->IsDead()) {
@@ -198,69 +225,12 @@ namespace GTS {
 			return {};
 		}
 
-		NiPoint3 predPos = pred->GetPosition();
-
-		auto preys = find_actors();
-
-		// Sort prey by distance
-		std::ranges::sort(preys,[predPos](const Actor* preyA, const Actor* preyB) -> bool{
-			float distanceToA = (preyA->GetPosition() - predPos).Length();
-			float distanceToB = (preyB->GetPosition() - predPos).Length();
-			return distanceToA < distanceToB;
-		});
-
-		// Filter out invalid targets
-		std::erase_if(preys,[pred, this](auto prey)
-		{
-			return !this->CanVore(pred, prey);
-		});
-
-		// Filter out actors not in front
-		auto actorAngle = pred->data.angle.z;
-		RE::NiPoint3 forwardVector{ 0.f, 1.f, 0.f };
-		RE::NiPoint3 actorForward = RotateAngleAxis(forwardVector, -actorAngle, { 0.f, 0.f, 1.f });
-
-		NiPoint3 predDir = actorForward;
-		predDir = predDir / predDir.Length();
-		std::erase_if(preys,[predPos, predDir](auto prey)
-		{
-			NiPoint3 preyDir = prey->GetPosition() - predPos;
-			if (preyDir.Length() <= 1e-4) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= 0; // 180 degress
-		});
-
-		// Filter out actors not in a truncated cone
-		// \      x   /
-		//  \  x     /
-		//   \______/  <- Truncated cone
-		//   | pred |  <- Based on width of pred
-		//   |______|
-		float predWidth = 70 * get_visual_scale(pred);
-		float shiftAmount = fabs((predWidth / 2.0f) / tan(VORE_ANGLE/2.0f));
-
-		NiPoint3 coneStart = predPos - predDir * shiftAmount;
-		std::erase_if(preys,[coneStart, predWidth, predDir](auto prey)
-		{
-			NiPoint3 preyDir = prey->GetPosition() - coneStart;
-			if (preyDir.Length() <= predWidth*0.4f) {
-				return false;
-			}
-			preyDir = preyDir / preyDir.Length();
-			float cosTheta = predDir.Dot(preyDir);
-			return cosTheta <= cos(VORE_ANGLE*PI/180.0f);
+		auto preys = SelectTargetsInFront(pred, numberOfPrey, VORE_ANGLE, numberOfPrey == 1 && NeedsFullActionTargetOrdering(pred), [pred, this](auto prey) {
+			return this->CanVore(pred, prey);
 		});
 
 		if (numberOfPrey == 1) {
 			return GetMaxActionableTinyCount(pred, preys);
-		}
-
-		// Reduce vector size
-		if (preys.size() > numberOfPrey) {
-			preys.resize(numberOfPrey);
 		}
 
 		return preys;
