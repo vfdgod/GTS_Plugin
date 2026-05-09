@@ -16,6 +16,25 @@ namespace {
 
 	constexpr float BASE_POWER = 0.000025f; // Default growth over time.
 	constexpr float DUAL_CAST_BONUS = 2.25f;
+	constexpr float SOUND_INTERVAL = 2.33f;
+
+	std::string GetSlowGrowTaskName(Actor* caster) {
+		return std::format("SlowGrowTask{}", caster->formID);
+	}
+
+	void SetSlowGrowState(Actor* caster, bool enabled) {
+		if (!caster) {
+			return;
+		}
+
+		if (auto* transient = Transient::GetActorData(caster)) {
+			transient->IsSlowGrowing = enabled;
+		}
+
+		if (!enabled) {
+			TaskManager::Cancel(GetSlowGrowTaskName(caster));
+		}
+	}
 
 	bool PerformMoanAndParticle(Actor* caster) {
 		if (caster && IsFemale(caster) && !IsActionOnCooldown(caster, CooldownSource::Emotion_Moan)) {
@@ -42,10 +61,14 @@ namespace GTS {
 
 	void SlowGrow::Task_SlowGrowTask(Actor* caster) {
 
-		std::string name = std::format("SlowGrowTask{}", caster->formID);
-		ActorHandle casterhandle = caster->CreateRefHandle();
+		const std::string name = GetSlowGrowTaskName(caster);
+		const ActorHandle casterhandle = caster->CreateRefHandle();
+		const bool isDual = this->IsDual;
 
-		TaskManager::Run(name, [=,this](auto& progressData) {
+		TaskManager::Run(name, [casterhandle, isDual, soundTimer = Timer(SOUND_INTERVAL)](auto&) mutable {
+			if (!casterhandle) {
+				return false;
+			}
 
 			const auto CasterActor = casterhandle.get().get();
 
@@ -68,7 +91,7 @@ namespace GTS {
 			float power = BASE_POWER * SkillBonus;
 			float bonus = 1.0f;
 
-			if (timer.ShouldRun()) {
+			if (soundTimer.ShouldRun()) {
 				float Volume = std::clamp(get_visual_scale(CasterActor) / 8.0f, 0.20f, 1.0f);
 				Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundGrowth, CasterActor, Volume, "NPC Pelvis [Pelv]");
 			}
@@ -77,7 +100,7 @@ namespace GTS {
 				bonus = get_visual_scale(CasterActor) * 0.25f + 0.75f;
 			}
 
-			if (IsDual) {
+			if (isDual) {
 				power *= DUAL_CAST_BONUS;
 			}
 
@@ -107,29 +130,36 @@ namespace GTS {
 		}
 	}
 
+	void SlowGrow::OnFinish() {
+		SetSlowGrowState(GetCaster(), false);
+	}
+
 	void SlowGrow::OnStart() {
 		Actor* caster = GetCaster();
-		if (caster) {
+		if (!caster) {
+			return;
+		}
 
-			const auto ActorTransient = Transient::GetActorData(caster);
-			if (ActorTransient) {
+		const auto ActorTransient = Transient::GetActorData(caster);
+		if (!ActorTransient) {
+			return;
+		}
 
-				float scale = get_visual_scale(caster);
-				float mult = 0.40f;
-				if (this->IsDual) {
-					Rumbling::For("SlowGrow", caster, Rumble_Growth_SlowGrowth_Start, 0.10f, "NPC COM [COM ]", 0.35f, 0.0f);
-					mult *= 1.5f;
-				}
-				SpawnCustomParticle(caster, ParticleType::Green, NiPoint3(), "NPC COM [COM ]", scale * mult * 1.75f);
+		float scale = get_visual_scale(caster);
+		float mult = 0.40f;
+		if (this->IsDual) {
+			Rumbling::For("SlowGrow", caster, Rumble_Growth_SlowGrowth_Start, 0.10f, "NPC COM [COM ]", 0.35f, 0.0f);
+			mult *= 1.5f;
+		}
 
-				if (!ActorTransient->IsSlowGrowing) {
-					ActorTransient->IsSlowGrowing = true;
-					Task_SlowGrowTask(caster);
-				}
-				else {
-					ActorTransient->IsSlowGrowing = false;
-				}
-			}
+		SpawnCustomParticle(caster, ParticleType::Green, NiPoint3(), "NPC COM [COM ]", scale * mult * 1.75f);
+
+		if (!ActorTransient->IsSlowGrowing) {
+			SetSlowGrowState(caster, true);
+			Task_SlowGrowTask(caster);
+		}
+		else {
+			SetSlowGrowState(caster, false);
 		}
 	}
 }

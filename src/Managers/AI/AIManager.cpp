@@ -128,9 +128,9 @@ namespace {
 	}
 
 	// Check if an actor is a valid action victim
-	inline bool ValidPrey(Actor* a_Performer, Actor* a_Prey, const bool a_AllowPlayer, const bool a_AllowTeamMates, const bool a_AllowEssential, const bool a_HostileOnly) {
+	inline bool IsCommonValidPrey(Actor* a_Prey, const bool a_AllowPlayer, const bool a_AllowTeamMates, const bool a_AllowEssential) {
 
-		if (!a_Prey || !a_Performer) {
+		if (!a_Prey) {
 			return false;
 		}
 
@@ -146,58 +146,61 @@ namespace {
 			return false;
 		}
 
+		if (AnimationVars::General::IsGTSBusy(a_Prey) || !IsVisible(a_Prey)) {
+			return false;
+		}
+
+		if (a_Prey->IsPlayerRef()) {
+			return a_AllowPlayer;
+		}
+
+		if (VoreController::GetSingleton().IsTinyInDataList(a_Prey)) {
+			return false;
+		}
+
+		if (HugShrink::GetSingleton().IsTinyInDataList(a_Prey)) {
+			return false;
+		}
+
+		if (IsTeammate(a_Prey)) {
+			return a_AllowTeamMates;
+		}
+
+		if (a_Prey->IsEssential()) {
+			return a_AllowEssential;
+		}
+
+		return true;
+	}
+
+	inline bool ValidPreyForPerformer(Actor* a_Performer, Actor* a_Prey, const bool a_HostileOnly) {
+
+		if (!a_Prey || !a_Performer) {
+			return false;
+		}
+
+		if (a_Prey == a_Performer) {
+			return false;
+		}
+
 		const bool Hostile = IsHostile(a_Prey, a_Performer) || IsHostile(a_Performer, a_Prey);
 
 		if (a_HostileOnly && !Hostile) {
 			return false;
 		}
 
-		if (!AnimationVars::General::IsGTSBusy(a_Prey) && IsVisible(a_Prey)) {
-
-			//If not a teammate and they are essential but we allow essentials
-			if (a_Prey->IsPlayerRef()) {
-				if (a_AllowPlayer) {
-					return true;
-				}
-				return false;
-			}
-
-			if (VoreController::GetSingleton().IsTinyInDataList(a_Prey)) {
-				return false;
-			}
-
-			if (HugShrink::GetSingleton().IsTinyInDataList(a_Prey)) {
-				return false;
-			}
-
-			if (IsTeammate(a_Prey)) {
-				if (a_AllowTeamMates) {
-					return true;
-				}
-				return false;
-			}
-
-			if (a_Prey->IsEssential()) {
-				if (a_AllowEssential) {
-					return true;
-				}
-
-				return false;
-			}
-			return true;
-		}
-		return false;
+		return true;
 	}
 
 	//Get a list of valid action initiators/performers
-	std::vector<RE::Actor*> FindValidPerformers() {
+	std::vector<RE::Actor*> FindValidPerformers(const std::vector<Actor*>& actors) {
 
 		std::vector<Actor*> ValidPerformers = {};
 
 		const bool CombatOnly = Config::AI.bCombatOnly;
 
 		//Get a list of valid perfomer actors, aka actors that are elidgible to start an action.
-		for (auto Target : find_actors()) {
+		for (auto Target : actors) {
 			//Skip Nullptr actors
 			if (!Target) continue;
 
@@ -214,28 +217,40 @@ namespace {
 
 	}
 
-	//Get a list of valid action victims
-	std::vector<RE::Actor*> FindValidPrey(Actor* a_Performer) {
+	std::vector<Actor*> FindPotentialPrey(const std::vector<Actor*>& actors) {
 
-		std::vector<Actor*> ValidVictims = {};
+		std::vector<Actor*> potentialPrey = {};
 
 		const auto& AISettings = Config::AI;
 		const auto& GeneralSettings = Config::General;
 
-		const bool AllowPlayer = AISettings.bAllowPlayer;
-		const bool AllowFollowers = AISettings.bAllowFollowers;
-		const bool AllowEssential = !GeneralSettings.bProtectEssentials;
+		const bool allowPlayer = AISettings.bAllowPlayer;
+		const bool allowFollowers = AISettings.bAllowFollowers;
+		const bool allowEssential = !GeneralSettings.bProtectEssentials;
+
+		potentialPrey.reserve(actors.size());
+		for (auto target : actors) {
+			if (IsCommonValidPrey(target, allowPlayer, allowFollowers, allowEssential)) {
+				potentialPrey.push_back(target);
+			}
+		}
+
+		return potentialPrey;
+	}
+
+	//Get a list of valid action victims
+	std::vector<RE::Actor*> FindValidPrey(Actor* a_Performer, const std::vector<Actor*>& potentialPrey) {
+
+		std::vector<Actor*> ValidVictims = {};
+
+		const auto& AISettings = Config::AI;
 		const bool HostileOnly = AISettings.bHostileOnly;
 
-		//Get a list of valid perfomer actors, aka actors that are elidgible to start an action.
-		for (auto Target : find_actors()) {
-			//Skip Nullptr actors and the performer
-			if (!Target || a_Performer == Target) continue;
-
-			if (ValidPrey(a_Performer, Target, AllowPlayer, AllowFollowers, AllowEssential, HostileOnly)) {
-				ValidVictims.push_back(Target);
+		ValidVictims.reserve(potentialPrey.size());
+		for (auto target : potentialPrey) {
+			if (ValidPreyForPerformer(a_Performer, target, HostileOnly)) {
+				ValidVictims.push_back(target);
 			}
-
 		}
 
 		return ValidVictims;
@@ -289,10 +304,11 @@ namespace GTS {
 		BeginNewActionTimer.UpdateDelta(AISettings.fMasterTimer);
 
 		if (BeginNewActionTimer.ShouldRun()) {
+			const auto& actors = find_actors();
 
 			//Reset attack blocking
 			if (!AISettings.bEnableActionAI) {
-				for (const auto& Actor : find_actors()) {
+				for (const auto& Actor : actors) {
 					ResetAttackBlocking(Actor);
 				}
 				return;
@@ -300,8 +316,9 @@ namespace GTS {
 
 			//logger::trace("AIManager Update");
 
-			const auto& PerformerList = FindValidPerformers();
-			if (!PerformerList.empty()) {
+			const auto performerList = FindValidPerformers(actors);
+			if (!performerList.empty()) {
+				const auto potentialPrey = FindPotentialPrey(actors);
 
 				//logger::trace("AIManager Found Performers");
 
@@ -309,8 +326,8 @@ namespace GTS {
 				//int idx = RandomInt(0, static_cast<int>(PerformerList.size()) - 1);
 				//Actor* Performer = PerformerList.at(idx);
 
-				for (const auto& Performer : PerformerList) {
-					if (TryStartAction(Performer)) {
+				for (const auto& Performer : performerList) {
+					if (TryStartAction(Performer, potentialPrey)) {
 						return;
 					}
 				}
@@ -319,7 +336,7 @@ namespace GTS {
 	}
 
 
-	bool AIManager::TryStartAction(Actor* a_Performer) const {
+	bool AIManager::TryStartAction(Actor* a_Performer, const std::vector<Actor*>& a_PotentialPrey) const {
 
 		if (!a_Performer) return false;
 
@@ -336,7 +353,7 @@ namespace GTS {
 		//a map containing which actions can be started based on if their probability will be > 0
 		absl::flat_hash_map<ActionType, int> StartableActions = {};
 
-		const auto& PreyList = FindValidPrey(a_Performer);
+		const auto PreyList = FindValidPrey(a_Performer, a_PotentialPrey);
 		if (PreyList.empty()) {
 			return false;
 		}

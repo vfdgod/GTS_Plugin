@@ -161,8 +161,8 @@ namespace GTS {
 		float MP = GetMaxAV(actor, ActorValue::kMagicka) * 0.00095f;
 		float SP = GetMaxAV(actor, ActorValue::kStamina) * 0.00125f;
 		actor->AsActorValueOwner()->RestoreActorValue(ACTOR_VALUE_MODIFIER::kDamage, ActorValue::kHealth, HP * TimeScale() * multiplier);
-		actor->AsActorValueOwner()->RestoreActorValue(ACTOR_VALUE_MODIFIER::kDamage, ActorValue::kMagicka, SP * TimeScale() * multiplier);
-		actor->AsActorValueOwner()->RestoreActorValue(ACTOR_VALUE_MODIFIER::kDamage, ActorValue::kStamina, MP * TimeScale() * multiplier);
+		actor->AsActorValueOwner()->RestoreActorValue(ACTOR_VALUE_MODIFIER::kDamage, ActorValue::kMagicka, MP * TimeScale() * multiplier);
+		actor->AsActorValueOwner()->RestoreActorValue(ACTOR_VALUE_MODIFIER::kDamage, ActorValue::kStamina, SP * TimeScale() * multiplier);
 	}
 }
 

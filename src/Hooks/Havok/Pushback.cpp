@@ -35,7 +35,6 @@ namespace Hooks {
 
 		// Reduces amount of CharController being pushed back on being hit based on size
 		// SE: DC0930
-		// TODO Somwehow improve performance instead of looping through all actors
 		static void thunk(bhkCharacterController* a_this, hkVector4& a_from, float a_time) {
 
 			float scale = 1.0f;

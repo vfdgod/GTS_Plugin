@@ -7,7 +7,7 @@ namespace GTS {
 		public:
 		virtual std::string DebugName() override;
 		virtual void Update() override;
-		bool TryStartAction(Actor* a_Performer) const;
+		bool TryStartAction(Actor* a_Performer, const std::vector<Actor*>& a_PotentialPrey) const;
 
 		Timer BeginNewActionTimer = Timer(3.0f);
 		SettingsAI_t& AISettings = Config::AI;
