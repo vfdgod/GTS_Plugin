@@ -29,7 +29,12 @@ namespace GTS {
 	template<typename ... Args>
 	void Cprint(std::string_view rt_fmt_str, Args&&... args) {
 		try {
-			ConsoleLog::GetSingleton()->Print("%s", std::vformat(rt_fmt_str, std::make_format_args(args ...)).c_str());
+			const auto formatted = std::vformat(rt_fmt_str, std::make_format_args(args ...));
+			if (const auto console = ConsoleLog::GetSingleton()) {
+				console->Print("%s", formatted.c_str());
+			} else {
+				logger::info("{}", formatted);
+			}
 		} catch (const std::format_error &e) {
 			logger::info("Could not format console log, check valid format string: {}", e.what());
 		}

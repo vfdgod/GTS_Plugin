@@ -29,7 +29,7 @@ namespace GTS {
         static void OpenSettingsConsoleCallback();
         void HandleOpenClose(bool a_open);
 
-        ImCategoryContainer* CategoryMgr = nullptr;
+        std::unique_ptr<ImCategoryContainer> CategoryMgr;
         std::atomic_flag m_saveLoadBusy = ATOMIC_FLAG_INIT;
         std::string m_footerText;
         bool m_showErrorModal = false;

@@ -33,6 +33,25 @@ namespace SizeOverride {
 		return a_actor && !a_actor->IsPlayerRef() && !GTS::IsTeammate(a_actor) && a_actor->IsEssential();
 	}
 
+	bool IsHostileTarget(Actor* a_actor) {
+		if (!a_actor || a_actor->IsPlayerRef() || GTS::IsTeammate(a_actor)) {
+			return false;
+		}
+
+		Actor* player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return false;
+		}
+
+		if (GTS::IsHostile(player, a_actor) || GTS::IsHostile(a_actor, player)) {
+			return true;
+		}
+
+		Actor* actorCombatTarget = a_actor->GetActorRuntimeData().currentCombatTarget.get().get();
+		Actor* playerCombatTarget = player->GetActorRuntimeData().currentCombatTarget.get().get();
+		return actorCombatTarget == player || playerCombatTarget == a_actor;
+	}
+
 	float ComputeActionFitLimit(float a_playerScale) {
 		float playerScale = std::max(a_playerScale, ACTION_FIT_RESULT_MIN);
 		if (playerScale >= ACTION_FIT_STRICTEST_THRESHOLD) {
@@ -81,6 +100,16 @@ namespace SizeOverride {
 			return Config::Balance.fMaxFollowerSize;
 		}
 
+		if (IsHostileTarget(a_actor)) {
+			if (Config::Balance.bHostileDynamicActionFit) {
+				return GetActionFitLimit();
+			}
+
+			if (Config::Balance.fMaxHostileSize > SIZE_OVERRIDE_MIN) {
+				return Config::Balance.fMaxHostileSize;
+			}
+		}
+
 		if (IsImportantTarget(a_actor)) {
 			if (Config::Balance.bImportantDynamicActionFit) {
 				return GetActionFitLimit();
@@ -116,6 +145,8 @@ namespace SizeOverride {
 namespace {
 
     constexpr float DEFAULT_MAX = 1'000'000.0f;
+	constexpr float SIZE_OVERRIDE_RESTORE_MAX = 1.0f;
+	constexpr float SIZE_OVERRIDE_RESTORE_EPS = 0.0001f;
 
     bool IsSizeUnlocked() {
 		// Reports true when player has ColossalGrowth perk and used gts unlimited command, else it's false
@@ -163,6 +194,58 @@ namespace {
 		}
 
 		return endless;
+	}
+
+	void UpdateSizeOverrideRestore(Actor* actor, float overrideLimit, bool overrideActive) {
+		if (!actor) {
+			return;
+		}
+
+		auto persistent = Persistent::GetActorData(actor);
+		auto transient = Transient::GetActorData(actor);
+
+		if (!persistent || !transient) {
+			return;
+		}
+
+		if (!overrideActive) {
+			transient->SizeOverrideLastRawLimit = 0.0f;
+			transient->SizeOverrideRestoreTargetScale = 0.0f;
+			transient->SizeOverrideRestoreActive = false;
+			return;
+		}
+
+		const float currentTargetScale = get_target_scale(actor);
+		const bool limitIncreased = transient->SizeOverrideLastRawLimit > SizeOverride::SIZE_OVERRIDE_MIN &&
+			overrideLimit > transient->SizeOverrideLastRawLimit + SIZE_OVERRIDE_RESTORE_EPS;
+
+		// Remember the pre-clamp target, but only restore once when the configured limit grows.
+		if (currentTargetScale > overrideLimit + SIZE_OVERRIDE_RESTORE_EPS) {
+			const float restoreTarget = std::min(currentTargetScale, SIZE_OVERRIDE_RESTORE_MAX);
+			if (restoreTarget > overrideLimit + SIZE_OVERRIDE_RESTORE_EPS) {
+				transient->SizeOverrideRestoreTargetScale = std::max(transient->SizeOverrideRestoreTargetScale, restoreTarget);
+				transient->SizeOverrideRestoreActive = true;
+			}
+		}
+
+		if (limitIncreased && transient->SizeOverrideRestoreActive) {
+			const float restoredTarget = std::min(
+				std::min(transient->SizeOverrideRestoreTargetScale, overrideLimit),
+				SIZE_OVERRIDE_RESTORE_MAX
+			);
+
+			if (restoredTarget > currentTargetScale + SIZE_OVERRIDE_RESTORE_EPS) {
+				set_target_scale(actor, restoredTarget);
+			}
+
+			if (restoredTarget + SIZE_OVERRIDE_RESTORE_EPS >= transient->SizeOverrideRestoreTargetScale ||
+				overrideLimit + SIZE_OVERRIDE_RESTORE_EPS >= SIZE_OVERRIDE_RESTORE_MAX) {
+				transient->SizeOverrideRestoreTargetScale = 0.0f;
+				transient->SizeOverrideRestoreActive = false;
+			}
+		}
+
+		transient->SizeOverrideLastRawLimit = overrideLimit;
 	}
 
 
@@ -244,12 +327,15 @@ namespace GTS {
 		}*/
 
 		float TotalLimit = GetLimit;
+		float OverrideLimit = 0.0f;
+		bool HasOverrideLimit = false;
 
 		if (IsSizeUnlocked()) {
-			float OverrideLimit = SizeOverride::GetConfiguredOverrideForActor(a_actor);
+			OverrideLimit = SizeOverride::GetConfiguredOverrideForActor(a_actor);
 
 			if (OverrideLimit > SizeOverride::SIZE_OVERRIDE_MIN) {
 				TotalLimit = OverrideLimit;
+				HasOverrideLimit = true;
 			}
 		}
 
@@ -258,6 +344,8 @@ namespace GTS {
 		if (get_max_scale(a_actor) < TotalLimit + Endless || get_max_scale(a_actor) > TotalLimit + Endless) {
 			set_max_scale(a_actor, TotalLimit);
 		}
+
+		UpdateSizeOverrideRestore(a_actor, OverrideLimit, HasOverrideLimit);
 		
     }
 

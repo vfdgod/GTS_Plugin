@@ -185,7 +185,12 @@ namespace GTS {
 	NiPoint3 CastRay(TESObjectREFR* ref, const NiPoint3& origin, const NiPoint3& direction, const float& length, bool& success) {
 		auto collector = AllRayCollector::Create();
 		collector->Reset();
-		collector->filterInfo = bhkCollisionFilter::GetSingleton()->GetNewSystemGroup() << 16 | std::to_underlying(COL_LAYER::kLOS);
+		if (const auto collisionFilter = bhkCollisionFilter::GetSingleton()) {
+			collector->filterInfo = collisionFilter->GetNewSystemGroup() << 16 | std::to_underlying(COL_LAYER::kLOS);
+		} else {
+			success = false;
+			return {};
+		}
 		CastRayImpl(ref, origin, direction, length, collector.get());
 
 		if (collector->HasHit()) {
@@ -203,7 +208,12 @@ namespace GTS {
 	NiPoint3 CastRayStatics(TESObjectREFR* ref, const NiPoint3& origin, const NiPoint3& direction, const float& length, bool& success) {
 		auto collector = AllRayCollector::Create();
 		collector->Reset();
-		collector->filterInfo = bhkCollisionFilter::GetSingleton()->GetNewSystemGroup() << 16 | std::to_underlying(COL_LAYER::kLOS);
+		if (const auto collisionFilter = bhkCollisionFilter::GetSingleton()) {
+			collector->filterInfo = collisionFilter->GetNewSystemGroup() << 16 | std::to_underlying(COL_LAYER::kLOS);
+		} else {
+			success = false;
+			return {};
+		}
 		CastRayImpl(ref, origin, direction, length, collector.get());
 
 		if (collector->HasHit()) {

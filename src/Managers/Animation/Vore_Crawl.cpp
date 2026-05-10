@@ -149,7 +149,9 @@ namespace {
 		for (auto& tiny: tinies) {
 			AllowToBeCrushed(tiny, true);
 			if (tiny->IsPlayerRef()) {
-				PlayerCamera::GetSingleton()->cameraTarget = giant->CreateRefHandle();
+				if (auto camera = PlayerCamera::GetSingleton()) {
+					camera->cameraTarget = giant->CreateRefHandle();
+				}
 			}
 		}
 

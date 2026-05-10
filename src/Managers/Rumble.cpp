@@ -54,25 +54,33 @@ namespace GTS {
 	}
 
 	void Rumbling::Stop(std::string_view tagsv, Actor* giant) {
+		if (!giant) {
+			return;
+		}
+
 		std::string tag = std::string(tagsv);
 		auto& me = Rumbling::GetSingleton();
-		try {
-			if (!me.data.empty() || !me.data.contains(giant)) {
-				me.data.at(giant).tags.at(tag).state = RumbleState::RampingDown;
+		if (auto actorIt = me.data.find(giant); actorIt != me.data.end()) {
+			if (auto tagIt = actorIt->second.tags.find(tag); tagIt != actorIt->second.tags.end()) {
+				tagIt->second.state = RumbleState::RampingDown;
 			}
 		}
-		catch (const std::out_of_range&) {}
 	}
 
 	void Rumbling::For(std::string_view tagsv, Actor* giant, float intensity, float halflife, std::string_view nodesv, float duration, float shake_duration, const bool ignore_scaling) {
+		if (!giant) {
+			return;
+		}
+
 		std::string tag = std::string(tagsv);
 		std::string node = std::string(nodesv);
 		auto& me = Rumbling::GetSingleton();
 		me.data.try_emplace(giant);
-		me.data.at(giant).tags.try_emplace(tag, intensity, duration, halflife, shake_duration, ignore_scaling, node);
+		auto& tags = me.data.at(giant).tags;
+		tags.try_emplace(tag, intensity, duration, halflife, shake_duration, ignore_scaling, node);
 		// Reset if already there (but don't reset the intensity this will let us smooth into it)
-		me.data.at(giant).tags.at(tag).ChangeTargetIntensity(intensity);
-		me.data.at(giant).tags.at(tag).ChangeDuration(duration);
+		tags.at(tag).ChangeTargetIntensity(intensity);
+		tags.at(tag).ChangeDuration(duration);
 	}
 
 	void Rumbling::Once(std::string_view tag, Actor* giant, float intensity, float halflife, std::string_view node, float shake_duration, const bool ignore_scaling) {
@@ -163,6 +171,10 @@ namespace GTS {
 						Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundWalkAirRumble, volume, node);
 					}
 				}
+			}
+
+			if (totalWeight <= 0.0f) {
+				continue;
 			}
 
 			averagePos = averagePos * (1.0f / totalWeight);

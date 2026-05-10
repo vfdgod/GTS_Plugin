@@ -46,32 +46,33 @@ namespace GTS {
             ImFont* KR = nullptr;
             ImFont* SC = nullptr;
 
-            ImFontConfig* Config = new ImFontConfig();
+            ImFontConfig Config = {};
 
             Font2(const char* a_Name, const std::array<std::string, 4>& a_paths) {
 
                 // Check if all font files exist
-                for (size_t i = 0; i < a_paths.size() - 1; i++) {
-                    if (!std::filesystem::exists(a_paths[i])) {
-                        ReportAndExit("Required font file not found: " + a_paths[i]);
+                for (const auto& path : a_paths) {
+                    if (!std::filesystem::exists(path)) {
+                        ReportAndExit("Required font file not found: " + path);
                     }
                 }
 
                 ImFontAtlas* const Atlas = ImGui::GetIO().Fonts;
-                memcpy(&Config->Name, a_Name, strlen(a_Name));
+                std::strncpy(Config.Name, a_Name, std::size(Config.Name) - 1);
+                Config.Name[std::size(Config.Name) - 1] = '\0';
 
-                Config->OversampleH = 4;
-                Config->OversampleV = 4;
+                Config.OversampleH = 4;
+                Config.OversampleV = 4;
 
                 //Base Font
-                EN = Atlas->AddFontFromFileTTF(a_paths[0].data(), 0.0f, Config);
+                EN = Atlas->AddFontFromFileTTF(a_paths[0].data(), 0.0f, &Config);
 
                 //Has to be set after atleast 1 font has been added fist.
                 //Merge Glyphs From Other Langs Into Base Font.
-                Config->MergeMode = true;
-                JP = Atlas->AddFontFromFileTTF(a_paths[1].data(), 0.0f, Config);
-                KR = Atlas->AddFontFromFileTTF(a_paths[2].data(), 0.0f, Config);
-                SC = Atlas->AddFontFromFileTTF(a_paths[3].data(), 0.0f, Config);
+                Config.MergeMode = true;
+                JP = Atlas->AddFontFromFileTTF(a_paths[1].data(), 0.0f, &Config);
+                KR = Atlas->AddFontFromFileTTF(a_paths[2].data(), 0.0f, &Config);
+                SC = Atlas->AddFontFromFileTTF(a_paths[3].data(), 0.0f, &Config);
 
             }
 

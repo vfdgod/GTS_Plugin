@@ -47,20 +47,20 @@ namespace GTS {
 
 	class MagicFactoryBase {
 		public:
-		virtual Magic* MakeNew(ActiveEffect* effect) const = 0;
+		virtual std::unique_ptr<Magic> MakeNew(ActiveEffect* effect) const = 0;
 		virtual ~MagicFactoryBase() = default;
 	};
 
 	template<class MagicCls>
 	class MagicFactory : public MagicFactoryBase {
 		public:
-		virtual Magic* MakeNew(ActiveEffect* effect)  const override;
+		virtual std::unique_ptr<Magic> MakeNew(ActiveEffect* effect) const override;
 	};
 
 	template<class MagicCls>
-	Magic* MagicFactory<MagicCls>::MakeNew(ActiveEffect* effect) const {
+	std::unique_ptr<Magic> MagicFactory<MagicCls>::MakeNew(ActiveEffect* effect) const {
 		if (effect) {
-			return new MagicCls(effect);
+			return std::make_unique<MagicCls>(effect);
 		}
 		return nullptr;
 	}
@@ -80,14 +80,14 @@ namespace GTS {
 		template<class MagicCls>
 		static void RegisterMagic(const std::string_view& a_tag) {
 			if (auto magic = Runtime::GetMagicEffect(a_tag)) {
-				factories.try_emplace(magic,new MagicFactory<MagicCls>());
+				factories.try_emplace(magic, std::make_unique<MagicFactory<MagicCls>>());
 			}
 		}
 
 		template<class MagicCls>
 		static void RegisterMagic(const RuntimeData::RuntimeEntry<RE::EffectSetting>& a_entry) {
 			if (auto magic = Runtime::GetMagicEffect(a_entry)) {
-				factories.try_emplace(magic, new MagicFactory<MagicCls>());
+				factories.try_emplace(magic, std::make_unique<MagicFactory<MagicCls>>());
 			}
 		}	
 

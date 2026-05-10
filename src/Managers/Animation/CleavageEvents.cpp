@@ -648,7 +648,6 @@ namespace GTS
         AnimationManager::RegisterEvent("GTS_BS_SwitchToCleavage", "Cleavage", GTS_BS_SwitchToCleavage);
         AnimationManager::RegisterEvent("GTS_BS_ResetTiny", "Cleavage", GTS_BS_ResetTiny);
 
-        AnimationManager::RegisterEvent("GTS_BS_Shake", "Cleavage", GTS_BS_Shake);
         AnimationManager::RegisterEvent("GTS_BS_HandsLand", "Cleavage", GTS_BS_HandsLand);
         AnimationManager::RegisterEvent("GTS_BS_Poke", "Cleavage", GTS_BS_Poke);
         AnimationManager::RegisterEvent("GTS_BS_Pat", "Cleavage", GTS_BS_Pat);

@@ -5,7 +5,8 @@ namespace GTS {
 
     ImContextManager::ContextMode ImContextManager::GetModeForWindowType(int windowType) {
 
-        if (UI::GetSingleton()->IsMenuOpen(RE::MainMenu::MENU_NAME)) {
+        const auto ui = UI::GetSingleton();
+        if (ui && ui->IsMenuOpen(RE::MainMenu::MENU_NAME)) {
             return ContextMode::kMainMenu;
         }
 

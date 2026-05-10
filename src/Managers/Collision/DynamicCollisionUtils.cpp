@@ -387,6 +387,10 @@ namespace GTS {
 	void DrawCollisionShapes(const Actor* a_actor, bool a_isBoneDriven) {
 
 		static const float* gWorldScaleInverse = reinterpret_cast<float*>(RE::Offset::Havok::WorldScaleInverse.address());
+		const auto player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return;
+		}
 
 		if (a_actor) {
 			if (!a_actor->IsDead()) {
@@ -449,7 +453,7 @@ namespace GTS {
 									}
 								}
 
-								const float distance = PlayerCharacter::GetSingleton()->GetPosition().GetDistance(a_actor->GetPosition());
+								const float distance = player->GetPosition().GetDistance(a_actor->GetPosition());
 
 								// Configure LOD based on distance
 								int32_t longitudinal_steps, latitude_steps;

@@ -206,7 +206,7 @@ namespace GTS {
 		AnimationManager::RegisterEvent("GTS_DiveSlide_OFF", "Proning", GTS_DiveSlide_OFF);
 		AnimationManager::RegisterEvent("GTS_BodyDamage_ON", "Proning", GTS_BodyDamage_ON);
 		AnimationManager::RegisterEvent("GTS_BodyDamage_Off", "Proning", GTS_BodyDamage_Off);
-		AnimationManager::RegisterEvent("GTS_Prone_EnterSneak", "Pronong", GTS_Prone_EnterSneak);
+		AnimationManager::RegisterEvent("GTS_Prone_EnterSneak", "Proning", GTS_Prone_EnterSneak);
 	}
 
 	void  AnimationProning::RegisterTriggers() {

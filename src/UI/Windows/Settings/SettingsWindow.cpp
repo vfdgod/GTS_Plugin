@@ -132,7 +132,7 @@ namespace GTS {
 		});
 
 
-		CategoryMgr = new ImCategoryContainer();
+		CategoryMgr = std::make_unique<ImCategoryContainer>();
 
 		//Add Categories, order here defines the order they'll be shown.
 		CategoryMgr->AddCategory(std::make_unique<CategoryStats>());

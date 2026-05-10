@@ -16,8 +16,11 @@ namespace RuntimeData {
 		explicit RuntimeEntry(const RE::BSFixedString& a_plugin, RE::FormID a_formID) : Plugin(a_plugin), ID(a_formID) {};
 		
 		bool Resolve() {
-
-			Value = RE::TESDataHandler::GetSingleton()->LookupForm<RecordType>(ID, Plugin);
+			if (const auto dataHandler = RE::TESDataHandler::GetSingleton()) {
+				Value = dataHandler->LookupForm<RecordType>(ID, Plugin);
+			} else {
+				Value = nullptr;
+			}
 
 			if (Value) {
 				return true; 

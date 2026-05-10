@@ -298,7 +298,8 @@ namespace GTS {
     	else { // Else scan Entire world
 			TESObjectREFR* GiantRef = skyrim_cast<TESObjectREFR*>(giant);
 			if (GiantRef) {
-				TES::GetSingleton()->ForEachReferenceInRange(GiantRef, maxDistance, [&](RE::TESObjectREFR* a_ref){
+				if (auto tes = TES::GetSingleton()) {
+					tes->ForEachReferenceInRange(GiantRef, maxDistance, [&](RE::TESObjectREFR* a_ref){
 					const bool IsActor = a_ref->Is(FormType::ActorCharacter);
 					if (!IsActor) { // we don't want to apply it to actors
 						const NiPoint3 objectlocation = a_ref->GetPosition();
@@ -311,7 +312,8 @@ namespace GTS {
 						}
 					}
 					return RE::BSContainer::ForEachResult::kContinue;    
-				});
+					});
+				}
 			}
 		}
 		

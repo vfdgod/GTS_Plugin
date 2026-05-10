@@ -297,7 +297,15 @@ namespace GTS {
 	}
 
 	void AnimationManager::RegisterEvent( std::string_view name,  std::string_view group, std::function<void(AnimationEventData&)> func) {
-		AnimationManager::GetSingleton().eventCallbacks.try_emplace(std::string(name), func, std::string(group));
+		auto& callbacks = AnimationManager::GetSingleton().eventCallbacks[std::string(name)];
+		if (std::ranges::any_of(callbacks, [group](const AnimationEvent& event) {
+			return event.group == group;
+		})) {
+			logger::warn("Duplicate animation event registration ignored: {} ({})", name, group);
+			return;
+		}
+
+		callbacks.emplace_back(func, std::string(group));
 		//log::info("Registering Event: Name {}, Group {}", name, group);
 	}
 
@@ -405,7 +413,7 @@ namespace GTS {
 			auto& eventData = actorData.at(group);
 			std::size_t currentTrigger = eventData.currentTrigger;
 			// Run the anim
-			if (behavorToPlay.behavors.size() < currentTrigger) {
+			if (currentTrigger < behavorToPlay.behavors.size()) {
 				giant.NotifyAnimationGraph(behavorToPlay.behavors[currentTrigger]);
 			}
 		}
@@ -420,28 +428,38 @@ namespace GTS {
 	void AnimationManager::ActorAnimEvent(Actor* actor, const std::string_view& tag, const std::string_view& payload) {
 		try {
 			if (actor) {
+				const std::string eventTag(tag);
 
-				if (!this->eventCallbacks.contains(std::string(tag))){
+				auto callbacks = this->eventCallbacks.find(eventTag);
+				if (callbacks == this->eventCallbacks.end()) {
 					return;
 				}
-
-				// Try to get the registerd anim for this tag
-				auto& animToPlay = this->eventCallbacks.at(std::string(tag));
 
 				// If data doesn't exist then insert with default
 				this->data.try_emplace(actor);
 				auto& actorData = this->data.at(actor);
-				auto group = animToPlay.group;
-				// If data doesn't exist this will insert it with default
-				actorData.try_emplace(group, *actor, nullptr);
-				// Get the data or the newly inserted data
-				auto& actdata = actorData.at(group);
-				// Call the anims function
-				animToPlay.callback(actdata);
-				// If the stage is 0 after an anim has been played then
-				//   delete this data so that we can reset for the next anim
-				if (actdata.stage == 0) {
-					actorData.erase(group);
+
+				for (auto& animToPlay : callbacks->second) {
+					auto group = animToPlay.group;
+					auto actorDataIt = actorData.find(group);
+
+					if (actorDataIt == actorData.end()) {
+						if (callbacks->second.size() > 1) {
+							continue;
+						}
+
+						// Unique tags preserve the legacy behavior: create event data on demand.
+						actorDataIt = actorData.try_emplace(group, *actor, nullptr).first;
+					}
+
+					auto& actdata = actorDataIt->second;
+					animToPlay.callback(actdata);
+
+					// If the stage is 0 after an anim has been played then
+					//   delete this data so that we can reset for the next anim
+					if (actdata.stage == 0) {
+						actorData.erase(group);
+					}
 				}
 			}
 		}

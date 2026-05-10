@@ -651,7 +651,11 @@ namespace GTS {
 	}
 
 	GPtr<IMenu> DebugDraw::GetHUD() {
-		return UI::GetSingleton()->GetMenu(DebugMenu::MENU_NAME);
+		const auto ui = UI::GetSingleton();
+		if (!ui) {
+			return {};
+		}
+		return ui->GetMenu(DebugMenu::MENU_NAME);
 	}
 
 	void DebugDraw::FastClampToScreen(glm::vec2& point) {
@@ -706,7 +710,12 @@ namespace GTS {
 			return;
 		}
 
-		GPtr<IMenu> menu = UI::GetSingleton()->GetMenu(DebugMenu::MENU_NAME);
+		const auto ui = UI::GetSingleton();
+		if (!ui) {
+			return;
+		}
+
+		GPtr<IMenu> menu = ui->GetMenu(DebugMenu::MENU_NAME);
 		if (!menu || !menu->uiMovie) {
 			return;
 		}

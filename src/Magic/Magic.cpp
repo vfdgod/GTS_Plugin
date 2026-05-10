@@ -174,7 +174,7 @@ namespace GTS {
 					auto &[key, factory] = (*factorySearch);
 					auto magic_effect = factory->MakeNew(effect);
 					if (magic_effect) {
-						active_effects.try_emplace(effect, magic_effect);
+						active_effects.try_emplace(effect, std::move(magic_effect));
 					}
 				}
 			}

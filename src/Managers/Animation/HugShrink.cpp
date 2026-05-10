@@ -685,20 +685,13 @@ namespace GTS {
 	}
 
 	TESObjectREFR* HugShrink::GetHuggiesObj(Actor* giant) {
-		try {
-			std::unique_lock lock(GetSingleton()._lock);
-			auto& me = HugShrink::GetSingleton();
-
-			if (me.data.empty() || !me.data.contains(giant)) {
-				return nullptr;
-			}
-
-			return me.data.at(giant).tiny;
-		}
-		catch (const std::out_of_range&) {
-			return nullptr;
+		std::unique_lock lock(GetSingleton()._lock);
+		auto& me = HugShrink::GetSingleton();
+		if (auto data = me.data.find(giant); data != me.data.end()) {
+			return data->second.tiny;
 		}
 
+		return nullptr;
 	}
 	Actor* HugShrink::GetHuggiesActor(Actor* giant) {
 		auto obj = HugShrink::GetHuggiesObj(giant);

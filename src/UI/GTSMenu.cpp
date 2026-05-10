@@ -99,11 +99,11 @@ namespace GTS {
 		ImGraphics::Load();
 
 		logger::info("ImWindowManager Init");
-		WindowManager = new ImWindowManager();
+		WindowManager = std::make_unique<ImWindowManager>();
 		WindowManager->Init();
 
 		logger::info("ImInput Init");
-		Input = new ImInput();
+		Input = std::make_unique<ImInput>();
 
 		m_imGuiInitialized.store(true);
 

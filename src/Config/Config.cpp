@@ -83,7 +83,9 @@ namespace GTS {
             return false;
         }
 
-        const std::string FileName = "Export_" + std::string(PlayerCharacter::GetSingleton()->GetName()) +  "_" + FileUtils::GetTimestamp() + ".toml";
+        const auto player = PlayerCharacter::GetSingleton();
+        const std::string playerName = player ? player->GetName() : "Unknown";
+        const std::string FileName = "Export_" + playerName +  "_" + FileUtils::GetTimestamp() + ".toml";
         auto exportPath = _fileManager.GetExportPath(FileName);
         bool result = SaveTOMLToFile(TomlData, exportPath);
 

@@ -21,22 +21,19 @@ namespace {
 
 		if (a_res) {
 			*a_res = CheckModLoaded(a_name);
-			return;
 		}
-		*a_res = false;
 	}
 
 	bool CheckDLLLoaded(const std::wstring_view& a_name) {
-		return GetModuleHandleW(a_name.data()) != nullptr; // DLL name
+		const std::wstring moduleName(a_name);
+		return GetModuleHandleW(moduleName.c_str()) != nullptr; // DLL name
 	}
 
 	void CheckDLLLoaded(bool* a_res, const std::wstring_view& a_name) {
 		logger::info("Dependency DLL Checker: Checking for {}", GTS::Utf16ToUtf8(a_name));
 		if (a_res) {
 			*a_res = CheckDLLLoaded(a_name);
-			return;
 		}
-		*a_res = false;
 	}
 
 

@@ -598,19 +598,12 @@ namespace GTS {
 	}
 
 	TESObjectREFR* Grab::GetHeldObj(Actor* giant) {
-		try {
-			auto& me = Grab::GetSingleton();
-			if (me.data.empty() || !me.data.contains(giant)) {
-				return nullptr;
-			}
-
-			return me.data.at(giant).tiny;
-			
-		}
-		catch (const std::out_of_range&) {
-			return nullptr;
+		auto& me = Grab::GetSingleton();
+		if (auto data = me.data.find(giant); data != me.data.end()) {
+			return data->second.tiny;
 		}
 
+		return nullptr;
 	}
 	Actor* Grab::GetHeldActor(Actor* giant) {
 		auto obj = Grab::GetHeldObj(giant);

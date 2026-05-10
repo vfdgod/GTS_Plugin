@@ -227,8 +227,16 @@ namespace GTS {
 	}
 
 	void ContactListener::ensure_last() {
+		if (!world || !world->GetWorld2()) {
+			return;
+		}
+
 		// Ensure our listener is the last one (will be called first)
 		hkArray<hkpContactListener*>& listeners = world->GetWorld2()->contactListeners;
+		if (listeners.size() == 0) {
+			return;
+		}
+
 		if (listeners[listeners.size() - 1] != this) {
 			BSWriteLockGuard lock(world->worldLock);
 
@@ -279,7 +287,7 @@ namespace GTS {
 		//   - Collides with kTransparentWall
 		//   - Collides with kTrap
 		//   - Collides with kTrees
-		if (!world) {
+		if (!world || !world->GetWorld2()) {
 			return;
 		}
 
@@ -296,6 +304,9 @@ namespace GTS {
 		BSWriteLockGuard lock(world->worldLock);
 
 		RE::bhkCollisionFilter* filter = static_cast<bhkCollisionFilter*>(world->GetWorld2()->collisionFilter);
+		if (!filter) {
+			return;
+		}
 
 
 		float PlayerScale = player_data->fTargetScale;
@@ -367,7 +378,7 @@ namespace GTS {
 		//  - Collides with kSpell
 		//  - Collides with kWeapon
 
-		if (!world) {
+		if (!world || !world->GetWorld2()) {
 			return;
 		}
 		BSWriteLockGuard lock(world->worldLock);

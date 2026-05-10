@@ -446,7 +446,6 @@ namespace GTS
 		AnimationManager::RegisterEvent("GTS_TSB_LandFloor", "ThighSandwich", AnimEvents::GTS_TSB_LandFloor);
 		AnimationManager::RegisterEvent("GTS_TSB_DOT_Start", "ThighSandwich", AnimEvents::GTS_TSB_DOT_Start);
 		AnimationManager::RegisterEvent("GTS_TSB_DOT_Stop", "ThighSandwich", AnimEvents::GTS_TSB_DOT_Stop);
-		AnimationManager::RegisterEvent("GTSSandwich_DisableRune", "ThighSandwich", AnimEvents::GTSSandwich_DisableRune);
 		AnimationManager::RegisterEvent("GTS_TSB_DustButt", "ThighSandwich", AnimEvents::GTS_TSB_DustButt);
 		AnimationManager::RegisterEvent("GTS_TSB_TinyInserted", "ThighSandwich", AnimEvents::GTS_TSB_TinyInserted);
 		AnimationManager::RegisterEvent("GTS_TSB_TinyPushStart", "ThighSandwich", AnimEvents::GTS_TSB_TinyPushStart);

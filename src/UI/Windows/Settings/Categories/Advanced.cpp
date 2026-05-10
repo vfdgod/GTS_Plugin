@@ -169,7 +169,9 @@ namespace GTS {
 	        if (ImGui::CollapsingHeader("数据管理",ImUtil::HeaderFlagsDefaultOpen)) {
 
                 if (ImGuiEx::Button("清空 Persistent", "清除 persistent 中的全部数据", false, 1.0f)) {
-                	TES::GetSingleton()->PurgeBufferedCells();
+					if (auto tes = TES::GetSingleton()) {
+						tes->PurgeBufferedCells();
+					}
                     logger::critical("Purged cell buffers in preperation of persistent erase.");
                 	Persistent::EraseUnloadedData();
                 }
@@ -177,7 +179,9 @@ namespace GTS {
                 ImGui::SameLine();
 
                 if (ImGuiEx::Button("清空 Transient", "清除 transient 中的全部数据", false, 1.0f)) {
-                    TES::GetSingleton()->PurgeBufferedCells();
+					if (auto tes = TES::GetSingleton()) {
+						tes->PurgeBufferedCells();
+					}
                     logger::critical("Purged cell buffers in preperation of transient erase.");
                     Transient::EraseUnloadedData();
                 }

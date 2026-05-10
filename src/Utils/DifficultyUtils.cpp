@@ -36,13 +36,21 @@ namespace GTS {
 	}
 
 	float GetDifficultyMultiplier(Actor* attacker, Actor* receiver) { // Credits to Doodlum for this method
+		const auto player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return 1.0f;
+		}
+
+		const auto currentdiff = static_cast<std::size_t>(player->GetGameStatsData().difficulty);
+		if (currentdiff >= Difficulty_ByPC.size() || currentdiff >= Difficulty_ToPC.size()) {
+			return 1.0f;
+		}
+
 		if (attacker && (attacker->IsPlayerRef() || IsTeammate(attacker))) {
-			auto currentdiff = PlayerCharacter::GetSingleton()->GetGameStatsData().difficulty;
             //log::info("Current By PC Difficulty: {}", Difficulty_ByPC[currentdiff]);
 			return GetSettingValue(Difficulty_ByPC[currentdiff]);
 		}
-    	else if (receiver && (receiver->IsPlayerRef() || IsTeammate(attacker))) {
-			auto currentdiff = PlayerCharacter::GetSingleton()->GetGameStatsData().difficulty;
+		else if (receiver && (receiver->IsPlayerRef() || IsTeammate(receiver))) {
             //log::info("Current To PC Difficulty: {}", Difficulty_ToPC[currentdiff]);
 			return GetSettingValue(Difficulty_ToPC[currentdiff]);
 		}

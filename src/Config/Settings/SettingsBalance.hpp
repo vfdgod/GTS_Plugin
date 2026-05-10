@@ -56,9 +56,11 @@ struct SettingsBalance_t {
     // Size limits
     float fMaxPlayerSizeOverride = 0.0f;
     float fMaxFollowerSize = 0.0f;
+    float fMaxHostileSize = 0.0f;
     float fMaxImportantSize = 0.0f;
     float fMaxOtherSize = 0.0f;
     bool bFollowerDynamicActionFit = false;
+    bool bHostileDynamicActionFit = false;
     bool bImportantDynamicActionFit = false;
     bool bOtherDynamicActionFit = false;
     // Legacy config entry kept so older exported settings still deserialize cleanly.

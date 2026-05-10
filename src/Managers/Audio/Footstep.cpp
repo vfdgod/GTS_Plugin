@@ -255,7 +255,9 @@ namespace GTS {
 		foot_event.pad04 = 10000001; // Mark as custom .dll event, so our dll won't listen to it
 		foot_event.tag = tag;
 
-		BGSImpactManager::GetSingleton()->ProcessEvent(&foot_event, eventSource); // Make the game play vanilla footstep sound
+		if (auto impactManager = BGSImpactManager::GetSingleton()) {
+			impactManager->ProcessEvent(&foot_event, eventSource); // Make the game play vanilla footstep sound
+		}
 	}
 	void FootStepManager::DoStompSounds(Actor* giant, float modifier, NiAVObject* foot, FootEvent foot_kind, float scale, bool Strong) {
 		PlayFootSound::BuildAndPlayStompSounds(giant, modifier, foot, foot_kind, scale, Strong);

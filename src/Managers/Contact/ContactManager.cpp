@@ -13,6 +13,10 @@ namespace GTS {
 
 	void ContactManager::HavokUpdate() {
 		auto playerCharacter = PlayerCharacter::GetSingleton();
+		if (!playerCharacter) {
+			return;
+		}
+
 		auto cell = playerCharacter->GetParentCell();
 		if (!cell) {
 			return;

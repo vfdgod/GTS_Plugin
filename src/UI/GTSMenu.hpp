@@ -11,8 +11,8 @@ namespace GTS {
 		static constexpr const char* MENU_PATH = "GTSPlugin/OverlayMenu";
 		static constexpr const char* MENU_NAME = "GTSMenu";
 
-		static inline ImInput* Input = nullptr;
-		static inline ImWindowManager* WindowManager = nullptr;
+		static inline std::unique_ptr<ImInput> Input = nullptr;
+		static inline std::unique_ptr<ImWindowManager> WindowManager = nullptr;
 		static inline ImGuiIO* ImIO = nullptr;
 		static inline std::atomic_bool m_DrawOnPresent = false;
 		static inline std::atomic_uint32_t m_localPauseCount{ 0 };

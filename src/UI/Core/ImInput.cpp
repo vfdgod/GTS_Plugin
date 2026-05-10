@@ -87,6 +87,10 @@ namespace GTS {
 
 	void ImInput::ProcessInputEvents(RE::InputEvent* const* a_events) {
 
+		if (!a_events || !*a_events) {
+			return;
+		}
+
 		for (auto it = *a_events; it; it = it->next) {
 			if (it->GetEventType() != RE::INPUT_EVENT_TYPE::kButton && it->GetEventType() != RE::INPUT_EVENT_TYPE::kChar)  // we do not care about non button or char events
 				continue;
@@ -101,7 +105,7 @@ namespace GTS {
 
 	void ImInput::RemoveAllKeyEvents(RE::InputEvent** a_event) {
 
-		if (!a_event) {
+		if (!a_event || !*a_event) {
 			return;
 		}
 

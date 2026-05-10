@@ -617,7 +617,8 @@ namespace GTS {
 			"击杀提示"
 		};
 
-		SizebarList[0] = fmt::format("体型条 - {}", PlayerCharacter::GetSingleton()->GetName());
+		const auto player = PlayerCharacter::GetSingleton();
+		SizebarList[0] = fmt::format("体型条 - {}", player ? player->GetName() : "玩家");
 		static std::string CurrentSizebar = SizebarList[0];
 		static std::string CurrentOther = OtherWidgetList[0];
 

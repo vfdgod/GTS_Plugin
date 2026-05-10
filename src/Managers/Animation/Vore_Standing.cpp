@@ -246,7 +246,9 @@ namespace {
 
 		for (auto& tiny: VoreData.GetVories()) {
 			if (tiny->IsPlayerRef()) {
-				PlayerCamera::GetSingleton()->cameraTarget = giant->CreateRefHandle();
+				if (auto camera = PlayerCamera::GetSingleton()) {
+					camera->cameraTarget = giant->CreateRefHandle();
+				}
 			}
 		}
 	}

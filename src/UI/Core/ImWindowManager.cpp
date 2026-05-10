@@ -167,7 +167,7 @@ namespace GTS {
     void ImWindowManager::Init() {
 
         logger::info("ImContextManager Init");
-        Context = new ImContextManager();
+        Context = std::make_unique<ImContextManager>();
 
         logger::info("ImFontManager Init");
         ImFontManager::Init();

@@ -54,12 +54,14 @@ namespace GTS {
 
 		absl::flat_hash_set<uint32_t> KeysToBlock = {};
 		absl::flat_hash_set<std::uint32_t> gameInputKeys = {};
+
+		if (!a_event || !*a_event) {
+			return;
+		}
+
 		RE::InputEvent* event = *a_event;
 		RE::InputEvent* prev = nullptr;
 
-		if (!a_event) {
-			return;
-		}
 		if (auto Player = PlayerCharacter::GetSingleton()) { // Disallow to hug and etc in ragdoll state
 			if (IsinRagdollState(Player)) {
 				return;
@@ -99,12 +101,12 @@ namespace GTS {
 			}
 		}
 
+		std::vector<ManagedInputEvent*> firedTriggers;
+
 		for (auto& trigger : this->m_eventTriggers) {
 
 			if (trigger.IsDisabled()) continue;
 
-			// Store triggers in here that have been fired this frame
-			std::vector<ManagedInputEvent*> firedTriggers; 
 			auto blockInput = trigger.ShouldBlock();
 
 			//Are all keys pressed for this trigger and are we allowed to selectively block?
@@ -189,6 +191,9 @@ namespace GTS {
 				const auto button = skyrim_cast<RE::ButtonEvent*>(event);
 				if (button) {
 					uint32_t input = button->GetIDCode();
+					if (button->device.get() == INPUT_DEVICE::kMouse) {
+						input += MOUSE_OFFSET;
+					}
 					if (KeysToBlock.contains(input)) {
 						//logger::debug("Blocked Input For Key {}", input);
 						shouldDispatch = false;

@@ -113,7 +113,9 @@ namespace GTS {
 
     void CantVorePlayerMessage(Actor* giant, Actor* tiny, float sizedifference) {
 		if (sizedifference < Action_Vore) {
-			std::string message = std::format("{} is too big to be eaten: x{:.2f}/{:.2f}", PlayerCharacter::GetSingleton()->GetName(), sizedifference, Action_Vore);
+			const auto player = PlayerCharacter::GetSingleton();
+			const std::string playerName = player ? player->GetName() : "Player";
+			std::string message = std::format("{} is too big to be eaten: x{:.2f}/{:.2f}", playerName, sizedifference, Action_Vore);
 			NotifyWithSound(tiny, message);
 		}
 	}

@@ -35,7 +35,11 @@ namespace SKSE::log {
 			GTS::ReportAndExit("Could not find a valid log directory.");
 		}
 
-		*path /= PluginDeclaration::GetSingleton()->GetName();
+		if (const auto declaration = PluginDeclaration::GetSingleton()) {
+			*path /= declaration->GetName();
+		} else {
+			*path /= "GTSPlugin";
+		}
 		*path += L".log";
 
 		std::shared_ptr <spdlog::logger> logger;
@@ -95,7 +99,7 @@ namespace SKSE::log {
 			SetLevel(debugConfig.sLogLevel.c_str());
 		}
 		catch (std::exception& e) {
-			logger::critical("Could not load spdlog settings from config", e.what());
+			logger::critical("Could not load spdlog settings from config: {}", e.what());
 			GTS::ReportAndExit("Logger: Could not load logger settings.");
 		}
 	}

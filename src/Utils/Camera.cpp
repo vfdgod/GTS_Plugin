@@ -93,6 +93,10 @@ namespace GTS {
 
 	bool HasFirstPersonBody() {
 		auto camera = RE::PlayerCamera::GetSingleton();
+		if (!camera) {
+			return false;
+		}
+
 		if (camera->currentState) {
 			std::uint32_t cameraID = camera->currentState->id;
 			if (cameraID == RE::CameraState::kThirdPerson) {
@@ -101,8 +105,9 @@ namespace GTS {
 					return true;
 				}
 			} else if (cameraID == RE::CameraState::kFirstPerson) {
-				auto actor3D = RE::PlayerCharacter::GetSingleton()->Get3D(false);
-				if (actor3D && !actor3D->GetFlags().any(RE::NiAVObject::Flag::kHidden) & 1) {
+				const auto player = RE::PlayerCharacter::GetSingleton();
+				auto actor3D = player ? player->Get3D(false) : nullptr;
+				if (actor3D && !actor3D->GetFlags().any(RE::NiAVObject::Flag::kHidden)) {
 					return true;
 				}
 			}

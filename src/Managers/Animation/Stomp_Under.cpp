@@ -147,8 +147,8 @@ namespace GTS {
 	}
 
 	void AnimationUnderStomp::RegisterTriggers() {
-		AnimationManager::RegisterTrigger("UnderStompRight", "Stomp", "GTSBeh_UnderStomp_StartR");
-		AnimationManager::RegisterTrigger("UnderStompLeft", "Stomp", "GTSBeh_UnderStomp_StartL");
+		AnimationManager::RegisterTrigger("UnderStompRight", "UnderStomp", "GTSBeh_UnderStomp_StartR");
+		AnimationManager::RegisterTrigger("UnderStompLeft", "UnderStomp", "GTSBeh_UnderStomp_StartL");
 
         AnimationManager::RegisterTrigger("UnderGrindR", "Stomp", "GTSBEH_StartUnderGrindR");
         AnimationManager::RegisterTrigger("UnderGrindL", "Stomp", "GTSBEH_StartUnderGrindL");

@@ -286,7 +286,7 @@ namespace GTS
 	}
 
 	void AnimationStrongStomp::RegisterTriggers() {
-		AnimationManager::RegisterTrigger("StrongStompRight", "Stomp", "GTSBeh_StrongStomp_StartRight");
-		AnimationManager::RegisterTrigger("StrongStompLeft", "Stomp", "GTSBeh_StrongStomp_StartLeft");
+		AnimationManager::RegisterTrigger("StrongStompRight", "StrongStomp", "GTSBeh_StrongStomp_StartRight");
+		AnimationManager::RegisterTrigger("StrongStompLeft", "StrongStomp", "GTSBeh_StrongStomp_StartLeft");
 	}
 }

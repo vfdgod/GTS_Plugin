@@ -44,6 +44,8 @@ namespace GTS {
 		float CurrentBellyScale = 0.0f;
 		float BreastsTransitionTime = 0.0f;
 		float BellyTransitionTime = 0.0f;
+		float SizeOverrideRestoreTargetScale = 0.0f;
+		float SizeOverrideLastRawLimit = 0.0f;
 
 
 		int Stacks_Perk_CataclysmicStomp = 0;
@@ -79,6 +81,7 @@ namespace GTS {
 		bool TemporaryDamageImmunity = false;
 		bool ReattachingTiny = false;
 		bool KissVoring = false;
+		bool SizeOverrideRestoreActive = false;
 
 		float EscapingActionProgress = 0.0f;
 		bool EscapingInteraction = false;

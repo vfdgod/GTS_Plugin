@@ -7,7 +7,7 @@ namespace ImGuiEx {
 	CollapsingTabHeader::TabData::TabData(const std::string& a_lbl): label(a_lbl) {}
 
 	void CollapsingTabHeader::RenameTab(size_t index, std::string_view newLabel) {
-		if (index < tabs.size() - 1) {
+		if (index < tabs.size()) {
 			tabs[index].label = newLabel;
 		}
 	}
