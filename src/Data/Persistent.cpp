@@ -28,14 +28,26 @@ namespace GTS {
 	}
 
 	void Persistent::ResetActor(Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
 		// Fired after a TESReset event
 		// This event should be when the game attempts to reset their
 		// actor values etc when the cell resets
 		auto key = actor->formID;
+		bool shouldResetScale = false;
 
-		auto it = this->ActorMap.value.find(key);
-		if (it != this->ActorMap.value.end()) {
-			it->second = {};
+		{
+			std::unique_lock lock(_Lock);
+			auto it = this->ActorMap.value.find(key);
+			if (it != this->ActorMap.value.end()) {
+				it->second = {};
+				shouldResetScale = true;
+			}
+		}
+
+		if (shouldResetScale) {
 			ResetToInitScale(actor);
 		}
 	}

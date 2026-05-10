@@ -161,6 +161,12 @@ namespace GTS {
         logger::info("Cooldowns cleared");
     }
 
+    void CooldownManager::ResetActor(Actor* actor) {
+        if (actor) {
+            this->CooldownData.erase(actor);
+        }
+    }
+
     void ApplyActionCooldown(Actor* giant, CooldownSource source) {
         if (!Config::Advanced.bCooldowns && IsCooldownDisabledByCheat(source)) {
             return;

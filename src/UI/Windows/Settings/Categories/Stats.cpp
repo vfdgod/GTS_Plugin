@@ -47,7 +47,7 @@ namespace GTS {
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyle().Colors[ImGuiCol_FrameBg]);
 
         // Draw teammate cards with paging
-        auto teammates = GTSMenu::WindowManager->GetCachedTeamMateList();
+        const auto& teammates = GTSMenu::WindowManager->GetCachedTeamMateList();
         if (!teammates.empty()) {
             static int currentPage = 0;
             constexpr int cardsPerPage = 2;

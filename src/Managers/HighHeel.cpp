@@ -54,6 +54,16 @@ namespace GTS {
 		return "::HighHeelManager";
 	}
 
+	void HighHeelManager::Reset() {
+		this->data.clear();
+	}
+
+	void HighHeelManager::ResetActor(Actor* actor) {
+		if (actor) {
+			this->data.erase(actor);
+		}
+	}
+
 	void HighHeelManager::HavokUpdate() {
 		GTS_PROFILE_SCOPE("HHMgr: HavokUpdate");
 		auto actors = FindSomeActors("HHHavokUpdate", 1);

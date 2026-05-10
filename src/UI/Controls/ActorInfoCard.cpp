@@ -96,7 +96,7 @@ namespace ImGuiEx {
 		I.bHasPerk_GTSCollosalGrowth = Runtime::HasPerk(a_actor, Runtime::PERK.GTSPerkColossalGrowth);
 		I.bHasPerk_GTSOverindulgence = Runtime::HasPerk(a_actor, Runtime::PERK.GTSPerkOverindulgence);
 
-		return std::move(I);
+		return I;
 
 	}
 

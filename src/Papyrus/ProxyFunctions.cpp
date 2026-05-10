@@ -3,6 +3,11 @@
 namespace GTS {
 	
 	void CallDevourment(Actor* a_Pred, Actor* a_Prey) {
+		if (!a_Pred || !a_Prey) {
+			logger::warn("CallDevourment skipped because pred or prey is null");
+			return;
+		}
+
 		auto ProxyQuest = Runtime::GetQuest(Runtime::QUST.GTSQuestProxy);
 		const auto& AllowEndo = Config::Gameplay.ActionSettings.bDVDoEndoOnTeam;
 		bool DoEndo = false;

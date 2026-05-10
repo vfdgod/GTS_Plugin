@@ -10,6 +10,10 @@
 
 namespace GTS {
 
+	KillFeedWindow::~KillFeedWindow() {
+		EventDispatcher::RemoveListener(this);
+	}
+
 	void KillFeedWindow::Init() {
 
 		m_windowType = WindowType::kWidget;

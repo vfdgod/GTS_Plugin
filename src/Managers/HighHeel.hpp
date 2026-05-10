@@ -7,14 +7,16 @@ namespace GTS {
 	struct HHData {
 		Spring multiplier = Spring(1.0f, 0.5f); // Used to smoothly disable/enable model .z offset of heels
 		bool wasWearingHh = false;
-		NiPoint3 lastBaseHHOffset;
-		float InitialHeelHeight; // initial heel height, used in calculating damage bonus
+		NiPoint3 lastBaseHHOffset{};
+		float InitialHeelHeight = 0.0f; // initial heel height, used in calculating damage bonus
 	};
 
 	class HighHeelManager : public EventListener, public CInitSingleton <HighHeelManager> {
 		public:
 		virtual std::string DebugName() override;
 		virtual void HavokUpdate() override;
+		virtual void Reset() override;
+		virtual void ResetActor(Actor* actor) override;
 		virtual void ActorEquip(Actor* actor) override;
 		virtual void ActorLoaded(Actor* actor) override;
 		virtual void OnAddPerk(const AddPerkEvent& evt) override;

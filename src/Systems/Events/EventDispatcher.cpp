@@ -18,11 +18,20 @@ namespace GTS {
 	}
 
 	void EventDispatcher::AddListenerTo(tbb::concurrent_vector<ListenerEntry>& listeners, EventListener* a_listener) {
+		ListenerEntry* emptySlot = nullptr;
 		for (auto& entry : listeners) {
-			if (entry.ptr.load(std::memory_order_relaxed) == nullptr) {
-				entry.ptr.store(a_listener, std::memory_order_release);
+			EventListener* current = entry.ptr.load(std::memory_order_relaxed);
+			if (current == a_listener) {
 				return;
 			}
+			if (current == nullptr && !emptySlot) {
+				emptySlot = &entry;
+			}
+		}
+
+		if (emptySlot) {
+			emptySlot->ptr.store(a_listener, std::memory_order_release);
+			return;
 		}
 
 		listeners.push_back(ListenerEntry(a_listener));
@@ -163,6 +172,9 @@ namespace GTS {
 
 
 	void EventDispatcher::DoResetActor(RE::Actor* actor) {
+		if (!actor) {
+			return;
+		}
 		ForEachListener([actor](EventListener* listener) {
 			GTS_PROFILE_SCOPE(listener->DebugName());
 			listener->ResetActor(actor);

@@ -28,6 +28,7 @@ Function Proxy_DevourmentForceSwallow(Actor akPred, actor akPrey, bool abEndo)
 		
 	int NoEscape = ModEvent.create("Devourment_DisableEscape")    
 	ModEvent.pushForm(NoEscape, akPrey as Form)    
+	ModEvent.Send(NoEscape)
 
 endfunction
 

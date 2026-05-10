@@ -5,6 +5,7 @@ using namespace GTS;
 namespace {
 
 	std::mutex scalesMutex;
+	constexpr float MIN_GAME_SCALE = 1e-4f;
 
 	struct InitialScales {
         float model = 1.0f;
@@ -16,7 +17,8 @@ namespace {
         }
 
         InitialScales(Actor* actor) {
-            model = get_model_scale(actor) / game_getactorscale(actor);
+			const float gameScale = std::max(game_getactorscale(actor), MIN_GAME_SCALE);
+            model = get_model_scale(actor) / gameScale;
             npc = get_npcnode_scale(actor);
         }
 
@@ -308,6 +310,9 @@ namespace GTS {
 	}
 
 	float game_getactorscale(Actor* actor) {
+		if (!actor) {
+			return 1.0f;
+		}
 		// This function reports same values as GetScale() in the console, so it is a value from SetScale() command
 		// Used inside: GTSManager.cpp - apply_height
 		//              Scale.cpp   -  get_natural_scale

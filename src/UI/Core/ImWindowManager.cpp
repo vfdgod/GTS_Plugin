@@ -209,7 +209,7 @@ namespace GTS {
         return Context->GetCurrentConfig().drawOnPresent;
     }
 
-    std::vector<Actor*> ImWindowManager::GetCachedTeamMateList(){
+    const std::vector<Actor*>& ImWindowManager::GetCachedTeamMateList() const {
     	return m_cachedTeamMateList;
     }
 

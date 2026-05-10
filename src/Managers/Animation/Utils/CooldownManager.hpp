@@ -82,6 +82,7 @@ namespace GTS {
 		public:
 		virtual std::string DebugName() override;
 		virtual void Reset() override;
+		virtual void ResetActor(Actor* actor) override;
 		CooldownData& GetCooldownData(Actor* actor);
 
         private: 

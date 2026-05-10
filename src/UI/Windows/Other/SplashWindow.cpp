@@ -1,6 +1,7 @@
 #include "UI/Windows/Other/SplashWindow.hpp"
 #include "UI/Core/ImFontManager.hpp"
 #include "Config/Util/KeybindHandler.hpp"
+#include "Config/Keybinds.hpp"
 
 #include "Version.hpp"
 
@@ -9,13 +10,32 @@
 namespace {
 
 	//Helper function to get the current keybind for opening the settings menu
-	std::string GetSettingsKeybind() {
-		for (const auto& evt : GTS::KeybindHandler::GetAllInputEvents()) {
+	std::string FormatKeyList(const std::vector<std::string>& keys) {
+		if (keys.empty()) {
+			return "未绑定";
+		}
+		return std::accumulate(std::next(keys.begin()), keys.end(), keys.front(), [](const std::string& a, const std::string& b) {
+			return a + " + " + b;
+		});
+	}
+
+	template <typename Events>
+	std::string FindSettingsKeybind(const Events& events) {
+		for (const auto& evt : events) {
 			if (evt.Event == "OpenModSettings") {
-				return std::accumulate(std::next(evt.Keys.begin()), evt.Keys.end(), evt.Keys.front(),[](const std::string& a, const std::string& b) {
-					return a + " + " + b;
-				});
+				return FormatKeyList(evt.Keys);
 			}
+		}
+		return {};
+	}
+
+	std::string GetSettingsKeybind() {
+		if (auto keybind = FindSettingsKeybind(GTS::Keybinds::InputEvents); !keybind.empty()) {
+			return keybind;
+		}
+
+		if (auto keybind = FindSettingsKeybind(GTS::KeybindHandler::GetAllInputEvents()); !keybind.empty()) {
+			return keybind;
 		}
 		return "未绑定";
 	}

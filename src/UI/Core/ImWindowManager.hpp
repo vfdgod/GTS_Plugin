@@ -50,7 +50,7 @@ namespace GTS {
         int8_t GetDesiredPriority() const;
         bool GetDesiredCursorState() const;
         bool GetWantDrawOnPresent() const;
-        [[nodiscard]] std::vector<RE::Actor*> GetCachedTeamMateList();
+        [[nodiscard]] const std::vector<RE::Actor*>& GetCachedTeamMateList() const;
 
     };
 
