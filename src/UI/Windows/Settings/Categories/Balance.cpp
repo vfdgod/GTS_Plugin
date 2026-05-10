@@ -29,7 +29,7 @@ namespace GTS {
 		void SameLineForMaxSizeButtonIfFits(const char* nextLabel) {
 			const ImGuiStyle& style = ImGui::GetStyle();
 			const float nextButtonRight = ImGui::GetItemRectMax().x + style.ItemSpacing.x + GetMaxSizeButtonWidth(nextLabel);
-			const float contentRight = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+			const float contentRight = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
 
 			if (nextButtonRight <= contentRight) {
 				ImGui::SameLine();
