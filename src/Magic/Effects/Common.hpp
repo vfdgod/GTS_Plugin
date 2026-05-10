@@ -13,6 +13,7 @@ namespace GTS {
 
 	bool CanBendLifeless(Actor* giant);
 	bool IsEssential_WithIcons(Actor* giant, Actor* tiny);
+	bool ClampToNaturalScale(Actor* actor);
 	bool Revert(Actor* actor, float scale_factor, float bonus);
 	bool BlockShrinkToNothing(Actor* giant, Actor* tiny, float time_mult);
 	bool ShrinkToNothing(Actor* caster, Actor* target, bool check_ticks, float time_mult, float mass_mult = 1.0f, bool Calamity_PlayLaugh = false, bool ShrinkOutburst_Absorb = false);

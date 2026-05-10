@@ -128,6 +128,13 @@ struct AIGrabAction_t {
 };
 TOML_SERIALIZABLE(AIGrabAction_t);
 
+struct AIWorshipAction_t {
+    float fPrayProbability  = 100.0f;
+    float fProneProbability = 0.0f;
+    float fCrawlProbability = 0.0f;
+};
+TOML_SERIALIZABLE(AIWorshipAction_t);
+
 //-------------------------------------------------------------------------------------------------------------------
 //  BASE STRUCT
 //  (Directly Serialized)
@@ -151,6 +158,7 @@ struct SettingsAI_t {
     AIHugAction_t Hugs       = {};
     AIButtAction_t ButtCrush = {};
     AIGrabAction_t Grab      = {};
+    AIWorshipAction_t WorshipActions = {};
 
     // Additional AI toggles
     bool bPanic                = true;

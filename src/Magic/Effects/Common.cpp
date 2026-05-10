@@ -9,6 +9,35 @@
 #include "Utils/DeathReport.hpp"
 
 namespace GTS {
+	namespace {
+		constexpr float RESTORE_SCALE_EPS = 1e-4f;
+
+		float GetRestoreNaturalScale(Actor* actor) {
+			float natural_scale = get_natural_scale(actor, true);
+
+			if (Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth)) {
+
+				if (actor->IsPlayerRef()) {
+					const auto Mode = StringToEnum<LActiveGamemode_t>(Config::Gameplay.GamemodePlayer.sGameMode);
+					if (Mode == LActiveGamemode_t::kSizeLocked ||
+						Mode == LActiveGamemode_t::kCurseOfDiminishing ||
+						Mode == LActiveGamemode_t::kCurseOfTheGiantess) {
+						natural_scale = Config::Gameplay.GamemodePlayer.fCurseTargetScale;
+					}
+				}
+				else if (IsTeammate(actor)) {
+					const auto Mode = StringToEnum<LActiveGamemode_t>(Config::Gameplay.GamemodeFollower.sGameMode);
+					if (Mode == LActiveGamemode_t::kSizeLocked ||
+						Mode == LActiveGamemode_t::kCurseOfDiminishing ||
+						Mode == LActiveGamemode_t::kCurseOfTheGiantess) {
+						natural_scale = Config::Gameplay.GamemodeFollower.fCurseTargetScale;
+					}
+				}
+			}
+
+			return natural_scale;
+		}
+	}
 
 	std::string GetAllyEssentialText(const bool Teammate) {
 		return Teammate ? "追随者" : "重要角色";
@@ -291,34 +320,41 @@ namespace GTS {
 		update_target_scale(actor, -CalcPower(actor, scale_factor, bonus, true), SizeEffectType::kShrink);
 	}
 
+	bool ClampToNaturalScale(Actor* actor) {
+		if (!actor) {
+			return false;
+		}
+
+		const float target_scale = get_target_scale(actor);
+		const float natural_scale = GetRestoreNaturalScale(actor);
+
+		if (target_scale <= natural_scale + RESTORE_SCALE_EPS) {
+			set_target_scale(actor, natural_scale);
+			return true;
+		}
+
+		return false;
+	}
+
 	bool Revert(Actor* actor, float scale_factor, float bonus) {
+		if (!actor) {
+			return false;
+		}
+
 		// amount = scale * a + b
 		float amount = CalcPower(actor, scale_factor, bonus, false);
 		float target_scale = get_target_scale(actor);
-		float natural_scale = get_natural_scale(actor, true); // get_neutral_scale(actor) 
+		float natural_scale = GetRestoreNaturalScale(actor);
 
-		if (Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth)) {
-
-			if (actor->IsPlayerRef()) {
-				const auto Mode = StringToEnum<LActiveGamemode_t>(Config::Gameplay.GamemodePlayer.sGameMode);
-				if (Mode == LActiveGamemode_t::kSizeLocked ||
-					Mode == LActiveGamemode_t::kCurseOfDiminishing ||
-					Mode == LActiveGamemode_t::kCurseOfTheGiantess) {
-					natural_scale = Config::Gameplay.GamemodePlayer.fCurseTargetScale;
-				}
-			}
-			else if (IsTeammate(actor)) {
-				const auto Mode = StringToEnum<LActiveGamemode_t>(Config::Gameplay.GamemodeFollower.sGameMode);
-				if (Mode == LActiveGamemode_t::kSizeLocked ||
-					Mode == LActiveGamemode_t::kCurseOfDiminishing ||
-					Mode == LActiveGamemode_t::kCurseOfTheGiantess) {
-					natural_scale = Config::Gameplay.GamemodeFollower.fCurseTargetScale;
-				}
-			}
+		// Repeated restore casts used to shrink actors one more step after they had
+		// already reached natural scale, which could destabilize bone-dependent mods.
+		if (target_scale <= natural_scale + RESTORE_SCALE_EPS) {
+			set_target_scale(actor, natural_scale); // Without GetScale multiplier
+			return false;
 		}
 
-		if (target_scale < natural_scale) {
-			set_target_scale(actor, natural_scale); // Without GetScale multiplier
+		if (target_scale - amount <= natural_scale + RESTORE_SCALE_EPS) {
+			set_target_scale(actor, natural_scale);
 			return false;
 		}
 

@@ -18,11 +18,20 @@ namespace {
 		std::string name = std::format("RevertSize_{}", caster->formID);
 		ActorHandle casterhandle = caster->CreateRefHandle();
 
+		// Recasts should refresh the restore task instead of being ignored by try_emplace.
+		TaskManager::Cancel(name);
 		TaskManager::RunFor(name, 180.0f, [=](auto& progressData) {
 			if (!casterhandle) {
 				return false;
 			}
 			auto casterref = casterhandle.get().get();
+			if (!casterref || casterref->IsDead() || !casterref->Is3DLoaded() || !casterref->GetCurrent3D()) {
+				return false;
+			}
+
+			if (ClampToNaturalScale(casterref)) {
+				return false;
+			}
 
 			bool BlockSound = IsActionOnCooldown(casterref, CooldownSource::Misc_RevertSound);
 			if (!BlockSound) {
@@ -52,6 +61,14 @@ namespace GTS {
 		if (!caster) {
 			return;
 		}
+		if (caster->IsDead() || !caster->Is3DLoaded() || !caster->GetCurrent3D()) {
+			return;
+		}
+
+		if (ClampToNaturalScale(caster)) {
+			return;
+		}
+
 		float Volume = std::clamp(get_visual_scale(caster) * 0.1f, 0.10f, 1.0f);
 		Runtime::PlaySound(Runtime::SNDR.GTSSoundShrink, caster, Volume, 1.0f);
 

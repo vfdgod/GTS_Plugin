@@ -78,6 +78,8 @@ namespace GTS {
 		bool EmotionPhonemeBusy = false;
 		bool ImmuneToBreastOneShot = true;
 		bool IsSlowGrowing = false;
+		bool IsWorshipping = false;
+		bool WorshipSuppressProneDamage = false;
 		bool TemporaryDamageImmunity = false;
 		bool ReattachingTiny = false;
 		bool KissVoring = false;
