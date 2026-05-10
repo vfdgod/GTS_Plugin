@@ -77,7 +77,7 @@ namespace {
 			Laugh_Chance(giantref, 2.2f, "FootGrind");
 
 			Rumbling::Once(r_name, giantref, Rumble_FootGrind_DOT, 0.025f, RNode, 0.0f);
-			float speed = AnimationManager::GetBonusAnimationSpeed(giant) * TimeScale();
+			float speed = AnimationManager::GetBonusAnimationSpeed(giantref) * TimeScale();
 			DoDamageEffect(giantref, Damage_Foot_Grind_DOT * speed, Radius_Foot_Grind_DOT, 10000, 0.025f, Event, 2.5f, DamageSource::FootGrindedRight);
 			return true;
 		});

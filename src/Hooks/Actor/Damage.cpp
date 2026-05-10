@@ -95,7 +95,11 @@ namespace GTS {
 		});
 	}
 
-	void DamageImmunityTask(Actor* actor, TransientActorData* data) {
+	void DamageImmunityTask(Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
 		std::string name = std::format("CheatDeath_Task_{}", actor->formID);
 		ActorHandle gianthandle = actor->CreateRefHandle();
 
@@ -107,11 +111,15 @@ namespace GTS {
 			}
 
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
+
 			double Finish = Time::WorldTimeElapsed();
 
 			double timepassed = Finish - Start;
 			if (timepassed > 2.5 || giantref->IsDead()) {
-				if (data) {
+				if (auto data = Transient::GetActorData(giantref)) {
 					data->TemporaryDamageImmunity = false; // Vulnerable again
 				}
 				return false;
@@ -121,6 +129,10 @@ namespace GTS {
 	}
 
 	void StartTemporaryDamageImmunity(Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
 		if (actor->IsPlayerRef()) {
 			auto camera = PlayerCamera::GetSingleton();
 			if (!camera) {
@@ -140,7 +152,7 @@ namespace GTS {
 				} else if (FP) {
 					CameraFOVTask_FP(actor, camera, tranData, AllowEdits);
 				}
-				DamageImmunityTask(actor, tranData);
+				DamageImmunityTask(actor);
 			}
 		}
 	}

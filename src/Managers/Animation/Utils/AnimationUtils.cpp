@@ -234,12 +234,12 @@ namespace GTS {
 			auto giantref = giantHandle.get().get();
 			auto tinyref = tinyHandle.get().get();
 
-			auto FingerA = find_node(giant, "NPC R Finger02 [RF02]");
+			auto FingerA = find_node(giantref, "NPC R Finger02 [RF02]");
 			if (!FingerA) {
 				Notify("R Finger 02 node not found");
 				return false;
 			}
-			auto FingerB = find_node(giant, "NPC R Finger30 [RF30]");
+			auto FingerB = find_node(giantref, "NPC R Finger30 [RF30]");
 			if (!FingerB) {
 				Notify("R Finger 30 node not found");
 				return false;
@@ -550,13 +550,13 @@ namespace GTS {
 					return false;
 				}
 				auto GiantRef = GiantHandle.get().get();
-				float stamina = GetAV(giant, ActorValue::kStamina);
+				float stamina = GetAV(GiantRef, ActorValue::kStamina);
 				if (stamina <= 1.0f) {
 					return false; // Abort if we don't have stamina so it won't drain it forever. Just to make sure.
 				}
-				float multiplier = AnimationManager::GetAnimSpeed(giant);
+				float multiplier = AnimationManager::GetAnimSpeed(GiantRef);
 				float WasteStamina = 0.50f * power * multiplier;
-				DamageAV(giant, ActorValue::kStamina, WasteStamina * WasteMult * TimeScale());
+				DamageAV(GiantRef, ActorValue::kStamina, WasteStamina * WasteMult * TimeScale());
 				return true;
 			});
 		} else {
@@ -697,7 +697,7 @@ namespace GTS {
 				return true;
 			}
 
-			auto coordinates = AttachToUnderFoot(giant, tiny, Right);
+			auto coordinates = AttachToUnderFoot(giantref, tinyref, Right);
 				
 			if (coordinates == NiPoint3(0,0,0)) {
 				return true;

@@ -134,7 +134,7 @@ namespace {
 				return false; //Disable it once we leave Thigh Crush state
 			}
 			float animspeed = AnimationManager::GetBonusAnimationSpeed(giantref);
-			ApplyThighDamage(giant, right, CooldownCheck, radius, damage * animspeed, bbmult, crush_threshold, random, DamageSource::ThighCrushed);
+			ApplyThighDamage(giantref, right, CooldownCheck, radius, damage * animspeed, bbmult, crush_threshold, random, DamageSource::ThighCrushed);
 
 			return true; // Cancel it
 		});

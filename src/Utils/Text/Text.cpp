@@ -30,7 +30,7 @@ namespace GTS {
 	}
 
 	bool starts_with(std::string_view arg, std::string_view prefix) {
-		return arg.compare(0, prefix.size(), prefix);
+		return arg.starts_with(prefix);
 	}
 
 	bool matches(std::string_view str, std::string_view reg){
@@ -71,18 +71,17 @@ namespace GTS {
 
 	// Trims whitespace from the beginning and end of the string
 	std::string trim(const std::string& s) {
-		auto start = s.begin();
-		while (start != s.end() && std::isspace(static_cast<unsigned char>(*start))) {
-			++start;
+		const auto isSpace = [](unsigned char ch) {
+			return std::isspace(ch) != 0;
+		};
+
+		const auto start = std::ranges::find_if_not(s, isSpace);
+		if (start == s.end()) {
+			return {};
 		}
 
-		auto end = s.end();
-		do {
-			--end;
-		}
-		while (end != start && std::isspace(static_cast<unsigned char>(*end)));
-
-		return std::string(start, end + 1);
+		const auto end = std::find_if_not(s.rbegin(), s.rend(), isSpace).base();
+		return std::string(start, end);
 	}
 
 	// In-place trimming functions for a std::string
@@ -118,7 +117,7 @@ namespace GTS {
             { "CombatGrowth", "战斗成长" },
             { "SlowCombatGrowth", "缓慢战斗成长" },
             { "CurseOfGrowth", "成长诅咒" },
-            { "CurseOfTheGiantess", "女巨人诅咒" },
+            { "CurseOfTheGiantess", "巨人诅咒" },
             { "CurseOfDiminishing", "衰减诅咒" },
             { "SizeLocked", "体型锁定" },
             { "LevelLocked", "等级锁定" },

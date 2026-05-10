@@ -103,12 +103,17 @@ namespace {
 	}
 
 	void Task_AdjustHalfLifeTask(Actor* a_target, float a_halfLife, double a_revertAfterTime) {
-		auto actor_data = Persistent::GetActorData(a_target);
-		float old_halflife = 0.0f;
-		if (actor_data) {
-			old_halflife = actor_data->fHalfLife; // record old half life
-			actor_data->fHalfLife = a_halfLife;
+		if (!a_target) {
+			return;
 		}
+
+		auto actor_data = Persistent::GetActorData(a_target);
+		if (!actor_data) {
+			return;
+		}
+
+		const float old_halflife = actor_data->fHalfLife; // record old half life
+		actor_data->fHalfLife = a_halfLife;
 
 		const double Start = Time::WorldTimeElapsed();
 		ActorHandle tinyhandle = a_target->CreateRefHandle();
@@ -119,8 +124,9 @@ namespace {
 			}
 			const double timepassed = Time::WorldTimeElapsed() - Start;
 			if (timepassed > a_revertAfterTime) {
-				if (actor_data) {
-					actor_data->fHalfLife = old_halflife;
+				auto tiny = tinyhandle.get().get();
+				if (auto data = Persistent::GetActorData(tiny)) {
+					data->fHalfLife = old_halflife;
 				}
 				return false;
 			}
@@ -824,6 +830,10 @@ namespace GTS {
 	}
 
 	void LaunchImmunityTask(Actor* giant, bool Balance) {
+		if (!giant) {
+			return;
+		}
+
 		auto transient = Transient::GetActorData(giant);
 		if (transient) {
 			if (!transient->Protection) Notify("Protection Started");
@@ -845,19 +855,23 @@ namespace GTS {
 				return false;
 			}
 
+			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
+
 			double Finish = Time::WorldTimeElapsed();
 			double timepassed = Finish - Start;
 			if (timepassed < 180.0f) {
-				auto giantref = gianthandle.get().get();
 				if (Utils_ManageTinyProtection(giantref, false, Balance)) {
 					return true; // Disallow to check further
 				}
 			}
-			if (transient) {
-				if (transient->Protection) Notify("Protection Ended");
-				transient->Protection = false; // reset protection to default value
+			if (auto data = Transient::GetActorData(giantref)) {
+				if (data->Protection) Notify("Protection Ended");
+				data->Protection = false; // reset protection to default value
 			}
-			return Utils_ManageTinyProtection(giant, true, Balance); // stop task, immunity has ended
+			return Utils_ManageTinyProtection(giantref, true, Balance); // stop task, immunity has ended
 		});
 	}
 

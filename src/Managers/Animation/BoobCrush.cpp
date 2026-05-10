@@ -166,7 +166,7 @@ namespace {
 			auto giantref = gianthandle.get().get();
 
 			float stamina = GetAV(giantref, ActorValue::kStamina);
-			DamageAV(giantref, ActorValue::kStamina, 0.12f * GetButtCrushCost(giant, false));
+			DamageAV(giantref, ActorValue::kStamina, 0.12f * GetButtCrushCost(giantref, false));
 
 			if (!AnimationVars::ButtCrush::IsButtCrushing(giantref)) {
 				return false;

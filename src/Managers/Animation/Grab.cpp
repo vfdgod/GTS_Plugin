@@ -134,8 +134,8 @@ namespace {
 			float RPosY = 0.0f;
 			float RPosZ = 0.0f;
 
-			auto BreastL = find_node(giant, "L Breast01");
-			auto BreastR = find_node(giant, "R Breast01");
+			auto BreastL = find_node(giantref, "L Breast01");
+			auto BreastR = find_node(giantref, "R Breast01");
 			if (!BreastL) {
 				return false;
 			}
@@ -438,7 +438,7 @@ namespace GTS {
 
             if (tiny && tiny->Is3DLoaded() && (GetAV(tiny, ActorValue::kHealth) <= 1.0f || tiny->IsDead())) {
 
-                ModSizeExperience_Crush(giant, tiny, false);
+                ModSizeExperience_Crush(giantess, tiny, false);
 				CrushManager::Crush(giantess, tiny);
 				DelayedBreastDeattach(tiny);
                 SetBeingHeld(tiny, false);

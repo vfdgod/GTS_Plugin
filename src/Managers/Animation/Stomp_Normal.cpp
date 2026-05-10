@@ -180,7 +180,7 @@ namespace {
 		
 			if (Finish - Start > 0.02) { 
 
-				Rumbling::Once(rumble, giant, shake_power, 0.0f, Node, 1.10f);
+				Rumbling::Once(rumble, giantref, shake_power, 0.0f, Node, 1.10f);
 				DoDamageEffect(giantref, Damage_Stomp * perk, Radius_Stomp, 10, 0.25f, Event, 1.0f, Source);
 				DoDustExplosion(giantref, dust + (animSpeed * 0.05f), Event, Node);
 				StompManager::PlayNewOrOldStomps(giantref, 1.0f, Event, Node, false);

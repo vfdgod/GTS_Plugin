@@ -22,11 +22,11 @@ namespace {
 			auto Arm = find_node(giant, "NPC R Hand [RHnd]");
 			if (Uarm) {
 				DoDamageAtPoint_Cooldown(giant, Radius_Sneak_HandSwipe, power, Uarm, NiPoint3(0,0,0), 10, 0.30f, crush, pushpower, DamageSource::HandSwipeRight);
-				PushObjects(Objects, actor, Uarm, pushpower, Radius_Sneak_HandSwipe, false);
+				PushObjects(Objects, giant, Uarm, pushpower, Radius_Sneak_HandSwipe, false);
 			}
 			if (Arm) {
 				DoDamageAtPoint_Cooldown(giant, Radius_Sneak_HandSwipe, power, Arm, NiPoint3(0,0,0), 10, 0.30f, crush, pushpower, DamageSource::HandSwipeRight);
-				PushObjects(Objects, actor, Arm, pushpower, Radius_Sneak_HandSwipe, false);
+				PushObjects(Objects, giant, Arm, pushpower, Radius_Sneak_HandSwipe, false);
 			}
 
 			Utils_UpdateHighHeelBlend(giant, false);
@@ -50,11 +50,11 @@ namespace {
 			auto Arm = find_node(giant, "NPC L Hand [LHnd]");
 			if (Uarm) {
 				DoDamageAtPoint_Cooldown(giant, Radius_Sneak_HandSwipe, power, Uarm, NiPoint3(0,0,0), 10, 0.30f, crush, pushpower, DamageSource::HandSwipeLeft);
-				PushObjects(Objects, actor, Uarm, pushpower, Radius_Sneak_HandSwipe, false);
+				PushObjects(Objects, giant, Uarm, pushpower, Radius_Sneak_HandSwipe, false);
 			}
 			if (Arm) {
 				DoDamageAtPoint_Cooldown(giant, Radius_Sneak_HandSwipe, power, Arm, NiPoint3(0,0,0), 10, 0.30f, crush, pushpower, DamageSource::HandSwipeLeft);
-				PushObjects(Objects, actor, Arm, pushpower, Radius_Sneak_HandSwipe, false);
+				PushObjects(Objects, giant, Arm, pushpower, Radius_Sneak_HandSwipe, false);
 			}
 
 			Utils_UpdateHighHeelBlend(giant, false);

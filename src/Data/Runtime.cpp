@@ -53,6 +53,11 @@ namespace {
 
 	void PlaySoundImpl(RE::BSISoundDescriptor* a_soundDescriptor, RE::TESObjectREFR* a_ref, const float& a_volume, const float& a_frequency) {
 
+		if (!a_ref) {
+			logger::warn("Tried to play a sound on a null reference");
+			return;
+		}
+
 		if (!a_soundDescriptor) {
 			logger::error("Ivallid Sound Descriptor");
 			return;
@@ -170,7 +175,7 @@ namespace {
 	}
 
 	void CreateExplosionAtPosImpl(RE::Actor* a_actor, RE::NiPoint3 a_pos, const float& a_scale, RE::BGSExplosion* data) {
-		if (!data && !a_actor) {
+		if (!data || !a_actor) {
 			return;
 		}
 
@@ -192,25 +197,25 @@ namespace {
 
 	RE::TESObjectREFR* PlaceContainerAtPosImpl(RE::TESObjectREFR* a_ref, RE::NiPoint3 a_pos, RE::TESObjectCONT* a_container) {
 
-		if (a_container) {
-
-			RE::NiPointer<RE::TESObjectREFR> instance_ptr = a_ref->PlaceObjectAtMe(a_container, false);
-			if (!instance_ptr) {
-				return nullptr;
-			}
-
-			RE::TESObjectREFR* instance = instance_ptr.get();
-			if (!instance) {
-				return nullptr;
-			}
-
-			instance->SetPosition(a_pos);
-			instance->data.angle.x = 0;
-			instance->data.angle.y = 0;
-			instance->data.angle.z = 0;
-			return instance;
+		if (!a_ref || !a_container) {
+			return nullptr;
 		}
-		return nullptr;
+
+		RE::NiPointer<RE::TESObjectREFR> instance_ptr = a_ref->PlaceObjectAtMe(a_container, false);
+		if (!instance_ptr) {
+			return nullptr;
+		}
+
+		RE::TESObjectREFR* instance = instance_ptr.get();
+		if (!instance) {
+			return nullptr;
+		}
+
+		instance->SetPosition(a_pos);
+		instance->data.angle.x = 0;
+		instance->data.angle.y = 0;
+		instance->data.angle.z = 0;
+		return instance;
 	}
 
 	RE::TESObjectREFR* PlaceContainerAtPosImplActor(RE::TESObjectREFR* a_actor, RE::NiPoint3 a_pos, RE::TESObjectCONT* a_container) {
@@ -544,40 +549,40 @@ namespace GTS {
 
 	void Runtime::AddSpell(Actor* a_actor, const std::string_view& a_tag) {
 		auto data = GetSpell(a_tag);
-		if (data && !HasSpell(a_actor, a_tag)) {
+		if (a_actor && data && !HasSpell(a_actor, a_tag)) {
 			a_actor->AddSpell(data);
 		}
 	}
 
 	void Runtime::AddSpell(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::SpellItem>& a_entry) {
 		auto data = GetSpell(a_entry);
-		if (data && !HasSpell(a_actor, a_entry)) {
+		if (a_actor && data && !HasSpell(a_actor, a_entry)) {
 			a_actor->AddSpell(data);
 		}
 	}
 
 	void Runtime::RemoveSpell(Actor* a_actor, const std::string_view& a_tag) {
 		auto data = GetSpell(a_tag);
-		if (data && HasSpell(a_actor, a_tag)) {
+		if (a_actor && data && HasSpell(a_actor, a_tag)) {
 			a_actor->RemoveSpell(data);
 		}
 	}
 
 	void Runtime::RemoveSpell(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::SpellItem>& a_entry) {
 		auto data = GetSpell(a_entry);
-		if (data && HasSpell(a_actor, a_entry)) {
+		if (a_actor && data && HasSpell(a_actor, a_entry)) {
 			a_actor->RemoveSpell(data);
 		}
 	}
 
 	bool Runtime::HasSpell(Actor* a_actor, const std::string_view& a_tag) {
 		auto data = GetSpell(a_tag);
-		return data ? a_actor->HasSpell(data) : false;
+		return a_actor && data ? a_actor->HasSpell(data) : false;
 	}
 
 	bool Runtime::HasSpell(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::SpellItem>& a_entry) {
 		auto data = GetSpell(a_entry);
-		return data ? a_actor->HasSpell(data) : false;
+		return a_actor && data ? a_actor->HasSpell(data) : false;
 	}
 
 	bool Runtime::HasSpellTeam(Actor* a_actor, const std::string_view& a_tag) {
@@ -604,15 +609,19 @@ namespace GTS {
 
 	void Runtime::CastSpell(Actor* a_caster, Actor* a_target, const std::string_view& a_tag) {
 		auto data = GetSpell(a_tag);
-		if (data) {
-			a_caster->GetMagicCaster(MagicSystem::CastingSource::kInstant)->CastSpellImmediate(data, false, a_target, 1.00f, false, 0.0f, a_caster);
+		if (a_caster && data) {
+			if (auto caster = a_caster->GetMagicCaster(MagicSystem::CastingSource::kInstant)) {
+				caster->CastSpellImmediate(data, false, a_target, 1.00f, false, 0.0f, a_caster);
+			}
 		}
 	}
 
 	void Runtime::CastSpell(Actor* a_caster, Actor* a_target, const RuntimeData::RuntimeEntry<RE::SpellItem>& a_entry) {
 		auto data = GetSpell(a_entry);
-		if (data) {
-			a_caster->GetMagicCaster(MagicSystem::CastingSource::kInstant)->CastSpellImmediate(data, false, a_target, 1.00f, false, 0.0f, a_caster);
+		if (a_caster && data) {
+			if (auto caster = a_caster->GetMagicCaster(MagicSystem::CastingSource::kInstant)) {
+				caster->CastSpellImmediate(data, false, a_target, 1.00f, false, 0.0f, a_caster);
+			}
 		}
 	}
 
@@ -621,50 +630,59 @@ namespace GTS {
 	//-----------------------
 
 	void Runtime::AddPerk(Actor* a_actor, const std::string_view& a_tag) {
-		if (auto data = GetPerk(a_tag); data && !HasPerk(a_actor, a_tag)) {
+		if (auto data = GetPerk(a_tag); a_actor && data && !HasPerk(a_actor, a_tag)) {
 			a_actor->AddPerk(data);
 		}
 	}
 
 	void Runtime::AddPerk(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::BGSPerk>& a_entry) {
-		if (auto data = GetPerk(a_entry); data && !HasPerk(a_actor, a_entry)) {
+		if (auto data = GetPerk(a_entry); a_actor && data && !HasPerk(a_actor, a_entry)) {
 			a_actor->AddPerk(data);
 		}
 	}
 
 	void Runtime::RemovePerk(Actor* a_actor, const std::string_view& a_tag) {
-		if (auto data = GetPerk(a_tag); data && HasPerk(a_actor, a_tag)) {
+		if (auto data = GetPerk(a_tag); a_actor && data && HasPerk(a_actor, a_tag)) {
 			a_actor->RemovePerk(data);
 		}
 	}
 
 	void Runtime::RemovePerk(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::BGSPerk>& a_entry) {
-		if (auto data = GetPerk(a_entry); data && HasPerk(a_actor, a_entry)) {
+		if (auto data = GetPerk(a_entry); a_actor && data && HasPerk(a_actor, a_entry)) {
 			a_actor->RemovePerk(data);
 		}
 	}
 
 	bool Runtime::HasPerk(Actor* a_actor, const std::string_view& a_tag) {
+		if (!a_actor) {
+			return false;
+		}
+
 		if (auto data = GetPerk(a_tag)) {
 			if (a_actor->HasPerk(data)) {
 				return true;
 			}
 
-			if (a_actor->GetActorBase()->GetPerkIndex(data).has_value()) {
+			const auto actorBase = a_actor->GetActorBase();
+			if (actorBase && actorBase->GetPerkIndex(data).has_value()) {
 				return true;
 			}
-
 		}
 		return false;
 	}
 
 	bool Runtime::HasPerk(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::BGSPerk>& a_entry) {
-		if (auto data = GetPerk(a_entry)) {
+		if (!a_actor) {
+			return false;
+		}
 
+		if (auto data = GetPerk(a_entry)) {
 			if (a_actor->HasPerk(data)) {
 				return true;
 			}
-			if (a_actor->GetActorBase()->GetPerkIndex(data).has_value()) {
+
+			const auto actorBase = a_actor->GetActorBase();
+			if (actorBase && actorBase->GetPerkIndex(data).has_value()) {
 				return true;
 			}
 		}
@@ -843,14 +861,14 @@ namespace GTS {
 	//-----------------------
 
 	bool Runtime::InFaction(Actor* a_actor, const std::string_view& a_tag) {
-		if (auto data = GetFaction(a_tag); a_actor) {
+		if (auto data = GetFaction(a_tag); a_actor && data) {
 			return a_actor->IsInFaction(data);
 		}
 		return false;
 	}
 
 	bool Runtime::InFaction(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::TESFaction>& a_entry) {
-		if (auto data = GetFaction(a_entry); a_actor) {
+		if (auto data = GetFaction(a_entry); a_actor && data) {
 			return a_actor->IsInFaction(data);
 		}
 		return false;
@@ -861,7 +879,7 @@ namespace GTS {
 	//-----------------------
 
 	void Runtime::PlayImpactEffect(Actor* a_actor, const std::string_view& a_tag, const std::string_view& a_node, NiPoint3 a_pickDirection, const float& a_length, const bool& a_applyRotation, const bool& a_useLocalRotation) {
-		if (auto data = GetImpactEffect(a_tag); a_actor) {
+		if (auto data = GetImpactEffect(a_tag); a_actor && data) {
 			if (auto impact = BGSImpactManager::GetSingleton()) {
 				impact->PlayImpactEffect(a_actor, data, a_node, a_pickDirection, a_length, a_applyRotation, a_useLocalRotation);
 			}
@@ -869,7 +887,7 @@ namespace GTS {
 	}
 
 	void Runtime::PlayImpactEffect(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::BGSImpactDataSet>& a_entry, const std::string_view& a_node, NiPoint3 a_pickDirection, const float& a_length, const bool& a_applyRotation, const bool& a_useLocalRotation) {
-		if (auto data = GetImpactEffect(a_entry); a_actor) {
+		if (auto data = GetImpactEffect(a_entry); a_actor && data) {
 			if (auto impact = BGSImpactManager::GetSingleton()) {
 				impact->PlayImpactEffect(a_actor, data, a_node, a_pickDirection, a_length, a_applyRotation, a_useLocalRotation);
 			}
@@ -881,14 +899,14 @@ namespace GTS {
 	//-----------------------
 
 	bool Runtime::IsRace(Actor* a_actor, const std::string_view& a_tag) {
-		if (auto data = GetRace(a_tag); a_actor) {
+		if (auto data = GetRace(a_tag); a_actor && data) {
 			return a_actor->GetRace() == data;
 		}
 		return false;
 	}
 
 	bool Runtime::IsRace(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::TESRace>& a_entry) {
-		if (auto data = GetRace(a_entry); a_actor) {
+		if (auto data = GetRace(a_entry); a_actor && data) {
 			return a_actor->GetRace() == data;
 		}
 		return false;
@@ -899,14 +917,14 @@ namespace GTS {
 	//-----------------------
 
 	bool Runtime::HasKeyword(Actor* a_actor, const std::string_view& a_tag) {
-		if (auto data = GetKeyword(a_tag); a_actor) {
+		if (auto data = GetKeyword(a_tag); a_actor && data) {
 			return a_actor->HasKeyword(data);
 		}
 		return false;
 	}
 
 	bool Runtime::HasKeyword(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::BGSKeyword>& a_entry) {
-		if (auto data = GetKeyword(a_entry); a_actor) {
+		if (auto data = GetKeyword(a_entry); a_actor && data) {
 			return a_actor->HasKeyword(data);
 		}
 		return false;
@@ -917,56 +935,56 @@ namespace GTS {
 	//-----------------------
 
 	TESObjectREFR* Runtime::PlaceContainer(Actor* a_actor, const std::string_view& a_tag) {
-		if (auto data = GetContainer(a_tag); a_actor) {
+		if (auto data = GetContainer(a_tag); a_actor && data) {
 			return PlaceContainerAtPosImplActor(a_actor, a_actor->GetPosition(), data);
 		}
 		return nullptr;
 	}
 
 	TESObjectREFR* Runtime::PlaceContainer(Actor* a_actor, const RuntimeData::RuntimeEntry<RE::TESObjectCONT>& a_entry) {
-		if (auto data = GetContainer(a_entry); a_actor) {
+		if (auto data = GetContainer(a_entry); a_actor && data) {
 			return PlaceContainerAtPosImplActor(a_actor, a_actor->GetPosition(), data);
 		}
 		return nullptr;
 	}
 
 	TESObjectREFR* Runtime::PlaceContainer(TESObjectREFR* a_object, const std::string_view& a_tag) {
-		if (auto data = GetContainer(a_tag); a_object) {
+		if (auto data = GetContainer(a_tag); a_object && data) {
 			return PlaceContainerAtPosImpl(a_object, a_object->GetPosition(), data);
 		}
 		return nullptr;
 	}
 
 	TESObjectREFR* Runtime::PlaceContainer(TESObjectREFR* a_object, const RuntimeData::RuntimeEntry<RE::TESObjectCONT>& a_entry) {
-		if (auto data = GetContainer(a_entry); a_object) {
+		if (auto data = GetContainer(a_entry); a_object && data) {
 			return PlaceContainerAtPosImpl(a_object, a_object->GetPosition(), data);
 		}
 		return nullptr;
 	}
 
 	TESObjectREFR* Runtime::PlaceContainerAtPos(Actor* a_actor, NiPoint3 a_pos, const std::string_view& a_tag) {
-		if (auto data = GetContainer(a_tag); a_actor) {
+		if (auto data = GetContainer(a_tag); a_actor && data) {
 			return PlaceContainerAtPosImplActor(a_actor, a_pos, data);
 		}
 		return nullptr;
 	}
 
 	TESObjectREFR* Runtime::PlaceContainerAtPos(Actor* a_actor, NiPoint3 a_pos, const RuntimeData::RuntimeEntry<RE::TESObjectCONT>& a_entry) {
-		if (auto data = GetContainer(a_entry); a_actor) {
+		if (auto data = GetContainer(a_entry); a_actor && data) {
 			return PlaceContainerAtPosImplActor(a_actor, a_pos, data);
 		}
 		return nullptr;
 	}
 
 	TESObjectREFR* Runtime::PlaceContainerAtPos(TESObjectREFR* a_object, NiPoint3 a_pos, const std::string_view& a_tag) {
-		if (auto data = GetContainer(a_tag); a_object) {
+		if (auto data = GetContainer(a_tag); a_object && data) {
 			return PlaceContainerAtPosImpl(a_object, a_pos, data);
 		}
 		return nullptr;
 	}
 
 	TESObjectREFR* Runtime::PlaceContainerAtPos(TESObjectREFR* a_object, NiPoint3 a_pos, const RuntimeData::RuntimeEntry<RE::TESObjectCONT>& a_entry) {
-		if (auto data = GetContainer(a_entry); a_object) {
+		if (auto data = GetContainer(a_entry); a_object && data) {
 			return PlaceContainerAtPosImpl(a_object, a_pos, data);
 		}
 		return nullptr;

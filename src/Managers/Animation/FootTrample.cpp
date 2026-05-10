@@ -39,7 +39,7 @@ namespace {
 			double timepassed = Finish - Start;
 
 			if (timepassed > 0.03) {
-				LaunchTask(giant, radius, power, Event);
+				LaunchTask(giantref, radius, power, Event);
 				return false;
 			}
 

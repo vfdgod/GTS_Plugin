@@ -16,8 +16,8 @@ namespace {
 	PSString TSizeReserve = "体型储备 Perk 储存的总体型。\n"
 		"通过吞噬、吸收或碾压他人获得。";
 
-	PSString TAspectOfGTS = "这是“女巨人化身”附魔的强度。\n"
-		"女巨人化身会影响：\n"
+	PSString TAspectOfGTS = "这是“巨人化身”附魔的强度。\n"
+		"巨人化身会影响：\n"
 		"- 最大体型、通用缩小强度和体型偷取法术强度\n"
 		"- 体型相关伤害，以及任务/平衡模式中的最低缩小阈值\n"
 		"- 随机成长的成长速率和成长几率\n"
