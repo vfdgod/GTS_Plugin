@@ -28,6 +28,7 @@ namespace GTS {
         Misc_ShrinkParticle_Animation,
         Misc_ShrinkParticle_Gaze,
         Misc_TinyCalamityRage,
+        Misc_Worship,
         Footstep_Right,
         Footstep_Left,
         Footstep_JumpLand,
@@ -65,6 +66,7 @@ namespace GTS {
         double lastAnimShrinkParticleTime = -1.0e8f;
         double lastGazeShrinkParticleTime = -1.0e8f;
         double lastTinyCalamityTime = -1.0e8f;
+        double lastWorshipTime = -1.0e8f;
 
         double lastFootstepTime_R = -1.0e8f;
         double lastFootstepTime_L = -1.0e8f;

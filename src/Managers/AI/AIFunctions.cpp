@@ -7,6 +7,10 @@ using namespace GTS;
 
 namespace {
 
+	constexpr float WORSHIP_SIZE_THRESHOLD = 1.75f;
+	constexpr float WORSHIP_DISTANCE = 96.0f;
+	constexpr float WORSHIP_DURATION = 6.0f;
+
 	void DisableEssentialFlag(Actor* actor) {
 		if (actor->IsEssential()) {
 			actor->GetActorRuntimeData().boolFlags.reset(RE::Actor::BOOL_FLAGS::kEssential); // Else they respawn.
@@ -96,6 +100,42 @@ namespace {
 				}
 			}*/
 		}
+	}
+
+	void StartWorship(Actor* tiny) {
+		if (IsActionOnCooldown(tiny, CooldownSource::Misc_Worship)) {
+			return;
+		}
+
+		ApplyActionCooldown(tiny, CooldownSource::Misc_Worship);
+
+		ActorHandle tinyHandle = tiny->CreateRefHandle();
+		std::string taskName = std::format("Worship_{}", tiny->formID);
+
+		tiny->NotifyAnimationGraph("IdlePray");
+
+		TaskManager::Run(taskName, [=](auto& update) {
+			if (!tinyHandle) {
+				return false;
+			}
+
+			auto tinyRef = tinyHandle.get().get();
+			if (!tinyRef) {
+				return false;
+			}
+
+			if (tinyRef->IsDead() || !tinyRef->Is3DLoaded()) {
+				tinyRef->NotifyAnimationGraph("IdleStop_Loose");
+				return false;
+			}
+
+			if (update.runtime >= WORSHIP_DURATION) {
+				tinyRef->NotifyAnimationGraph("IdleStop_Loose");
+				return false;
+			}
+
+			return true;
+		});
 	}
 }
 
@@ -329,6 +369,50 @@ namespace GTS {
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+
+	void WorshipActors(Actor* giant) {
+		GTS_PROFILE_SCOPE("ActorUtils: WorshipActors");
+		if (!Config::AI.bWorship) {
+			return;
+		}
+		if (!giant || !giant->IsPlayerRef() || giant->IsSneaking() || AnimationVars::Crawl::IsCrawling(giant) || AnimationVars::Prone::IsProne(giant)) {
+			return;
+		}
+
+		for (auto tiny: FindSomeActors("AiActors", 2)) {
+			if (tiny == giant || !tiny || tiny->IsPlayerRef()) {
+				continue;
+			}
+			if (!IsHuman(tiny) || tiny->IsDead() || IsInSexlabAnim(tiny, giant)) {
+				continue;
+			}
+			if (IsBeingHeld(giant, tiny) || IsRagdolled(tiny) || InBleedout(tiny)) {
+				continue;
+			}
+
+			float sizedifference = std::clamp(get_scale_difference(giant, tiny, SizeType::VisualScale, false, true), 0.10f, 12.0f);
+			if (sizedifference < WORSHIP_SIZE_THRESHOLD) {
+				continue;
+			}
+
+			NiPoint3 giantPosition = giant->GetPosition();
+			NiPoint3 tinyPosition = tiny->GetPosition();
+			float distance = (giantPosition - tinyPosition).Length();
+
+			if (distance > WORSHIP_DISTANCE * GetMovementModifier(giant) * sizedifference) {
+				continue;
+			}
+
+			auto tinyRef = skyrim_cast<TESObjectREFR*>(tiny);
+			auto giantRef = skyrim_cast<TESObjectREFR*>(giant);
+			if (tinyRef && giantRef) {
+				bool seeingGiant = false;
+				if (tiny->HasLineOfSight(giantRef, seeingGiant)) {
+					StartWorship(tiny);
 				}
 			}
 		}

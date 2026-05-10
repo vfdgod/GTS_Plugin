@@ -279,7 +279,7 @@ namespace GTS {
 
             PSString T0 = "全局启用/禁用追随者动作 AI。";
 
-            PSString T1 = "设置追随者尝试开始新 GTS 动作的时间间隔。\n"
+            PSString T1 = "设置追随者尝试开始新 GT 动作的时间间隔。\n"
                           "这不保证追随者每隔 x 秒一定会执行动作。\n"
                           "它只改变尝试开始某个动作的间隔。\n"
                           "是否实际执行取决于右侧各动作配置的概率。";
@@ -295,7 +295,7 @@ namespace GTS {
 
             PSString T7 = "启用后，即使附近没有敌人，也总是阻止追随者普通攻击。";
 
-            PSString THelp = "GTS AI 会按可配置的时间间隔检查可开始的 GTS 动作。\n"
+            PSString THelp = "GT AI 会按可配置的时间间隔检查可开始的 GT 动作。\n"
                              "AI 是否执行动作取决于对应动作的概率设置。\n"
                              "如果概率较低，该动作就不太容易开始。\n"
                              "当所有动作概率都较低时，AI 更可能什么都不做。\n"
@@ -334,7 +334,7 @@ namespace GTS {
 		{
             
             PSString T0 = "切换追随者超过 x1.25 体型后，是否进一步降低移动速度。\n"
-                            "- 此开关会根据体型降低追随者冲刺概率，使其更倾向于压迫感十足地行走而不是冲刺。\n"
+                            "- 此开关会根据体型降低追随者冲刺概率，使其更倾向于行走而不是冲刺。\n"
                             "- 会修改 SpeedMult Actor Value，最多可降低 15。\n\n"
                             "- 此开关需要动态动画速度开关启用后才会生效。";
             PSString T2 = "切换追随者超过 x1.25 体型后，是否降低转身速度。\n\n"
@@ -342,13 +342,18 @@ namespace GTS {
             PSString T3 = "切换追随者是否记录腿/手的移动速度。\n"
                              "- 启用后，追随者只是站着不动时不会推开他人。\n"
                              "- 由于会每帧为每个追随者记录数据，可能对 FPS 有负面影响。";
-            PSString T4 = "切换其他 NPC 接近 GTS 时是否会恐慌。";
+            PSString T4 = "切换其他 NPC 接近 GT 角色时是否会进入逃离状态。";
+            PSString T5 = "切换符合条件的类人角色接近玩家时是否会进入短暂祈祷动作。\n"
+                          "- 仅在体型差明显且距离较近时触发。\n"
+                          "- 允许追随者、敌对目标和战斗中的目标触发。\n"
+                          "- 不影响玩家、死亡、被抓取或失去行动状态的目标。";
 
             if (ImGui::CollapsingHeader("杂项设置",ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("降低移动速度 AV", &Config::AI.bSlowMovementDown, T0);
                 ImGuiEx::CheckBox("降低战斗转身速度", &Config::AI.bSlowRotationDown, T2);
                 ImGuiEx::CheckBox("记录节点移动速度数据", &Config::AI.bRecordBoneSpeedData, T3);
                 ImGuiEx::CheckBox("角色恐慌", &Config::AI.bPanic, T4);
+                ImGuiEx::CheckBox("角色崇拜", &Config::AI.bWorship, T5);
                 ImGui::Spacing();
             }
 		}

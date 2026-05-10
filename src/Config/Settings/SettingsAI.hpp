@@ -154,6 +154,7 @@ struct SettingsAI_t {
 
     // Additional AI toggles
     bool bPanic                = true;
+    bool bWorship              = false;
     bool bCombatOnly           = true;
     bool bAllowPlayer          = false;
     bool bAllowFollowers       = false;

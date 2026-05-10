@@ -431,6 +431,7 @@ void GTSManager::Update() {
 				SpawnActionIcon(actor, actorList);         // Icons for interactions with others, Player only
 			}
 			ScareActors(actor);
+			WorshipActors(actor);
 
 			//Ported from papyrus
 			UpdateCrawlState(actor);
