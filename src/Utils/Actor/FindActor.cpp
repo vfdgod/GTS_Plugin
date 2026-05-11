@@ -37,6 +37,9 @@ namespace GTS {
 			for (const auto& handle : handles) {
 				if (const auto actorPtr = handle.get(); actorPtr && actorPtr->Get3D1(false)) {
 					auto* actor = actorPtr.get();
+					if (!actor) {
+						continue;
+					}
 					cache.actors.emplace_back(actor);
 					if (IsTeammate(actor)) {
 						cache.teammates.emplace_back(actor);
@@ -86,6 +89,9 @@ namespace GTS {
 		uint32_t addedCount = 0;
 
 		for (const auto actor : actors) {
+			if (!actor) {
+				continue;
+			}
 			// Player or teammate are always updated
 			if (actor->IsPlayerRef() || IsTeammate(actor)) {
 				finalActors.push_back(actor);
@@ -110,6 +116,9 @@ namespace GTS {
 			// those not added set
 			data.previousActors.clear();
 			for (auto actor : notAddedActors) {
+				if (!actor) {
+					continue;
+				}
 				if (addedCount < howMany) {
 					finalActors.push_back(actor);
 					data.previousActors.insert(actor->formID);
