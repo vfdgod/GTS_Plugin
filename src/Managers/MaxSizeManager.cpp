@@ -11,6 +11,8 @@ using namespace GTS;
 namespace SizeOverride {
 
 	constexpr float SIZE_OVERRIDE_MIN = 0.05f;
+	constexpr float SIZE_OVERRIDE_MAX = 1'000'000.0f;
+	constexpr float SIZE_RULE_DEFAULT_FIXED_LIMIT = 1.0f;
 	constexpr float ACTION_FIT_RESULT_MIN = 0.051f;
 	constexpr float ACTION_FIT_RESULT_MAX = 1.0f;
 	constexpr float ACTION_FIT_STRICTEST_THRESHOLD = Action_Vore + 0.01f;
@@ -29,12 +31,151 @@ namespace SizeOverride {
 		return cache;
 	}
 
+	struct ResolvedSizeLimitRule {
+		bool Matched = false;
+		bool HasOverrideLimit = false;
+		bool LockToNatural = false;
+		float OverrideLimit = 0.0f;
+	};
+
+	template <class Enum>
+	std::string EnumName(Enum a_value) {
+		return std::string(magic_enum::enum_name(a_value));
+	}
+
+	bool TryParseTarget(const std::string& a_value, LSizeLimitRuleTarget_t& a_out) {
+		if (auto parsed = magic_enum::enum_cast<LSizeLimitRuleTarget_t>(a_value); parsed.has_value()) {
+			a_out = *parsed;
+			return true;
+		}
+		return false;
+	}
+
+	bool TryParseMode(const std::string& a_value, LSizeLimitRuleMode_t& a_out) {
+		if (auto parsed = magic_enum::enum_cast<LSizeLimitRuleMode_t>(a_value); parsed.has_value()) {
+			a_out = *parsed;
+			return true;
+		}
+		return false;
+	}
+
+	bool IsModeAllowedForTarget(LSizeLimitRuleTarget_t a_target, LSizeLimitRuleMode_t a_mode) {
+		return !(a_target == LSizeLimitRuleTarget_t::kPlayer && a_mode == LSizeLimitRuleMode_t::kActionFit);
+	}
+
+	void NormalizeSizeLimitRule(SizeLimitRule_t& a_rule) {
+		LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
+		if (!TryParseTarget(a_rule.sTarget, target)) {
+			target = LSizeLimitRuleTarget_t::kHumanoidNPC;
+			a_rule.sTarget = EnumName(target);
+		}
+
+		LSizeLimitRuleMode_t mode = LSizeLimitRuleMode_t::kFixedLimit;
+		if (!TryParseMode(a_rule.sMode, mode) || !IsModeAllowedForTarget(target, mode)) {
+			mode = target == LSizeLimitRuleTarget_t::kPlayer ?
+				LSizeLimitRuleMode_t::kSystemAuto :
+				LSizeLimitRuleMode_t::kFixedLimit;
+			a_rule.sMode = EnumName(mode);
+		}
+
+		if (mode == LSizeLimitRuleMode_t::kFixedLimit) {
+			if (a_rule.fValue < SIZE_OVERRIDE_MIN) {
+				a_rule.fValue = SIZE_RULE_DEFAULT_FIXED_LIMIT;
+			}
+			else if (a_rule.fValue > SIZE_OVERRIDE_MAX) {
+				a_rule.fValue = SIZE_OVERRIDE_MAX;
+			}
+		}
+	}
+
+	void AppendRule(std::vector<SizeLimitRule_t>& a_rules, LSizeLimitRuleTarget_t a_target, LSizeLimitRuleMode_t a_mode, float a_value = SIZE_RULE_DEFAULT_FIXED_LIMIT) {
+		SizeLimitRule_t rule;
+		rule.bEnabled = true;
+		rule.sTarget = EnumName(a_target);
+		rule.sMode = EnumName(a_mode);
+		rule.fValue = a_value;
+		NormalizeSizeLimitRule(rule);
+		a_rules.push_back(std::move(rule));
+	}
+
+	void AppendMigratedLegacyRule(std::vector<SizeLimitRule_t>& a_rules, LSizeLimitRuleTarget_t a_target, float a_scale, bool a_actionFit) {
+		if (a_actionFit && IsModeAllowedForTarget(a_target, LSizeLimitRuleMode_t::kActionFit)) {
+			AppendRule(a_rules, a_target, LSizeLimitRuleMode_t::kActionFit);
+			return;
+		}
+
+		if (a_scale <= SIZE_OVERRIDE_MIN) {
+			return;
+		}
+
+		if (a_scale >= SIZE_OVERRIDE_MAX - SIZE_OVERRIDE_MIN) {
+			AppendRule(a_rules, a_target, LSizeLimitRuleMode_t::kUnlimited, SIZE_OVERRIDE_MAX);
+			return;
+		}
+
+		AppendRule(a_rules, a_target, LSizeLimitRuleMode_t::kFixedLimit, a_scale);
+	}
+
+	void AppendMigratedLegacyOtherRules(std::vector<SizeLimitRule_t>& a_rules, float a_scale, bool a_actionFit) {
+		constexpr LSizeLimitRuleTarget_t Targets[] = {
+			LSizeLimitRuleTarget_t::kHumanoidNPC,
+			LSizeLimitRuleTarget_t::kAnimal,
+			LSizeLimitRuleTarget_t::kCreature,
+			LSizeLimitRuleTarget_t::kDragon,
+			LSizeLimitRuleTarget_t::kGiantMammoth,
+			LSizeLimitRuleTarget_t::kMechanical,
+		};
+
+		for (auto target : Targets) {
+			AppendMigratedLegacyRule(a_rules, target, a_scale, a_actionFit);
+		}
+	}
+
+	bool HasLegacyRuleConfiguration() {
+		const float otherScale = Config::Balance.fMaxOtherSize > SIZE_OVERRIDE_MIN ?
+			Config::Balance.fMaxOtherSize :
+			Config::Balance.fMaxOrdinaryNPCSize;
+
+		return Config::Balance.fMaxPlayerSizeOverride > SIZE_OVERRIDE_MIN ||
+			Config::Balance.fMaxFollowerSize > SIZE_OVERRIDE_MIN ||
+			Config::Balance.fMaxHostileSize > SIZE_OVERRIDE_MIN ||
+			Config::Balance.fMaxImportantSize > SIZE_OVERRIDE_MIN ||
+			otherScale > SIZE_OVERRIDE_MIN ||
+			Config::Balance.bFollowerDynamicActionFit ||
+			Config::Balance.bHostileDynamicActionFit ||
+			Config::Balance.bImportantDynamicActionFit ||
+			Config::Balance.bOtherDynamicActionFit;
+	}
+
+	void EnsureInitialized() {
+		auto& balance = Config::Balance;
+		if (!balance.bSizeLimitRulesInitialized) {
+			if (balance.SizeLimitRules.empty() && HasLegacyRuleConfiguration()) {
+				AppendMigratedLegacyRule(balance.SizeLimitRules, LSizeLimitRuleTarget_t::kPlayer, balance.fMaxPlayerSizeOverride, false);
+				AppendMigratedLegacyRule(balance.SizeLimitRules, LSizeLimitRuleTarget_t::kFollower, balance.fMaxFollowerSize, balance.bFollowerDynamicActionFit);
+				AppendMigratedLegacyRule(balance.SizeLimitRules, LSizeLimitRuleTarget_t::kHostile, balance.fMaxHostileSize, balance.bHostileDynamicActionFit);
+				AppendMigratedLegacyRule(balance.SizeLimitRules, LSizeLimitRuleTarget_t::kImportant, balance.fMaxImportantSize, balance.bImportantDynamicActionFit);
+
+				const float otherScale = balance.fMaxOtherSize > SIZE_OVERRIDE_MIN ?
+					balance.fMaxOtherSize :
+					balance.fMaxOrdinaryNPCSize;
+				AppendMigratedLegacyOtherRules(balance.SizeLimitRules, otherScale, balance.bOtherDynamicActionFit);
+			}
+
+			balance.bSizeLimitRulesInitialized = true;
+		}
+
+		for (auto& rule : balance.SizeLimitRules) {
+			NormalizeSizeLimitRule(rule);
+		}
+	}
+
 	bool IsImportantTarget(Actor* a_actor) {
-		return a_actor && !a_actor->IsPlayerRef() && !GTS::IsTeammate(a_actor) && a_actor->IsEssential();
+		return a_actor && !a_actor->IsPlayerRef() && a_actor->IsEssential();
 	}
 
 	bool IsHostileTarget(Actor* a_actor) {
-		if (!a_actor || a_actor->IsPlayerRef() || GTS::IsTeammate(a_actor)) {
+		if (!a_actor || a_actor->IsPlayerRef()) {
 			return false;
 		}
 
@@ -84,47 +225,117 @@ namespace SizeOverride {
 		return cache.Limit;
 	}
 
-	float GetConfiguredOverrideForActor(Actor* a_actor) {
+	bool IsAnimalTarget(Actor* a_actor) {
+		return a_actor && !a_actor->IsPlayerRef() && Runtime::HasKeyword(a_actor, Runtime::KYWD.AnimalKeyword);
+	}
+
+	bool IsCreatureTarget(Actor* a_actor) {
+		return a_actor && !a_actor->IsPlayerRef() && Runtime::HasKeyword(a_actor, Runtime::KYWD.CreatureKeyword);
+	}
+
+	bool IsHumanoidNPCTarget(Actor* a_actor) {
+		return a_actor && !a_actor->IsPlayerRef() && GTS::IsHuman(a_actor);
+	}
+
+	bool IsDragonTarget(Actor* a_actor) {
+		return a_actor && !a_actor->IsPlayerRef() && GTS::IsDragon(a_actor);
+	}
+
+	bool IsGiantMammothTarget(Actor* a_actor) {
+		return a_actor && !a_actor->IsPlayerRef() && (GTS::IsGiant(a_actor) || GTS::IsMammoth(a_actor));
+	}
+
+	bool IsMechanicalTarget(Actor* a_actor) {
+		return a_actor && !a_actor->IsPlayerRef() && GTS::IsMechanical(a_actor);
+	}
+
+	bool ActorMatchesRuleTarget(Actor* a_actor, LSizeLimitRuleTarget_t a_target) {
+		switch (a_target) {
+			case LSizeLimitRuleTarget_t::kPlayer:
+				return a_actor && a_actor->IsPlayerRef();
+			case LSizeLimitRuleTarget_t::kFollower:
+				return a_actor && GTS::IsTeammate(a_actor);
+			case LSizeLimitRuleTarget_t::kHostile:
+				return IsHostileTarget(a_actor);
+			case LSizeLimitRuleTarget_t::kImportant:
+				return IsImportantTarget(a_actor);
+			case LSizeLimitRuleTarget_t::kHumanoidNPC:
+				return IsHumanoidNPCTarget(a_actor);
+			case LSizeLimitRuleTarget_t::kAnimal:
+				return IsAnimalTarget(a_actor);
+			case LSizeLimitRuleTarget_t::kCreature:
+				return IsCreatureTarget(a_actor);
+			case LSizeLimitRuleTarget_t::kDragon:
+				return IsDragonTarget(a_actor);
+			case LSizeLimitRuleTarget_t::kGiantMammoth:
+				return IsGiantMammothTarget(a_actor);
+			case LSizeLimitRuleTarget_t::kMechanical:
+				return IsMechanicalTarget(a_actor);
+			default:
+				return false;
+		}
+	}
+
+	ResolvedSizeLimitRule ResolveRuleForActor(Actor* a_actor) {
+		EnsureInitialized();
+
+		ResolvedSizeLimitRule resolved;
 		if (!a_actor) {
-			return 0.0f;
+			return resolved;
 		}
 
-		if (a_actor->IsPlayerRef()) {
-			return Config::Balance.fMaxPlayerSizeOverride;
-		}
-
-		if (GTS::IsTeammate(a_actor)) {
-			if (Config::Balance.bFollowerDynamicActionFit) {
-				return GetActionFitLimit();
-			}
-			return Config::Balance.fMaxFollowerSize;
-		}
-
-		if (IsHostileTarget(a_actor)) {
-			if (Config::Balance.bHostileDynamicActionFit) {
-				return GetActionFitLimit();
+		for (const auto& rule : Config::Balance.SizeLimitRules) {
+			if (!rule.bEnabled) {
+				continue;
 			}
 
-			if (Config::Balance.fMaxHostileSize > SIZE_OVERRIDE_MIN) {
-				return Config::Balance.fMaxHostileSize;
+			LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
+			if (!TryParseTarget(rule.sTarget, target) || !ActorMatchesRuleTarget(a_actor, target)) {
+				continue;
+			}
+
+			LSizeLimitRuleMode_t mode = LSizeLimitRuleMode_t::kFixedLimit;
+			if (!TryParseMode(rule.sMode, mode) || !IsModeAllowedForTarget(target, mode)) {
+				mode = LSizeLimitRuleMode_t::kFixedLimit;
+			}
+
+			resolved.Matched = true;
+
+			switch (mode) {
+				case LSizeLimitRuleMode_t::kNaturalCeiling:
+					resolved.HasOverrideLimit = true;
+					resolved.OverrideLimit = std::max(get_natural_scale(a_actor, true), SIZE_OVERRIDE_MIN);
+					return resolved;
+				case LSizeLimitRuleMode_t::kNaturalLock:
+					resolved.HasOverrideLimit = true;
+					resolved.LockToNatural = true;
+					resolved.OverrideLimit = std::max(get_natural_scale(a_actor, true), SIZE_OVERRIDE_MIN);
+					return resolved;
+				case LSizeLimitRuleMode_t::kFixedLimit:
+					resolved.HasOverrideLimit = true;
+					resolved.OverrideLimit = std::clamp(rule.fValue, SIZE_OVERRIDE_MIN, SIZE_OVERRIDE_MAX);
+					return resolved;
+				case LSizeLimitRuleMode_t::kActionFit:
+					resolved.HasOverrideLimit = true;
+					resolved.OverrideLimit = GetActionFitLimit();
+					return resolved;
+				case LSizeLimitRuleMode_t::kSystemAuto:
+					return resolved;
+				case LSizeLimitRuleMode_t::kUnlimited:
+					resolved.HasOverrideLimit = true;
+					resolved.OverrideLimit = SIZE_OVERRIDE_MAX;
+					return resolved;
+				default:
+					return resolved;
 			}
 		}
 
-		if (IsImportantTarget(a_actor)) {
-			if (Config::Balance.bImportantDynamicActionFit) {
-				return GetActionFitLimit();
-			}
+		return resolved;
+	}
 
-			if (Config::Balance.fMaxImportantSize > SIZE_OVERRIDE_MIN) {
-				return Config::Balance.fMaxImportantSize;
-			}
-		}
-
-		if (Config::Balance.bOtherDynamicActionFit) {
-			return GetActionFitLimit();
-		}
-
-		return Config::Balance.fMaxOtherSize;
+	float GetConfiguredOverrideForActor(Actor* a_actor) {
+		const auto resolved = ResolveRuleForActor(a_actor);
+		return resolved.HasOverrideLimit ? resolved.OverrideLimit : 0.0f;
 	}
 
 	bool SizeOverrideEnabled() {
@@ -292,6 +503,14 @@ namespace {
 
 namespace GTS {
 
+	bool ActorMatchesSizeLimitRuleTarget(Actor* a_actor, LSizeLimitRuleTarget_t a_target) {
+		return SizeOverride::ActorMatchesRuleTarget(a_actor, a_target);
+	}
+
+	void EnsureSizeLimitRulesInitialized() {
+		SizeOverride::EnsureInitialized();
+	}
+
 	float GetActionCompatibleSizeLimit(bool a_forceRefresh) {
 		return SizeOverride::GetActionFitLimit(a_forceRefresh);
 	}
@@ -329,11 +548,14 @@ namespace GTS {
 		float TotalLimit = GetLimit;
 		float OverrideLimit = 0.0f;
 		bool HasOverrideLimit = false;
+		bool LockToNatural = false;
 
 		if (IsSizeUnlocked()) {
-			OverrideLimit = SizeOverride::GetConfiguredOverrideForActor(a_actor);
+			const auto resolvedRule = SizeOverride::ResolveRuleForActor(a_actor);
+			OverrideLimit = resolvedRule.OverrideLimit;
+			LockToNatural = resolvedRule.LockToNatural;
 
-			if (OverrideLimit > SizeOverride::SIZE_OVERRIDE_MIN) {
+			if (resolvedRule.HasOverrideLimit && OverrideLimit > SizeOverride::SIZE_OVERRIDE_MIN) {
 				TotalLimit = OverrideLimit;
 				HasOverrideLimit = true;
 			}
@@ -343,6 +565,10 @@ namespace GTS {
 
 		if (get_max_scale(a_actor) < TotalLimit + Endless || get_max_scale(a_actor) > TotalLimit + Endless) {
 			set_max_scale(a_actor, TotalLimit);
+		}
+
+		if (LockToNatural && get_target_scale(a_actor) < NaturalScale - SIZE_OVERRIDE_RESTORE_EPS) {
+			set_target_scale(a_actor, NaturalScale);
 		}
 
 		UpdateSizeOverrideRestore(a_actor, OverrideLimit, HasOverrideLimit);

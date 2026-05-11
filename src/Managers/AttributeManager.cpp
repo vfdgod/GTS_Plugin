@@ -2,6 +2,8 @@
 
 #include "Config/Config.hpp"
 
+#include "Magic/Effects/Common.hpp"
+
 #include "Managers/Damage/TinyCalamity.hpp"
 #include "Managers/GTSSizeManager.hpp"
 
@@ -26,6 +28,92 @@ namespace {
 			return transient->MovementSlowdown;
 		}
 		return 1.0f;
+	}
+
+	constexpr float kShrinkStealHardDrainThreshold = 0.50f;
+	constexpr float kShrinkStealBaseDrainPerTick = 0.05f;
+	constexpr float kShrinkStealSeverityDrainPerTick = 0.15f;
+	constexpr float kShrinkStealExperienceScale = 0.01f; // 100 resource points = 1.0 GTS XP
+	constexpr float kActorValueEpsilon = 1e-3f;
+
+	float GetShrinkStealScaleRatio(Actor* actor) {
+		const float naturalScale = std::max(get_natural_scale(actor, true), 0.01f);
+		return std::max(get_visual_scale(actor) / naturalScale, 0.0f);
+	}
+
+	bool ShouldHardDrainShrinkSteal(float scaleRatio) {
+		return scaleRatio <= kShrinkStealHardDrainThreshold + kActorValueEpsilon;
+	}
+
+	void FeedPlayerResourceOrExperience(Actor* player, ActorValue av, float drainedValue) {
+		if (!player || drainedValue <= kActorValueEpsilon) {
+			return;
+		}
+
+		const float playerMax = std::max(GetMaxAV(player, av), 0.0f);
+		const float playerCurrent = std::clamp(GetAV(player, av), 0.0f, playerMax);
+		const float missingValue = std::max(playerMax - playerCurrent, 0.0f);
+		const float restoredValue = std::min(drainedValue, missingValue);
+
+		if (restoredValue > kActorValueEpsilon) {
+			player->AsActorValueOwner()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, av, restoredValue);
+		}
+
+		const float extraValue = drainedValue - restoredValue;
+		if (extraValue > kActorValueEpsilon) {
+			ModSizeExperience(player, extraValue * kShrinkStealExperienceScale);
+		}
+	}
+
+	void DrainShrunkActorValue(Actor* actor, Actor* player, ActorValue av, float scaleRatio) {
+		const float maxValue = std::max(GetMaxAV(actor, av), 0.0f);
+		if (maxValue <= kActorValueEpsilon) {
+			return; // Some targets simply do not use this AV, e.g. many animals have no magicka pool.
+		}
+
+		const float currentValue = std::clamp(GetAV(actor, av), 0.0f, maxValue);
+		if (currentValue <= kActorValueEpsilon) {
+			return;
+		}
+
+		float drainedValue = currentValue;
+		if (!ShouldHardDrainShrinkSteal(scaleRatio)) {
+			// Shrunk below natural size: drain continuously.
+			// Once it reaches 50% of natural size or less, the entire resource pool is drained.
+			const float normalizedSeverity = std::clamp(
+				(1.0f - scaleRatio) / (1.0f - kShrinkStealHardDrainThreshold),
+				0.0f,
+				1.0f
+			);
+			const float drainStep = maxValue * (kShrinkStealBaseDrainPerTick + normalizedSeverity * kShrinkStealSeverityDrainPerTick) * std::max(TimeScale(), 0.01f);
+			drainedValue = std::clamp(drainStep, 0.0f, currentValue);
+		}
+
+		if (drainedValue <= kActorValueEpsilon) {
+			return;
+		}
+
+		DamageAV(actor, av, drainedValue);
+		FeedPlayerResourceOrExperience(player, av, drainedValue);
+	}
+
+	void ManageShrinkResourceSteal(Actor* actor) {
+		if (!Config::Balance.bShrinkStealResources || !actor || actor->IsPlayerRef() || actor->IsDead()) {
+			return;
+		}
+
+		Actor* player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return;
+		}
+
+		const float scaleRatio = GetShrinkStealScaleRatio(actor);
+		if (scaleRatio >= 1.0f - kActorValueEpsilon) {
+			return;
+		}
+
+		DrainShrunkActorValue(actor, player, ActorValue::kStamina, scaleRatio);
+		DrainShrunkActorValue(actor, player, ActorValue::kMagicka, scaleRatio);
 	}
 
 	void ManagePerkBonuses(Actor* actor) {
@@ -83,6 +171,7 @@ namespace {
 	void UpdateActors(Actor* actor) {
 		if (actor) {
 			ManagePerkBonuses(actor);
+			ManageShrinkResourceSteal(actor);
 			if (actor->IsPlayerRef()) {
 				TinyCalamity_BonusSpeed(actor); // Manages SMT bonuses
 			}

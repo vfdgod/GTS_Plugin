@@ -32,6 +32,50 @@ enum class LSizeMode_t : uint8_t {
     kMassBased
 };
 
+enum class LSizeLimitRuleTarget_t : uint8_t {
+    kPlayer,
+    kFollower,
+    kHostile,
+    kImportant,
+    kHumanoidNPC,
+    kAnimal,
+    kCreature,
+    kDragon,
+    kGiantMammoth,
+    kMechanical,
+    kTotal
+};
+
+enum class LSizeLimitRuleMode_t : uint8_t {
+    kNaturalCeiling,
+    kNaturalLock,
+    kFixedLimit,
+    kActionFit,
+    kSystemAuto,
+    kUnlimited,
+    kTotal
+};
+
+enum class LShrinkRecallFilterMode_t : uint8_t {
+    kAllShrunken,
+    kCustomTargets,
+    kTotal
+};
+
+enum class LShrinkRecallPlacement_t : uint8_t {
+    kRing,
+    kFront,
+    kTotal
+};
+
+struct SizeLimitRule_t {
+    bool bEnabled = true;
+    std::string sTarget = "kHumanoidNPC";
+    std::string sMode = "kFixedLimit";
+    float fValue = 1.0f;
+};
+TOML_SERIALIZABLE(SizeLimitRule_t);
+
 //-------------------------------------------------------------------------------------------------------------------
 //  BASE STRUCT
 //  (Directly Serialized)
@@ -65,6 +109,8 @@ struct SettingsBalance_t {
     bool bOtherDynamicActionFit = false;
     // Legacy config entry kept so older exported settings still deserialize cleanly.
     float fMaxOrdinaryNPCSize = 0.0f;
+    bool bSizeLimitRulesInitialized = false;
+    std::vector<SizeLimitRule_t> SizeLimitRules = {};
 
 
     // Balance mode adjustments
@@ -74,6 +120,12 @@ struct SettingsBalance_t {
     float fBMShrinkRateCombat = 0.08f;
     float fBMShrinkOnHitMult = 1.0f;
     bool bSharePerks = false;
+    bool bShrinkStealResources = false;
+    std::string sShrinkRecallFilterMode = "kAllShrunken";
+    std::vector<std::string> ShrinkRecallTargets = {};
+    std::string sShrinkRecallPlacement = "kRing";
+    float fShrinkRecallSearchRadius = 3000.0f;
+    float fShrinkRecallPauseDuration = 1.5f;
 
 };
 TOML_SERIALIZABLE(SettingsBalance_t);

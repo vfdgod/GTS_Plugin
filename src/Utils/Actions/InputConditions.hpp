@@ -224,6 +224,20 @@ namespace GTS {
 		return false;
 	}
 
+	static bool RecallShrunkenActorsCondition() {
+		auto target = PlayerCharacter::GetSingleton();
+		if (!target) {
+			return false;
+		}
+		if (!CanDoActionBasedOnQuestProgress(target, QuestAnimationType::kOthers)) {
+			return false;
+		}
+		if (AnimationVars::General::IsGTSBusy(target) || AnimationVars::General::IsTransitioning(target)) {
+			return false;
+		}
+		return true;
+	}
+
 
 
 	//---------------------------

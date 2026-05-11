@@ -177,11 +177,13 @@ namespace Hooks {
 
 				if (!a_actor) return;
 
-				if (FurnitureManager::ValidActor(a_actor)) {
-					if (TransientActorData* data = Transient::GetActorData(a_actor)) {
-						if (data->BlockMovementTimer.Gate()) {
-							return;
-						}
+				if (TransientActorData* data = Transient::GetActorData(a_actor)) {
+					if (data->RecallPauseTimer.Gate()) {
+						return;
+					}
+
+					if (FurnitureManager::ValidActor(a_actor) && data->BlockMovementTimer.Gate()) {
+						return;
 					}
 				}
 			}

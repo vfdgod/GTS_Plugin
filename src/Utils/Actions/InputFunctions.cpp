@@ -12,9 +12,15 @@
 #include "Managers/HighHeel.hpp"
 #include "Managers/AttributeManager.hpp"
 #include "Managers/GTSSizeManager.hpp"
+#include "Managers/MaxSizeManager.hpp"
 #include "Managers/Audio/MoansLaughs.hpp"
 
 #include "Magic/Effects/Common.hpp"
+#include "Utils/Actor/ActorUtils.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <numbers>
 
 using namespace GTS;
 
@@ -22,6 +28,173 @@ namespace {
 
 	constexpr float DURATION = 2.0f;
 	constexpr int StruggleMax = 40;
+	constexpr float RECALL_SHRINK_EPSILON = 0.001f;
+	constexpr float RECALL_SEARCH_RADIUS_MIN = 250.0f;
+	constexpr float RECALL_SEARCH_RADIUS_MAX = 20000.0f;
+	constexpr float RECALL_PAUSE_MIN = 0.0f;
+	constexpr float RECALL_PAUSE_MAX = 10.0f;
+	constexpr float RECALL_FRONT_START = 180.0f;
+	constexpr float RECALL_FRONT_SPACING_X = 110.0f;
+	constexpr float RECALL_FRONT_SPACING_Y = 120.0f;
+	constexpr int RECALL_FRONT_PER_ROW = 5;
+	constexpr float RECALL_RING_BASE_RADIUS = 170.0f;
+	constexpr float RECALL_RING_LAYER_SPACING = 120.0f;
+	constexpr float RECALL_RING_TARGET_SPACING = 110.0f;
+
+	template <class Enum>
+	bool TryParseEnumString(const std::string& a_value, Enum& a_out) {
+		if (auto parsed = magic_enum::enum_cast<Enum>(a_value); parsed.has_value()) {
+			a_out = *parsed;
+			return true;
+		}
+		return false;
+	}
+
+	bool ContainsRecallTarget(const std::vector<std::string>& a_targets, LSizeLimitRuleTarget_t a_target) {
+		const std::string_view targetName = magic_enum::enum_name(a_target);
+		for (const auto& target : a_targets) {
+			if (target == targetName) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	LShrinkRecallFilterMode_t GetRecallFilterMode() {
+		LShrinkRecallFilterMode_t mode = LShrinkRecallFilterMode_t::kAllShrunken;
+		TryParseEnumString(Config::Balance.sShrinkRecallFilterMode, mode);
+		return mode;
+	}
+
+	LShrinkRecallPlacement_t GetRecallPlacementMode() {
+		LShrinkRecallPlacement_t mode = LShrinkRecallPlacement_t::kRing;
+		TryParseEnumString(Config::Balance.sShrinkRecallPlacement, mode);
+		return mode;
+	}
+
+	float GetRecallSearchRadius() {
+		return std::clamp(Config::Balance.fShrinkRecallSearchRadius, RECALL_SEARCH_RADIUS_MIN, RECALL_SEARCH_RADIUS_MAX);
+	}
+
+	float GetRecallPauseDuration() {
+		return std::clamp(Config::Balance.fShrinkRecallPauseDuration, RECALL_PAUSE_MIN, RECALL_PAUSE_MAX);
+	}
+
+	bool IsShrunkenActor(Actor* actor) {
+		if (!actor) {
+			return false;
+		}
+		const float naturalScale = get_natural_scale(actor, true);
+		const float currentScale = get_visual_scale(actor);
+		return currentScale < naturalScale - RECALL_SHRINK_EPSILON;
+	}
+
+	bool MatchesRecallCustomTargets(Actor* actor) {
+		for (int rawTarget = 0; rawTarget < static_cast<int>(LSizeLimitRuleTarget_t::kTotal); ++rawTarget) {
+			const auto target = static_cast<LSizeLimitRuleTarget_t>(rawTarget);
+			if (target == LSizeLimitRuleTarget_t::kPlayer) {
+				continue;
+			}
+
+			if (!ContainsRecallTarget(Config::Balance.ShrinkRecallTargets, target)) {
+				continue;
+			}
+
+			if (ActorMatchesSizeLimitRuleTarget(actor, target)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool ShouldRecallActor(Actor* player, Actor* actor, float searchRadius) {
+		if (!player || !actor || actor->IsPlayerRef()) {
+			return false;
+		}
+		if (actor->IsDead() || !actor->Is3DLoaded()) {
+			return false;
+		}
+		if ((actor->GetPosition() - player->GetPosition()).Length() > searchRadius) {
+			return false;
+		}
+
+		auto transient = Transient::GetActorData(actor);
+		if (transient) {
+			if (transient->BeingHeld || transient->BetweenBreasts || transient->AboutToBeEaten || transient->ReattachingTiny) {
+				return false;
+			}
+		}
+
+		if (AnimationVars::General::IsGTSBusy(actor) || AnimationVars::General::IsTransitioning(actor)) {
+			return false;
+		}
+		if (!IsShrunkenActor(actor)) {
+			return false;
+		}
+
+		if (GetRecallFilterMode() == LShrinkRecallFilterMode_t::kCustomTargets) {
+			return MatchesRecallCustomTargets(actor);
+		}
+
+		return true;
+	}
+
+	RE::NiPoint3 GetPlayerForwardVector(Actor* player) {
+		RE::NiPoint3 forwardVector{ 0.0f, 1.0f, 0.0f };
+		RE::NiPoint3 forward = RotateAngleAxis(forwardVector, -player->data.angle.z, { 0.0f, 0.0f, 1.0f });
+		const float length = forward.Length();
+		if (length <= 0.0001f) {
+			return RE::NiPoint3{ 0.0f, 1.0f, 0.0f };
+		}
+		return forward / length;
+	}
+
+	RE::NiPoint3 GetPlayerRightVector(Actor* player) {
+		RE::NiPoint3 rightVector{ 1.0f, 0.0f, 0.0f };
+		RE::NiPoint3 right = RotateAngleAxis(rightVector, -player->data.angle.z, { 0.0f, 0.0f, 1.0f });
+		const float length = right.Length();
+		if (length <= 0.0001f) {
+			return RE::NiPoint3{ 1.0f, 0.0f, 0.0f };
+		}
+		return right / length;
+	}
+
+	RE::NiPoint3 GetRecallPlacementOffset(std::size_t index, LShrinkRecallPlacement_t placement, const RE::NiPoint3& forward, const RE::NiPoint3& right) {
+		if (placement == LShrinkRecallPlacement_t::kFront) {
+			const int row = static_cast<int>(index) / RECALL_FRONT_PER_ROW;
+			const int column = static_cast<int>(index) % RECALL_FRONT_PER_ROW;
+			const float centeredColumn = static_cast<float>(column) - (static_cast<float>(RECALL_FRONT_PER_ROW - 1) * 0.5f);
+
+			return forward * (RECALL_FRONT_START + row * RECALL_FRONT_SPACING_Y) +
+				right * (centeredColumn * RECALL_FRONT_SPACING_X);
+		}
+
+		std::size_t remaining = index;
+		int layer = 0;
+		while (true) {
+			const float radius = RECALL_RING_BASE_RADIUS + layer * RECALL_RING_LAYER_SPACING;
+			const int capacity = std::max(6, static_cast<int>(std::floor((2.0f * std::numbers::pi_v<float> * radius) / RECALL_RING_TARGET_SPACING)));
+			if (remaining < static_cast<std::size_t>(capacity)) {
+				const float angle = (2.0f * std::numbers::pi_v<float> * static_cast<float>(remaining)) / static_cast<float>(capacity);
+				return forward * (std::cos(angle) * radius) + right * (std::sin(angle) * radius);
+			}
+
+			remaining -= static_cast<std::size_t>(capacity);
+			layer += 1;
+		}
+	}
+
+	void StartRecallPause(Actor* actor, float duration) {
+		if (!actor || duration <= RECALL_PAUSE_MIN) {
+			return;
+		}
+
+		if (auto transient = Transient::GetActorData(actor)) {
+			transient->RecallPauseTimer.UpdateDelta(duration);
+			transient->RecallPauseTimer.ResetGate();
+		}
+	}
 
 	void ResetEscapeDataTask() {
 		std::string name = std::format("ResetStruggle");
@@ -536,6 +709,54 @@ namespace {
 		}
 	}
 
+	void RecallShrunkenActorsEvent(const ManagedInputEvent& data) {
+		Actor* player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return;
+		}
+
+		const float searchRadius = GetRecallSearchRadius();
+		const float pauseDuration = GetRecallPauseDuration();
+		const auto placement = GetRecallPlacementMode();
+		const RE::NiPoint3 playerPos = player->GetPosition();
+		const RE::NiPoint3 forward = GetPlayerForwardVector(player);
+		const RE::NiPoint3 right = GetPlayerRightVector(player);
+
+		std::vector<Actor*> recalledActors;
+		recalledActors.reserve(16);
+
+		for (auto actor : find_actors()) {
+			if (!ShouldRecallActor(player, actor, searchRadius)) {
+				continue;
+			}
+			recalledActors.push_back(actor);
+		}
+
+		std::ranges::sort(recalledActors, [&](Actor* lhs, Actor* rhs) {
+			return lhs->GetPosition().GetDistance(playerPos) < rhs->GetPosition().GetDistance(playerPos);
+		});
+
+		for (std::size_t index = 0; index < recalledActors.size(); ++index) {
+			Actor* actor = recalledActors[index];
+			RE::NiPoint3 destination = playerPos + GetRecallPlacementOffset(index, placement, forward, right);
+			destination.z = playerPos.z;
+			actor->SetPosition(destination, true);
+			StartRecallPause(actor, pauseDuration);
+		}
+
+		if (recalledActors.empty()) {
+			Notify("附近没有符合条件的缩小目标");
+			return;
+		}
+
+		if (pauseDuration > RECALL_PAUSE_MIN) {
+			Notify("已召回 {} 个缩小目标，并停步 {:.1f} 秒", recalledActors.size(), pauseDuration);
+		}
+		else {
+			Notify("已召回 {} 个缩小目标", recalledActors.size());
+		}
+	}
+
 	void AnimSpeedUpEvent(const ManagedInputEvent& data) {
 		AnimationManager::AdjustAnimSpeed(0.045f); // Increase speed and power
 	}
@@ -686,6 +907,7 @@ namespace GTS {
 		InputManager::RegisterInputEvent("RapidShrink", RapidShrinkEvent, RappidGrowShrinkCondition);
 		InputManager::RegisterInputEvent("ShrinkOutburst", ShrinkOutburstEvent, ShrinkOutburstCondition);
 		InputManager::RegisterInputEvent("ProtectSmallOnes", ProtectSmallOnesEvent, ProtectSmallOnesCondition);
+		InputManager::RegisterInputEvent("RecallShrunkenActors", RecallShrunkenActorsEvent, RecallShrunkenActorsCondition);
 
 		InputManager::RegisterInputEvent("ManualGrow", TotalControlGrowEvent, TotalControlCondition);
 		InputManager::RegisterInputEvent("ManualShrink", TotalControlShrinkEvent, TotalControlCondition);

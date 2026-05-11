@@ -14,67 +14,252 @@
 
 #include "UI/Controls/Text.hpp"
 
+#include <algorithm>
+
 
 namespace GTS {
 
 	namespace {
-		constexpr float MaxSizeSliderAutoThreshold = 0.0001f;
-		constexpr float MaxSizeSliderPresetReset = 1.0f;
-
-		float GetMaxSizeButtonWidth(const char* label) {
-			const ImGuiStyle& style = ImGui::GetStyle();
-			return ImGui::CalcTextSize(label, nullptr, true).x + style.FramePadding.x * 2.0f;
+		constexpr float SizeRuleFixedLimitMin = 0.05f;
+		constexpr float SizeRuleFixedLimitMax = 255.0f;
+		template <class Enum>
+		std::string EnumName(Enum a_value) {
+			return std::string(magic_enum::enum_name(a_value));
 		}
 
-		void SameLineForMaxSizeButtonIfFits(const char* nextLabel) {
-			const ImGuiStyle& style = ImGui::GetStyle();
-			const float nextButtonRight = ImGui::GetItemRectMax().x + style.ItemSpacing.x + GetMaxSizeButtonWidth(nextLabel);
-			const float contentRight = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+		bool TryParseRuleTarget(const std::string& a_value, LSizeLimitRuleTarget_t& a_out) {
+			if (auto parsed = magic_enum::enum_cast<LSizeLimitRuleTarget_t>(a_value); parsed.has_value()) {
+				a_out = *parsed;
+				return true;
+			}
+			return false;
+		}
 
-			if (nextButtonRight <= contentRight) {
-				ImGui::SameLine();
+		bool TryParseRuleMode(const std::string& a_value, LSizeLimitRuleMode_t& a_out) {
+			if (auto parsed = magic_enum::enum_cast<LSizeLimitRuleMode_t>(a_value); parsed.has_value()) {
+				a_out = *parsed;
+				return true;
+			}
+			return false;
+		}
+
+		LSizeLimitRuleTarget_t GetRuleTarget(const SizeLimitRule_t& a_rule) {
+			LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
+			TryParseRuleTarget(a_rule.sTarget, target);
+			return target;
+		}
+
+		LSizeLimitRuleMode_t GetRuleMode(const SizeLimitRule_t& a_rule) {
+			LSizeLimitRuleMode_t mode = LSizeLimitRuleMode_t::kFixedLimit;
+			TryParseRuleMode(a_rule.sMode, mode);
+			return mode;
+		}
+
+		const char* GetRuleTargetLabel(LSizeLimitRuleTarget_t a_target) {
+			switch (a_target) {
+				case LSizeLimitRuleTarget_t::kPlayer:
+					return "玩家";
+				case LSizeLimitRuleTarget_t::kFollower:
+					return "追随者";
+				case LSizeLimitRuleTarget_t::kHostile:
+					return "敌对目标";
+				case LSizeLimitRuleTarget_t::kImportant:
+					return "重要角色";
+				case LSizeLimitRuleTarget_t::kHumanoidNPC:
+					return "普通人形 NPC";
+				case LSizeLimitRuleTarget_t::kAnimal:
+					return "动物";
+				case LSizeLimitRuleTarget_t::kCreature:
+					return "怪物 / Creature";
+				case LSizeLimitRuleTarget_t::kDragon:
+					return "龙";
+				case LSizeLimitRuleTarget_t::kGiantMammoth:
+					return "巨人 / 猛犸";
+				case LSizeLimitRuleTarget_t::kMechanical:
+					return "机械 / 矮人造物";
+				default:
+					return "未知分类";
 			}
 		}
 
-		const char* GetManualMaxSizeSliderFormat(float value) {
-			return value < 1.0f ? "%.2fx" : "%.1fx";
+		const char* GetRuleTargetTooltip(LSizeLimitRuleTarget_t a_target) {
+			switch (a_target) {
+				case LSizeLimitRuleTarget_t::kPlayer:
+					return "只匹配玩家自己。";
+				case LSizeLimitRuleTarget_t::kFollower:
+					return "匹配追随者/队友类目标。";
+				case LSizeLimitRuleTarget_t::kHostile:
+					return "匹配当前与玩家敌对，或战斗目标互相指向彼此的非玩家目标。";
+				case LSizeLimitRuleTarget_t::kImportant:
+					return "匹配带 Essential/重要角色标记的非玩家目标。";
+				case LSizeLimitRuleTarget_t::kHumanoidNPC:
+					return "匹配普通人形 NPC。若它同时也是追随者、敌对或重要角色，顺序由规则列表决定。";
+				case LSizeLimitRuleTarget_t::kAnimal:
+					return "匹配带 AnimalKeyword 的目标。猛犸也可能命中这类，最终以规则顺序为准。";
+				case LSizeLimitRuleTarget_t::kCreature:
+					return "匹配带 CreatureKeyword 的怪物目标。龙等特殊种类若同时命中，也由顺序决定。";
+				case LSizeLimitRuleTarget_t::kDragon:
+					return "单独匹配龙类目标。";
+				case LSizeLimitRuleTarget_t::kGiantMammoth:
+					return "单独匹配巨人和猛犸。";
+				case LSizeLimitRuleTarget_t::kMechanical:
+					return "匹配 Dwemer / 机械造物。";
+				default:
+					return "";
+			}
 		}
 
-		std::string GetActionFitSliderFormat() {
-			return fmt::format("动作适配 [{:.2f}x]", GetActionCompatibleSizeLimit());
+		const char* GetRuleModeLabel(LSizeLimitRuleMode_t a_mode) {
+			switch (a_mode) {
+				case LSizeLimitRuleMode_t::kNaturalCeiling:
+					return "自然体型封顶";
+				case LSizeLimitRuleMode_t::kNaturalLock:
+					return "锁定自然体型";
+				case LSizeLimitRuleMode_t::kFixedLimit:
+					return "固定上限";
+				case LSizeLimitRuleMode_t::kActionFit:
+					return "动作适应";
+				case LSizeLimitRuleMode_t::kSystemAuto:
+					return "原系统自动";
+				case LSizeLimitRuleMode_t::kUnlimited:
+					return "无限";
+				default:
+					return "未知模式";
+			}
 		}
 
-		bool DrawMaxSizePresetButtons(float* scale, const char* resetLabel, bool* dynamicActionFit = nullptr, const char* actionLabel = nullptr) {
-			bool changed = false;
+		const char* GetRuleModeTooltip(LSizeLimitRuleMode_t a_mode) {
+			switch (a_mode) {
+				case LSizeLimitRuleMode_t::kNaturalCeiling:
+					return "只阻止目标高于自然体型，允许被继续缩小。";
+				case LSizeLimitRuleMode_t::kNaturalLock:
+					return "始终维持在自然体型，放大和缩小都会被程序逐步拉回。";
+				case LSizeLimitRuleMode_t::kFixedLimit:
+					return "将最大体型限制在你设置的数值；若目标当前高于该值，会被逐步压回。";
+				case LSizeLimitRuleMode_t::kActionFit:
+					return "动态跟随当前玩家体型，为常规动作保留可用上限。玩家不提供这个模式。";
+				case LSizeLimitRuleMode_t::kSystemAuto:
+					return "命中这条规则后停止继续匹配，不写额外 override，改为沿用该目标原本的 GTS 成长公式。";
+				case LSizeLimitRuleMode_t::kUnlimited:
+					return "命中这条规则后直接取消额外上限。";
+				default:
+					return "";
+			}
+		}
 
-			if (ImGuiEx::Button(resetLabel, "将此滑块快速重置为 1.0x")) {
-				*scale = MaxSizeSliderPresetReset;
-				if (dynamicActionFit) {
-					*dynamicActionFit = false;
+		const char* GetRecallFilterModeLabel(LShrinkRecallFilterMode_t a_mode) {
+			switch (a_mode) {
+				case LShrinkRecallFilterMode_t::kAllShrunken:
+					return "全部缩小角色";
+				case LShrinkRecallFilterMode_t::kCustomTargets:
+					return "自定义分类";
+				default:
+					return "未知模式";
+			}
+		}
+
+		const char* GetRecallFilterModeTooltip(LShrinkRecallFilterMode_t a_mode) {
+			switch (a_mode) {
+				case LShrinkRecallFilterMode_t::kAllShrunken:
+					return "只要是非玩家、当前已缩小、活着且已加载的角色，都允许被召回。";
+				case LShrinkRecallFilterMode_t::kCustomTargets:
+					return "只有命中你在下方勾选分类、并且当前已缩小的角色，才会被召回。";
+				default:
+					return "";
+			}
+		}
+
+		const char* GetRecallPlacementLabel(LShrinkRecallPlacement_t a_mode) {
+			switch (a_mode) {
+				case LShrinkRecallPlacement_t::kRing:
+					return "环形";
+				case LShrinkRecallPlacement_t::kFront:
+					return "面前";
+				default:
+					return "未知模式";
+			}
+		}
+
+		const char* GetRecallPlacementTooltip(LShrinkRecallPlacement_t a_mode) {
+			switch (a_mode) {
+				case LShrinkRecallPlacement_t::kRing:
+					return "把目标分散摆在玩家周围的同心圆上，最稳妥，不容易全部堆到正前方。";
+				case LShrinkRecallPlacement_t::kFront:
+					return "把目标分散摆在玩家前方的数排位置，更方便你正面观察和处理。";
+				default:
+					return "";
+			}
+		}
+
+		bool TryParseRecallFilterMode(const std::string& a_value, LShrinkRecallFilterMode_t& a_out) {
+			if (auto parsed = magic_enum::enum_cast<LShrinkRecallFilterMode_t>(a_value); parsed.has_value()) {
+				a_out = *parsed;
+				return true;
+			}
+			return false;
+		}
+
+		bool TryParseRecallPlacement(const std::string& a_value, LShrinkRecallPlacement_t& a_out) {
+			if (auto parsed = magic_enum::enum_cast<LShrinkRecallPlacement_t>(a_value); parsed.has_value()) {
+				a_out = *parsed;
+				return true;
+			}
+			return false;
+		}
+
+		bool IsRecallTargetSelected(const std::vector<std::string>& a_targets, LSizeLimitRuleTarget_t a_target) {
+			const std::string_view targetName = magic_enum::enum_name(a_target);
+			return std::find(a_targets.begin(), a_targets.end(), targetName) != a_targets.end();
+		}
+
+		void SetRecallTargetSelected(std::vector<std::string>& a_targets, LSizeLimitRuleTarget_t a_target, bool a_selected) {
+			const std::string targetName = EnumName(a_target);
+			const auto iter = std::find(a_targets.begin(), a_targets.end(), targetName);
+
+			if (a_selected) {
+				if (iter == a_targets.end()) {
+					a_targets.push_back(targetName);
 				}
-				changed = true;
 			}
+			else if (iter != a_targets.end()) {
+				a_targets.erase(iter);
+			}
+		}
 
-			if (dynamicActionFit && actionLabel) {
-				const float actionFitLimit = GetActionCompatibleSizeLimit();
-				const std::string actionTooltip = fmt::format(
-					"动态跟随当前玩家体型，为所有常规目标动作保留可用上限。\n"
-					"按最严格的 Grab/Vore 条件（> x8 体型差）计算，并限制在 1.0x 以内。\n"
-					"每 0.15 秒，或玩家体型变化至少 0.01x 时自动刷新。\n"
-					"当前结果：{:.2f}x。\n"
-					"启用后，拖动滑块或点击 1x 会退出此模式。",
-					actionFitLimit
-				);
+		bool RuleTargetSupportsActionFit(LSizeLimitRuleTarget_t a_target) {
+			return a_target != LSizeLimitRuleTarget_t::kPlayer;
+		}
 
-				SameLineForMaxSizeButtonIfFits(actionLabel);
-				if (ImGuiEx::Button(actionLabel, actionTooltip.c_str())) {
-					*scale = GetActionCompatibleSizeLimit(true);
-					*dynamicActionFit = true;
-					changed = true;
+		SizeLimitRule_t MakeDefaultRule(LSizeLimitRuleTarget_t a_target) {
+			SizeLimitRule_t rule;
+			rule.bEnabled = true;
+			rule.sTarget = EnumName(a_target);
+			rule.sMode = EnumName(LSizeLimitRuleMode_t::kFixedLimit);
+			rule.fValue = 1.0f;
+			return rule;
+		}
+
+		bool TargetAlreadyUsed(const std::vector<SizeLimitRule_t>& a_rules, LSizeLimitRuleTarget_t a_target) {
+			for (const auto& rule : a_rules) {
+				if (GetRuleTarget(rule) == a_target) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		std::vector<LSizeLimitRuleTarget_t> CollectAddableTargets(const std::vector<SizeLimitRule_t>& a_rules) {
+			std::vector<LSizeLimitRuleTarget_t> targets;
+			targets.reserve(10);
+
+			for (int i = 0; i < static_cast<int>(LSizeLimitRuleTarget_t::kTotal); ++i) {
+				const auto target = static_cast<LSizeLimitRuleTarget_t>(i);
+				if (!TargetAlreadyUsed(a_rules, target)) {
+					targets.push_back(target);
 				}
 			}
 
-			return changed;
+			return targets;
 		}
 	}
 
@@ -157,11 +342,113 @@ namespace GTS {
             PSString T1 = "把部分玩家已获得的 Perk 分享给追随者（如果他们还没有）。\n"
                           "（影响最大体型的 Perk 不会共享）";
 
-            if (ImGui::CollapsingHeader("Perk 设置", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("Perk 设置", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("向追随者共享 Perk", &Config::Balance.bSharePerks, T1);
                 ImGui::Spacing();
             }
         }
+
+		ImUtil_Unique
+		{
+			PSString T0 = "启用后，所有非玩家角色在缩小到自然体型以下时，会持续失去当前耐力；\n"
+			              "如果该目标本身有最大魔力值，也会一并持续失去当前魔力。\n"
+			              "判断基准使用目标自己的自然体型，而不是固定 1.0x。\n"
+			              "只要低于自然体型，就会持续被抽取；低于自然体型的 50% 时，会直接被抽到 0。\n"
+			              "被抽走的数值会优先回复玩家的对应资源；如果玩家该资源已满，则按 100 点资源 = 1.0 点 GTS 经验折算。\n"
+			              "没有魔力值的目标只会处理耐力。";
+
+			if (ImGui::CollapsingHeader("缩小时资源掠夺", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("启用非玩家缩小时抽取耐力/魔力", &Config::Balance.bShrinkStealResources, T0);
+				ImGui::Spacing();
+			}
+		}
+
+		ImUtil_Unique
+		{
+			PSString T0 = "设置“召回缩小目标”快捷键按下后，会扫描玩家周围多大的范围。\n"
+			              "只处理当前已加载的角色；范围过大时，一次可能会召回很多目标。";
+			PSString T1 = "决定召回过来的目标摆在玩家周围一圈，还是摆在玩家正前方几排。";
+			PSString T2 = "召回成功后，让目标短暂无法自行走开。\n"
+			              "这是基于短时拦移动实现的软停步，不会改动它们的长期 AI 状态。";
+			PSString T3 = "如果切到“自定义分类”，只有下方勾选到的分类才会参与召回。\n"
+			              "无论哪种模式，都只会召回当前已经缩小到自然体型以下的非玩家目标。";
+			LShrinkRecallFilterMode_t filterMode = LShrinkRecallFilterMode_t::kAllShrunken;
+			if (!TryParseRecallFilterMode(Config::Balance.sShrinkRecallFilterMode, filterMode)) {
+				Config::Balance.sShrinkRecallFilterMode = EnumName(filterMode);
+			}
+
+			LShrinkRecallPlacement_t placementMode = LShrinkRecallPlacement_t::kRing;
+			if (!TryParseRecallPlacement(Config::Balance.sShrinkRecallPlacement, placementMode)) {
+				Config::Balance.sShrinkRecallPlacement = EnumName(placementMode);
+			}
+
+			Config::Balance.fShrinkRecallSearchRadius = std::clamp(Config::Balance.fShrinkRecallSearchRadius, 250.0f, 20000.0f);
+			Config::Balance.fShrinkRecallPauseDuration = std::clamp(Config::Balance.fShrinkRecallPauseDuration, 0.0f, 10.0f);
+
+			if (ImGui::CollapsingHeader("缩小目标召回", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::HelpText("快捷键说明", "快捷键本身在“按键绑定 -> 能力 / Perk”里设置，默认是 NUMPAD0。");
+
+				if (ImGui::BeginCombo("召回筛选", GetRecallFilterModeLabel(filterMode))) {
+					for (int rawMode = 0; rawMode < static_cast<int>(LShrinkRecallFilterMode_t::kTotal); ++rawMode) {
+						const auto candidate = static_cast<LShrinkRecallFilterMode_t>(rawMode);
+						const bool selected = candidate == filterMode;
+						if (ImGui::Selectable(GetRecallFilterModeLabel(candidate), selected)) {
+							Config::Balance.sShrinkRecallFilterMode = EnumName(candidate);
+							filterMode = candidate;
+						}
+						if (selected) {
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGuiEx::Tooltip(GetRecallFilterModeTooltip(filterMode));
+
+				ImGuiEx::SliderF("搜索范围", &Config::Balance.fShrinkRecallSearchRadius, 250.0f, 20000.0f, T0, "%.0f");
+
+				if (ImGui::BeginCombo("落点模式", GetRecallPlacementLabel(placementMode))) {
+					for (int rawMode = 0; rawMode < static_cast<int>(LShrinkRecallPlacement_t::kTotal); ++rawMode) {
+						const auto candidate = static_cast<LShrinkRecallPlacement_t>(rawMode);
+						const bool selected = candidate == placementMode;
+						if (ImGui::Selectable(GetRecallPlacementLabel(candidate), selected)) {
+							Config::Balance.sShrinkRecallPlacement = EnumName(candidate);
+							placementMode = candidate;
+						}
+						if (selected) {
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGuiEx::Tooltip(T1);
+				ImGuiEx::Tooltip(GetRecallPlacementTooltip(placementMode));
+
+				ImGuiEx::SliderF("召回后停步时长", &Config::Balance.fShrinkRecallPauseDuration, 0.0f, 10.0f, T2, "%.1f 秒");
+
+				if (filterMode == LShrinkRecallFilterMode_t::kCustomTargets) {
+					ImGui::SeparatorText("自定义分类");
+					ImGuiEx::HelpText("筛选规则", T3);
+
+					for (int rawTarget = 0; rawTarget < static_cast<int>(LSizeLimitRuleTarget_t::kTotal); ++rawTarget) {
+						const auto target = static_cast<LSizeLimitRuleTarget_t>(rawTarget);
+						if (target == LSizeLimitRuleTarget_t::kPlayer) {
+							continue;
+						}
+
+						bool selected = IsRecallTargetSelected(Config::Balance.ShrinkRecallTargets, target);
+						if (ImGui::Checkbox(GetRuleTargetLabel(target), &selected)) {
+							SetRecallTargetSelected(Config::Balance.ShrinkRecallTargets, target, selected);
+						}
+						ImGuiEx::Tooltip(GetRuleTargetTooltip(target));
+						if (target == LSizeLimitRuleTarget_t::kFollower || target == LSizeLimitRuleTarget_t::kImportant || target == LSizeLimitRuleTarget_t::kDragon) {
+							ImGui::SameLine();
+						}
+					}
+				}
+
+				ImGui::Spacing();
+			}
+		}
     }
 
     void CategoryBalance::DrawRight() {
@@ -217,345 +504,161 @@ namespace GTS {
             }
 
             if (ImGuiEx::ConditionalHeader("体型上限", DisableReason, HasPerk && Unlock && !Config::Balance.bBalanceMode)) {
-                constexpr float Max = 255.0f;
-                constexpr float Min = 0.0f;
-                constexpr float InfSentinel = 1'000'000.0f;
-
-                const bool IsMassBased = Config::Balance.sSizeMode == "kMassBased";
-                const float MassLimit = get_max_scale(PlayerCharacter::GetSingleton());
-
+                EnsureSizeLimitRulesInitialized();
                 ImGuiEx::HelpText("最大体型由什么决定", THelp);
+                ImGuiEx::HelpText(
+                    "规则如何工作",
+                    "从上到下检查规则，第一条命中后立即停止，不再看后面的分类。\n"
+                    "未命中任何规则时：不处理，不写额外 override，保留原系统体型逻辑。\n"
+                    "玩家不提供“动作适应”模式。"
+                );
 
-                {   // Player Size
-                    float* Scale = &Config::Balance.fMaxPlayerSizeOverride;
+                auto& rules = Config::Balance.SizeLimitRules;
+                auto addableTargets = CollectAddableTargets(rules);
+                static int addTargetIndex = 0;
 
-                    const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
-
-                    float UIValue = StoredInf ? Max : (StoredAuto ? Min : *Scale);
-
-                    std::string _Frmt;
-                    if (StoredInf) {
-                        _Frmt = "无限";
-                    }
-                    else if (StoredAuto) {
-                        float SkillBasedLimit = MassMode_GetValuesForMenu(PlayerCharacter::GetSingleton());
-                        if (IsMassBased) {
-                            _Frmt = fmt::format("质量模式 [{:.2f}x] / 上限 [{:.2f}x]", MassLimit, SkillBasedLimit);
-                        }
-                        else {
-                            _Frmt = fmt::format("技能决定 [{:.2f}x]", SkillBasedLimit);
-                        }
-                    }
-                    else {
-                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
+                if (!addableTargets.empty()) {
+                    if (addTargetIndex >= static_cast<int>(addableTargets.size())) {
+                        addTargetIndex = 0;
                     }
 
-                    std::string ToolTip = fmt::format(
-                        "调整玩家的最大体型。\n"
-                        "高于 {:.0f}x 时视为取消上限。\n"
-                        "设置为 0.0x 时，会改为由技能等级和 Perk 决定。",
-                        Max - 5.0f
-                    );
-
-                    const bool Changed = ImGuiEx::SliderF("玩家最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
-
-                    if (Changed) {
-                        const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
-
-                        if (WantsInf) {
-                            *Scale = InfSentinel;
+                    if (ImGui::BeginCombo("添加分类", GetRuleTargetLabel(addableTargets[addTargetIndex]))) {
+                        for (int i = 0; i < static_cast<int>(addableTargets.size()); ++i) {
+                            const bool selected = i == addTargetIndex;
+                            if (ImGui::Selectable(GetRuleTargetLabel(addableTargets[i]), selected)) {
+                                addTargetIndex = i;
+                            }
+                            if (selected) {
+                                ImGui::SetItemDefaultFocus();
+                            }
                         }
-                        else if (WantsAuto) {
-                            *Scale = 0.0f;
-                        }
-                        else {
-                            *Scale = UIValue;
-                        }
+                        ImGui::EndCombo();
                     }
-                    else {
-                        if (StoredInf) {
-                            *Scale = InfSentinel;
-                        }
-                        else if (StoredAuto) {
-                            *Scale = 0.0f;
-                        }
-                    }
+                    ImGuiEx::Tooltip("从尚未使用的分类中新增一条规则。");
 
-                    DrawMaxSizePresetButtons(Scale, "1x##PlayerMaxSizeReset");
+                    ImGui::SameLine();
+                    if (ImGuiEx::Button("添加规则", "把选中的分类加入规则列表，默认模式为“固定上限 1.0x”。")) {
+                        rules.push_back(MakeDefaultRule(addableTargets[addTargetIndex]));
+                    }
+                }
+                else {
+                    ImGui::TextDisabled("所有分类都已添加。删除现有规则后可重新加入。");
                 }
 
-                {   // Max Follower Size
-                    float* Scale = &Config::Balance.fMaxFollowerSize;
-                    bool* DynamicActionFit = &Config::Balance.bFollowerDynamicActionFit;
+                ImGui::SeparatorText("规则列表");
 
-                    const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
-                    const bool StoredDynamic = *DynamicActionFit;
-
-                    float UIValue = StoredDynamic ? GetActionCompatibleSizeLimit() : (StoredInf ? Max : (StoredAuto ? Min : *Scale));
-
-                    std::string _Frmt;
-                    if (StoredDynamic) {
-                        _Frmt = GetActionFitSliderFormat();
-                    }
-                    else if (StoredInf) {
-                        _Frmt = "无限";
-                    }
-                    else if (StoredAuto) {
-                        _Frmt = IsMassBased ? "质量模式" : "技能决定";
-                    }
-                    else {
-                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
-                    }
-
-                    std::string ToolTip = fmt::format(
-                        "调整追随者的最大体型。\n"
-                        "高于 {:.0f}x 时视为取消上限。\n"
-                        "设置为 0.0x 时，会改为由追随者的 GTS 等级和 Perk 决定。",
-                        Max - 5.0f
-                    );
-
-                    const bool Changed = ImGuiEx::SliderF("追随者最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
-
-                    if (Changed) {
-                        *DynamicActionFit = false;
-                        const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
-
-                        if (WantsInf) {
-                            *Scale = InfSentinel;
-                        }
-                        else if (WantsAuto) {
-                            *Scale = 0.0f;
-                        }
-                        else {
-                            *Scale = UIValue;
-                        }
-                    }
-                    else if (!StoredDynamic) {
-                        if (StoredInf) {
-                            *Scale = InfSentinel;
-                        }
-                        else if (StoredAuto) {
-                            *Scale = 0.0f;
-                        }
-                    }
-
-                    DrawMaxSizePresetButtons(
-                        Scale,
-                        "1x##FollowerMaxSizeReset",
-                        DynamicActionFit,
-                        StoredDynamic ? "适应中##FollowerMaxSizeActionFit" : "适应##FollowerMaxSizeActionFit"
-                    );
+                if (rules.empty()) {
+                    ImGui::TextWrapped("当前没有任何分类规则。此时程序不会额外接管体型上限，所有目标都沿用原系统逻辑。");
                 }
 
-                {   // Hostile Target Max Size
-                    float* Scale = &Config::Balance.fMaxHostileSize;
-                    bool* DynamicActionFit = &Config::Balance.bHostileDynamicActionFit;
+                for (size_t i = 0; i < rules.size();) {
+                    auto& rule = rules[i];
+                    const auto target = GetRuleTarget(rule);
+                    const bool supportsActionFit = RuleTargetSupportsActionFit(target);
+                    auto mode = GetRuleMode(rule);
 
-                    const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
-                    const bool StoredDynamic = *DynamicActionFit;
-
-                    float UIValue = StoredDynamic ? GetActionCompatibleSizeLimit() : (StoredInf ? Max : (StoredAuto ? Min : *Scale));
-
-                    std::string _Frmt;
-                    if (StoredDynamic) {
-                        _Frmt = GetActionFitSliderFormat();
-                    }
-                    else if (StoredInf) {
-                        _Frmt = "无限";
-                    }
-                    else if (StoredAuto) {
-                        _Frmt = "沿用重要角色/其他普通目标";
-                    }
-                    else {
-                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
+                    if (!supportsActionFit && mode == LSizeLimitRuleMode_t::kActionFit) {
+                        rule.sMode = EnumName(LSizeLimitRuleMode_t::kSystemAuto);
+                        mode = LSizeLimitRuleMode_t::kSystemAuto;
                     }
 
-                    std::string ToolTip = fmt::format(
-                        "为敌对目标单独设置最大体型。\n"
-                        "敌对目标 = 与玩家互相敌对，或当前战斗目标为彼此的非玩家、非追随者目标。\n"
-                        "这个滑条会优先于下方的重要角色和其他普通目标设定。\n"
-                        "高于 {:.0f}x 时视为取消上限。\n"
-                        "设置为 0.0x 时，将回退到下方的重要角色/其他普通目标设定。",
-                        Max - 5.0f
-                    );
+                    bool deleteRule = false;
+                    bool moveUp = false;
+                    bool moveDown = false;
 
-                    const bool Changed = ImGuiEx::SliderF("敌对目标最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
+                    ImGui::PushID(static_cast<int>(i));
 
-                    if (Changed) {
-                        *DynamicActionFit = false;
-                        const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
+                    ImGui::SeparatorText(fmt::format("规则 {}: {}", i + 1, GetRuleTargetLabel(target)).c_str());
+                    ImGuiEx::Tooltip(GetRuleTargetTooltip(target));
 
-                        if (WantsInf) {
-                            *Scale = InfSentinel;
+                    ImGui::Checkbox("启用", &rule.bEnabled);
+
+                    ImGui::SameLine();
+                    ImGui::BeginDisabled(i == 0);
+                    if (ImGui::ArrowButton("##MoveUp", ImGuiDir_Up)) {
+                        moveUp = true;
+                    }
+                    ImGui::EndDisabled();
+
+                    ImGui::SameLine();
+                    ImGui::BeginDisabled(i + 1 >= rules.size());
+                    if (ImGui::ArrowButton("##MoveDown", ImGuiDir_Down)) {
+                        moveDown = true;
+                    }
+                    ImGui::EndDisabled();
+
+                    ImGui::SameLine();
+                    if (ImGuiEx::Button("删除", "删除这条分类规则。")) {
+                        deleteRule = true;
+                    }
+
+                    ImGui::TextWrapped("%s", GetRuleTargetTooltip(target));
+
+                    if (ImGui::BeginCombo("模式", GetRuleModeLabel(mode))) {
+                        for (int rawMode = 0; rawMode < static_cast<int>(LSizeLimitRuleMode_t::kTotal); ++rawMode) {
+                            const auto candidate = static_cast<LSizeLimitRuleMode_t>(rawMode);
+                            if (candidate == LSizeLimitRuleMode_t::kActionFit && !supportsActionFit) {
+                                continue;
+                            }
+
+                            const bool selected = candidate == mode;
+                            if (ImGui::Selectable(GetRuleModeLabel(candidate), selected)) {
+                                rule.sMode = EnumName(candidate);
+                                mode = candidate;
+                            }
+                            if (selected) {
+                                ImGui::SetItemDefaultFocus();
+                            }
                         }
-                        else if (WantsAuto) {
-                            *Scale = 0.0f;
-                        }
-                        else {
-                            *Scale = UIValue;
-                        }
+                        ImGui::EndCombo();
                     }
-                    else if (!StoredDynamic) {
-                        if (StoredInf) {
-                            *Scale = InfSentinel;
+                    ImGuiEx::Tooltip(GetRuleModeTooltip(mode));
+
+                    if (mode == LSizeLimitRuleMode_t::kFixedLimit) {
+                        float value = std::clamp(rule.fValue, SizeRuleFixedLimitMin, SizeRuleFixedLimitMax);
+                        ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8.0f);
+                        if (ImGui::InputFloat("上限", &value, 0.05f, 0.50f, "%.2fx", ImGuiInputTextFlags_AutoSelectAll)) {
+                            rule.fValue = std::clamp(value, SizeRuleFixedLimitMin, SizeRuleFixedLimitMax);
                         }
-                        else if (StoredAuto) {
-                            *Scale = 0.0f;
-                        }
+                        ImGui::SameLine();
+                        ImGui::TextDisabled("固定值是绝对体型，不是相对自然体型的倍率。");
                     }
-
-                    DrawMaxSizePresetButtons(
-                        Scale,
-                        "1x##HostileMaxSizeReset",
-                        DynamicActionFit,
-                        StoredDynamic ? "适应中##HostileMaxSizeActionFit" : "适应##HostileMaxSizeActionFit"
-                    );
-                }
-
-                {   // Important Target Max Size
-                    float* Scale = &Config::Balance.fMaxImportantSize;
-                    bool* DynamicActionFit = &Config::Balance.bImportantDynamicActionFit;
-                    const bool OtherDynamicActionFit = Config::Balance.bOtherDynamicActionFit;
-
-                    const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
-                    const bool StoredDynamic = *DynamicActionFit;
-
-                    float UIValue = StoredDynamic ? GetActionCompatibleSizeLimit() : (StoredInf ? Max : (StoredAuto ? Min : *Scale));
-
-                    std::string _Frmt;
-                    if (StoredDynamic) {
-                        _Frmt = GetActionFitSliderFormat();
+                    else if (mode == LSizeLimitRuleMode_t::kActionFit) {
+                        ImGui::TextDisabled("当前动作适应结果：%.2fx", GetActionCompatibleSizeLimit());
                     }
-                    else if (StoredInf) {
-                        _Frmt = "无限";
+                    else if (mode == LSizeLimitRuleMode_t::kNaturalCeiling) {
+                        ImGui::TextDisabled("只封顶，不会把已经缩小的目标拉回去。");
                     }
-                    else if (StoredAuto) {
-                        if (OtherDynamicActionFit) {
-                            _Frmt = fmt::format("沿用其他普通目标/动作适配 [{:.2f}x]", GetActionCompatibleSizeLimit());
-                        }
-                        else {
-                            _Frmt = IsMassBased ? "沿用其他普通目标/质量模式" : "沿用其他普通目标/技能决定";
-                        }
+                    else if (mode == LSizeLimitRuleMode_t::kNaturalLock) {
+                        ImGui::TextDisabled("会把被缩小的目标也逐步拉回自然体型。");
                     }
-                    else {
-                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
+                    else if (mode == LSizeLimitRuleMode_t::kSystemAuto) {
+                        ImGui::TextDisabled("命中后停止继续匹配，并交回该目标自己的原系统成长逻辑。");
+                    }
+                    else if (mode == LSizeLimitRuleMode_t::kUnlimited) {
+                        ImGui::TextDisabled("命中后取消额外上限。");
                     }
 
-                    std::string ToolTip = fmt::format(
-                        "为重要角色单独设置最大体型。\n"
-                        "重要角色 = 非玩家、非追随者、带有重要/Essential 标记的目标。\n"
-                        "这个滑条会优先于下方的“其他普通目标最大体型”生效。\n"
-                        "高于 {:.0f}x 时视为取消上限。\n"
-                        "设置为 0.0x 时，将回退到下方的其他普通目标设定。",
-                        Max - 5.0f
-                    );
+                    ImGui::PopID();
 
-                    const bool Changed = ImGuiEx::SliderF("重要角色最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
-
-                    if (Changed) {
-                        *DynamicActionFit = false;
-                        const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
-
-                        if (WantsInf) {
-                            *Scale = InfSentinel;
-                        }
-                        else if (WantsAuto) {
-                            *Scale = 0.0f;
-                        }
-                        else {
-                            *Scale = UIValue;
-                        }
-                    }
-                    else if (!StoredDynamic) {
-                        if (StoredInf) {
-                            *Scale = InfSentinel;
-                        }
-                        else if (StoredAuto) {
-                            *Scale = 0.0f;
-                        }
+                    if (deleteRule) {
+                        rules.erase(rules.begin() + static_cast<std::ptrdiff_t>(i));
+                        continue;
                     }
 
-                    DrawMaxSizePresetButtons(
-                        Scale,
-                        "1x##ImportantMaxSizeReset",
-                        DynamicActionFit,
-                        StoredDynamic ? "适应中##ImportantMaxSizeActionFit" : "适应##ImportantMaxSizeActionFit"
-                    );
-                }
-
-                {   // Other Normal Target Max Size
-                    float* Scale = &Config::Balance.fMaxOtherSize;
-                    bool* DynamicActionFit = &Config::Balance.bOtherDynamicActionFit;
-
-                    const bool StoredInf = *Scale >= (Max - 5.0f);
-                    const bool StoredAuto = *Scale <= (Min + MaxSizeSliderAutoThreshold);
-                    const bool StoredDynamic = *DynamicActionFit;
-
-                    float UIValue = StoredDynamic ? GetActionCompatibleSizeLimit() : (StoredInf ? Max : (StoredAuto ? Min : *Scale));
-
-                    std::string _Frmt;
-                    if (StoredDynamic) {
-                        _Frmt = GetActionFitSliderFormat();
-                    }
-                    else if (StoredInf) {
-                        _Frmt = "无限";
-                    }
-                    else if (StoredAuto) {
-                        _Frmt = IsMassBased ? "质量模式" : "技能决定";
-                    }
-                    else {
-                        _Frmt = GetManualMaxSizeSliderFormat(UIValue);
+                    if (moveUp && i > 0) {
+                        std::swap(rules[i], rules[i - 1]);
+                        --i;
+                        continue;
                     }
 
-                    std::string ToolTip = fmt::format(
-                        "调整所有其他普通目标的最大体型。\n"
-                        "其他普通目标 = 非玩家、非追随者、非重要角色的目标。\n"
-                        "这里不区分普通 NPC、动物或怪物。\n"
-                        "高于 {:.0f}x 时视为取消上限。\n"
-                        "设置为 0.0x 时，会改为由目标自己的 GTS 等级和 Perk 决定。",
-                        Max - 5.0f
-                    );
-
-                    const bool Changed = ImGuiEx::SliderF("其他普通目标最大体型", &UIValue, Min, Max, ToolTip.c_str(), _Frmt.c_str());
-
-                    if (Changed) {
-                        *DynamicActionFit = false;
-                        const bool WantsInf = UIValue >= (Max - 5.0f);
-                        const bool WantsAuto = UIValue <= (Min + MaxSizeSliderAutoThreshold);
-
-                        if (WantsInf) {
-                            *Scale = InfSentinel;
-                        }
-                        else if (WantsAuto) {
-                            *Scale = 0.0f;
-                        }
-                        else {
-                            *Scale = UIValue;
-                        }
-                    }
-                    else if (!StoredDynamic) {
-                        if (StoredInf) {
-                            *Scale = InfSentinel;
-                        }
-                        else if (StoredAuto) {
-                            *Scale = 0.0f;
-                        }
+                    if (moveDown && i + 1 < rules.size()) {
+                        std::swap(rules[i], rules[i + 1]);
+                        ++i;
+                        continue;
                     }
 
-                    DrawMaxSizePresetButtons(
-                        Scale,
-                        "1x##OtherMaxSizeReset",
-                        DynamicActionFit,
-                        StoredDynamic ? "适应中##OtherMaxSizeActionFit" : "适应##OtherMaxSizeActionFit"
-                    );
+                    ++i;
                 }
 
                 ImGui::Spacing();

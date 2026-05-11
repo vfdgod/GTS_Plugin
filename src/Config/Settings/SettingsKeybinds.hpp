@@ -1506,6 +1506,18 @@ namespace GTS {
 		        .Duration   = 1.0f,
 		        .BlockInput = "Never"
 		    }
+        },
+        {
+			.UICategory    = LInputCategory_t::kAbility,
+			.AdvFeature    = false,
+			.UIName        = "召回缩小目标",
+			.UIDescription = "把搜索范围内、已经缩小过的角色召回到你附近，并让他们短暂停步。",
+			.Event = {
+		        .Event      = "RecallShrunkenActors",
+		        .Keys       = {"NUMPAD0"},
+		        .Trigger    = "Once",
+		        .BlockInput = "Never"
+		    }
         }
 		
     };

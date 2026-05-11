@@ -1,6 +1,10 @@
 #pragma once
 
+#include "Config/Settings/SettingsBalance.hpp"
+
 namespace GTS {
+    bool ActorMatchesSizeLimitRuleTarget(Actor* a_actor, LSizeLimitRuleTarget_t a_target);
+    void EnsureSizeLimitRulesInitialized();
     void UpdateMaxScale(Actor* a_actor);
     void UpdateGlobalSizeLimit(Actor* a_actor);
 
