@@ -17,7 +17,7 @@ namespace {
 
     void DoImpactRumble(Actor* giant, std::string_view node, std::string_view name, float Mult = 1.0f) {
 		float shake_power = Rumble_Stomp_Under_Strong;
-		float smt = TinyCalamityActive(giant) ? 1.5f : 1.0f;
+		float smt = TinyCalamityBonusActive(giant) ? 1.5f : 1.0f;
 		smt *= GetHighHeelsBonusDamage(giant, true);
 		Rumbling::Once(name, giant, shake_power * smt * Mult, 0.0f, node, 1.25f);
 	}
@@ -26,7 +26,7 @@ namespace {
 		float perk = GetPerkBonus_Basics(giant);
 		float SMT = 1.0f;
 		float damage = 1.0f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			SMT = 1.75f; // Larger Dust
 			damage = 1.25f;
 		}
@@ -42,6 +42,9 @@ namespace {
 
 			double Finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			if (Finish - Start > 0.05) { 
 				float Augment = PerkHandler::Perks_Cataclysmic_EmpowerStomp(giantref);

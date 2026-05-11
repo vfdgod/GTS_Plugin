@@ -44,6 +44,9 @@ namespace GTS {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			double Finish = Time::WorldTimeElapsed();
 
 			if (AllowEdits) {
@@ -77,6 +80,9 @@ namespace GTS {
 			}
 
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			double Finish = Time::WorldTimeElapsed();
 
 			if (AllowEdits) {
@@ -288,7 +294,7 @@ namespace GTS {
 			float tiny_scale = get_visual_scale(tiny);
 			float giant_scale = get_visual_scale(giant);
 			
-			if (TinyCalamityActive(giant)) {
+			if (TinyCalamityBonusActive(giant)) {
 			    giant_scale *= 2.5f;
 		    }
 

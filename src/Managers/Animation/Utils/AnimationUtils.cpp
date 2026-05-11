@@ -233,6 +233,9 @@ namespace GTS {
 			}
 			auto giantref = giantHandle.get().get();
 			auto tinyref = tinyHandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			auto FingerA = find_node(giantref, "NPC R Finger02 [RF02]");
 			if (!FingerA) {
@@ -343,6 +346,9 @@ namespace GTS {
 			}
 			auto giantref = giantHandle.get().get();
 			auto tinyref = tinyHandle.get().get();
+			if (!giantref || !tinyref) {
+				return;
+			}
 
 			float scale = get_visual_scale(tinyref) * GetSizeFromBoundingBox(tinyref);
 			PerkHandler::UpdatePerkValues(giantref, PerkUpdate::Perk_LifeForceAbsorption);
@@ -424,6 +430,9 @@ namespace GTS {
 				return false;
 			}
 			Actor* giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			Utils_UpdateHighHeelBlend(giantref, false);
 			// make behaviors read the value to blend between anims
@@ -479,8 +488,11 @@ namespace GTS {
 			}
 			
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
-			ApplyActionCooldown(giant, CooldownSource::Action_ButtCrush); // Set butt crush on the cooldown
+			ApplyActionCooldown(giantref, CooldownSource::Action_ButtCrush); // Set butt crush on the cooldown
 			if (!AnimationVars::General::IsGTSBusy(giantref)) {
 				return false;
 			}
@@ -496,6 +508,9 @@ namespace GTS {
 				return;
 			}
 			auto giant = giantref.get().get();
+			if (!giant) {
+				return;
+			}
 			DoLaunch(giant, radius, power, kind);
 		});
 	}
@@ -503,7 +518,7 @@ namespace GTS {
 	void DoLaunch(Actor* giant, float radius, float power, FootEvent kind) {
 		float smt_power = 1.0f;
 		float smt_radius = 1.0f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			smt_power *= 2.0f;
 			smt_radius *= 1.25f;
 		}
@@ -513,7 +528,7 @@ namespace GTS {
 	void DoLaunch(Actor* giant, float radius, float power, NiAVObject* node) {
 		float smt_power = 1.0f;
 		float smt_radius = 1.0f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			smt_power *= 2.0f;
 			smt_radius *= 1.25f;
 		}
@@ -550,6 +565,9 @@ namespace GTS {
 					return false;
 				}
 				auto GiantRef = GiantHandle.get().get();
+				if (!GiantRef) {
+					return false;
+				}
 				float stamina = GetAV(GiantRef, ActorValue::kStamina);
 				if (stamina <= 1.0f) {
 					return false; // Abort if we don't have stamina so it won't drain it forever. Just to make sure.
@@ -652,6 +670,9 @@ namespace GTS {
 
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			auto FrameB = Time::FramesElapsed() - FrameA;
 			if (FrameB <= 4.0f) {
@@ -692,6 +713,9 @@ namespace GTS {
 
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 			auto FrameB = Time::FramesElapsed() - FrameA;
 			if (FrameB <= 4.0f) {
 				return true;
@@ -742,6 +766,9 @@ namespace GTS {
 
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 			auto FrameB = Time::FramesElapsed() - FrameA;
 			if (FrameB <= 3) {
 				return true;
@@ -777,7 +804,7 @@ namespace GTS {
 		float giantScale = get_visual_scale(giant);
 
 		float SCALE_RATIO = Action_FingerGrind;
-		bool SMT = TinyCalamityActive(giant);
+		bool SMT = TinyCalamityBonusActive(giant);
 		if (SMT) {
 			SCALE_RATIO = 0.9f;
 		}
@@ -848,7 +875,7 @@ namespace GTS {
 
 			float maxFootDistance = radius * giantScale;
 
-			if (TinyCalamityActive(actor)) {
+			if (TinyCalamityBonusActive(actor)) {
 				SCALE_RATIO = 0.8f;
 			}
 			std::vector<NiPoint3> CoordsToCheck = GetFootCoordinates(actor, Right, false);
@@ -904,6 +931,9 @@ namespace GTS {
 
 										auto giant = giantHandle.get().get();
 										auto tiny = tinyHandle.get().get();
+										if (!giant || !tiny) {
+											return false;
+										}
 
 										if (Finish - Start > 0.02) {
 											if (CanDoDamage(giant, tiny, false)) {
@@ -958,7 +988,7 @@ namespace GTS {
 				NodePosition = node->world.translate;
 			}
 
-			if (TinyCalamityActive(giant)) {
+			if (TinyCalamityBonusActive(giant)) {
 				giantScale += 2.40f; // enough to push giants around, but not mammoths/dragons
 				SMT = true; // set SMT to true
 			}
@@ -1063,7 +1093,7 @@ namespace GTS {
 		constexpr float BASE_CHECK_DISTANCE = 90.0f;
 		float SCALE_RATIO = 1.75f;
 
-		if (TinyCalamityActive(actor)) {
+		if (TinyCalamityBonusActive(actor)) {
 			giantScale += 0.20f;
 			SCALE_RATIO = 0.90f;
 		}
@@ -1215,7 +1245,7 @@ namespace GTS {
 		float giantScale = get_visual_scale(giant);
 
 		float SCALE_RATIO = 1.25f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			SCALE_RATIO = 0.8f;
 			giantScale *= 1.3f;
 		}
@@ -1357,7 +1387,11 @@ namespace GTS {
 			NiAVObject* toe = Toe;
 			NiTransform inverseFoot = foot->world.Invert();
 			NiPoint3 forward = inverseFoot*toe->world.translate;
-			forward = forward / forward.Length();
+			const float forwardLength = forward.Length();
+			if (forwardLength <= 1e-4f) {
+				return footPoints;
+			}
+			forward = forward / forwardLength;
 
 			NiPoint3 up_1 = ((calf->world.translate + foot->world.translate) / 2);
 
@@ -1374,7 +1408,11 @@ namespace GTS {
 				}
 			}
 
-			up = up / up.Length();
+			const float upLength = up.Length();
+			if (upLength <= 1e-4f) {
+				return footPoints;
+			}
+			up = up / upLength;
 
 			NiPoint3 side = forward.UnitCross(up);
 			forward = up.UnitCross(side); // Reorthonalize
@@ -1473,6 +1511,9 @@ namespace GTS {
 			}
 			auto giantref = giantHandle.get().get();
 			auto tinyref = tinyHandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			if (ShrinkToNothing(giantref, tinyref, check_ticks, time_mult)) {
 				if (naming == "Absorb") {
@@ -1508,6 +1549,9 @@ namespace GTS {
 			}
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 			bool FullEmotion = EmotionManager::GetEmotionValue(giantref, CharEmotionType::Phenome, 0) >= 1.0f;
@@ -1552,6 +1596,9 @@ namespace GTS {
 			}
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 
 			bool ShouldRevert = timepassed >= duration + duration_add;
@@ -1601,6 +1648,9 @@ namespace GTS {
 			}
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 			bool ShouldRevert = timepassed >= duration + duration_add;
@@ -1652,6 +1702,9 @@ namespace GTS {
 			}
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 			bool ShouldRevert = timepassed >= duration + duration_add;
@@ -1700,6 +1753,9 @@ namespace GTS {
 			}
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 			bool ShouldRevert = timepassed >= duration + duration_add;
@@ -1750,6 +1806,9 @@ namespace GTS {
 			}
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 			bool ShouldRevert = timepassed >= duration + duration_add;

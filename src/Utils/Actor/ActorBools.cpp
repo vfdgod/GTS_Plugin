@@ -348,4 +348,14 @@ namespace GTS {
 		return false;
 	}
 
+	bool TinyCalamityBonusActive(Actor* giant) {
+		if (TinyCalamityActive(giant)) {
+			return true;
+		}
+		if (giant && giant->IsPlayerRef() && Config::Advanced.bPlayerTinyCalamityBonus) {
+			return true;
+		}
+		return false;
+	}
+
 }

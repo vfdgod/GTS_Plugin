@@ -90,13 +90,16 @@ namespace {
 				return false;
 			}
 			auto giant = gianthandle.get().get();
+			if (!giant) {
+				return false;
+			}
 			double timepassed = Time::WorldTimeElapsed() - Start;
 			float animspeed = AnimationManager::GetAnimSpeed(giant);
 
 			float elapsed = static_cast<float>(std::clamp(timepassed * animspeed, 0.0, 4.4));
 			float gain = std::clamp(get_growth_formula(giant, elapsed, GrowthType), -0.01f, 1.0f);
 
-			float growth = CalcPower(actor, 0.0080f * growth_mult * gain * animspeed, 0.0f, false);
+			float growth = CalcPower(giant, 0.0080f * growth_mult * gain * animspeed, 0.0f, false);
 
 			if (gain > 0) {
 				override_actor_scale(giant, growth, SizeEffectType::kGrow);
@@ -109,8 +112,8 @@ namespace {
 			if (!IsActionOnCooldown(giant, CooldownSource::Misc_GrowthSound)) {
 				ApplyActionCooldown(giant, CooldownSource::Misc_GrowthSound);
 
-				float Volume = std::clamp(get_visual_scale(actor)/8.0f, 0.20f, 1.0f);
-				Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundGrowth, actor, Volume * gain, "NPC Pelvis [Pelv]");
+				float Volume = std::clamp(get_visual_scale(giant)/8.0f, 0.20f, 1.0f);
+				Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundGrowth, giant, Volume * gain, "NPC Pelvis [Pelv]");
 			}
 			
 			if (!AnimationVars::Growth::IsGrowing(giant) || elapsed > 1.8f && gain < 0.0f) {

@@ -2,7 +2,6 @@
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Animation/Grab_Throw.hpp"
-#include "Managers/OverkillManager.hpp"
 #include "Managers/Animation/Grab.hpp"
 
 #include "Managers/Rumble.hpp"
@@ -13,55 +12,6 @@ namespace {
 
 	constexpr std::string_view RNode = "NPC R Foot [Rft ]";
 	constexpr std::string_view LNode = "NPC L Foot [Lft ]";
-
-	void Throw_DoCollisionDamage(TESObjectREFR* victim_ref, TESObjectREFR* aggressor_ref, float speed) {
-		float damage = speed * Damage_Throw_Collision;
-
-		Actor* victim = skyrim_cast<Actor*>(victim_ref);
-		Actor* aggressor = skyrim_cast<Actor*>(aggressor_ref);
-
-		if (victim && aggressor) {
-			InflictSizeDamage(aggressor, victim, damage);
-
-			std::string task = std::format("ThrowTiny {}", victim->formID);
-			ActorHandle giantHandle = aggressor->CreateRefHandle();
-			ActorHandle tinyHandle = victim->CreateRefHandle();
-
-			logger::info("Inflicting throw damage for {}: {}", victim->GetDisplayFullName(), damage);
-
-			TaskManager::RunOnce(task, [=](auto& update){
-				if (!giantHandle) {
-					return;
-				}
-				if (!tinyHandle) {
-					return;
-				}
-				
-				auto giant = giantHandle.get().get();
-				auto tiny = tinyHandle.get().get();
-				float health = GetAV(tiny, ActorValue::kHealth);
-				if (health <= 1.0f || tiny->IsDead()) {
-					OverkillManager::Overkill(giant, tiny);
-				}
-			});
-		}
-	}
-
-	void Throw_RayCastTask(Actor* giant, Actor* tiny, float speed) {
-		// currently does nothing
-		// Throw_DoCollisionDamage(victim_ref, aggressor_ref, speed);
-		// Idea is to apply damage when actor collides with the ground/rock and inflict damage based on how long it took to hit something
-	}
-
-	void Throw_RegisterForThrowDamage(Actor* giant, Actor* tiny, float speed) {
-		auto transient = Transient::GetActorData(tiny);
-		if (transient) {
-			//Throw_RayCastTask(giant, tiny, speed);
-			transient->ThrowWasThrown = true;
-			transient->ThrowOffender = giant;
-			transient->ThrowSpeed = speed;
-		}
-	}
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// E V E N T S
@@ -83,7 +33,7 @@ namespace {
 		float launch = 1.0f;
 		float dust = 0.9f;
 		float perk = GetPerkBonus_Basics(&data.giant);
-		if (TinyCalamityActive(&data.giant)) {
+		if (TinyCalamityBonusActive(&data.giant)) {
 			smt = 1.5f;
 			launch = 1.5f;
 			dust = 1.25f;
@@ -106,7 +56,7 @@ namespace {
 		float launch = 1.0f;
 		float dust = 0.9f;
 		float perk = GetPerkBonus_Basics(&data.giant);
-		if (TinyCalamityActive(&data.giant)) {
+		if (TinyCalamityBonusActive(&data.giant)) {
 			smt = 1.5f;
 			launch = 1.5f;
 			dust = 1.25f;
@@ -157,6 +107,9 @@ namespace {
 				}
 				Actor* giant = gianthandle.get().get();
 				Actor* tiny = tinyhandle.get().get();
+				if (!giant || !tiny) {
+					return false;
+				}
 				
 				// Wait for 3D to be ready
 				if (!giant->Is3DLoaded()) {
@@ -185,7 +138,7 @@ namespace {
 				if (charcont) {
 					charcont->SetLinearVelocityImpl((0.0f, 0.0f, 0.0f, 0.0f)); // Stop actor moving in space, just in case
 				}
-				float throw_mult = TinyCalamityActive(giant) ? 5.0f : 2.0f;
+				float throw_mult = TinyCalamityBonusActive(giant) ? 5.0f : 2.0f;
 				float Z = 35.0f;
 				if (giant->IsSneaking()) {
 					throw_mult *= 0.2f; // Else it is too strong, literally throws 70+ meters at normal size

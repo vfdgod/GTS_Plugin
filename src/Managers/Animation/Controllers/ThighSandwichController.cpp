@@ -52,6 +52,9 @@ namespace {
 			}
 			double Finish = Time::WorldTimeElapsed();
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			auto node = find_node(giantref, rune_node);
 			double timepassed = std::clamp(((Finish - Start) * GetAnimationSlowdown(giantref)) * 0.70, 0.01, 1.0);
 			if (node) {
@@ -75,6 +78,9 @@ namespace {
 			}
 			double Finish = Time::WorldTimeElapsed();
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			auto node = find_node(giantref, rune_node);
 			double timepassed = std::clamp(((Finish - Start) * GetAnimationSlowdown(giantref)) * 0.80, 0.01, 9999.0);
 			//log::info("Grow Rune task is running, timepassed: {}, AnimationSlowdown: {} ", timepassed, GetAnimationSlowdown(giantref));
@@ -273,7 +279,7 @@ namespace GTS {
 
 		float MINIMUM_DISTANCE = MINIMUM_SANDWICH_DISTANCE;
 
-		if (TinyCalamityActive(pred)) {
+		if (TinyCalamityBonusActive(pred)) {
 			MINIMUM_DISTANCE *= 1.75f;
 		}
 

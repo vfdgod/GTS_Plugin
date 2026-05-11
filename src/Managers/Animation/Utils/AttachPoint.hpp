@@ -186,10 +186,18 @@ namespace GTS {
 
 			NiTransform inverseFoot = foot->world.Invert();
 			NiPoint3 forward = inverseFoot*toe->world.translate;
-			forward = forward / forward.Length();
+			const float forwardLength = forward.Length();
+			if (forwardLength <= 1e-4f) {
+				return NiPoint3(0,0,0);
+			}
+			forward = forward / forwardLength;
 
 			NiPoint3 up = inverseFoot*calf->world.translate;
-			up = up / up.Length();
+			const float upLength = up.Length();
+			if (upLength <= 1e-4f) {
+				return NiPoint3(0,0,0);
+			}
+			up = up / upLength;
 
 			NiPoint3 side = up.UnitCross(forward);
 			forward = side.UnitCross(up); // Reorthonalize

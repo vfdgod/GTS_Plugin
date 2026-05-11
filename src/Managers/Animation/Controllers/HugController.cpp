@@ -68,6 +68,9 @@ namespace {
 
 			auto pred = giantHandle.get().get();
 			auto prey = tinyHandle.get().get();
+			if (!pred || !prey) {
+				return;
+			}
 			
 			HugShrink::GetSingleton().HugActor(pred, prey);
 			AnimationManager::StartAnim("Huggies_Try", pred);
@@ -157,7 +160,7 @@ namespace GTS {
 			}
 		}
 	
-		if (TinyCalamityActive(pred)) {
+		if (TinyCalamityBonusActive(pred)) {
 			MINIMUM_HUG_SCALE *= 0.80f;
 		}
 

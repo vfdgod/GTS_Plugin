@@ -39,6 +39,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			auto BreastL = find_node(giantref, "NPC L Breast");
 			auto BreastR = find_node(giantref, "NPC R Breast");
@@ -105,6 +108,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			auto BreastL = find_node(giantref, "NPC L Breast");
 			auto BreastR = find_node(giantref, "NPC R Breast");

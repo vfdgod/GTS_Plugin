@@ -85,7 +85,7 @@ namespace {
                         if (health <= HpThreshold) {
                             AnimationManager::StartAnim(pass_anim, player);
                             return true;
-                        } else if (TinyCalamityActive(player)) {
+                        } else if (TinyCalamityBonusActive(player)) {
                             DamageAV(player, ActorValue::kStamina, 60);
                             AnimationManager::StartAnim(pass_anim, player);
                             AddSMTPenalty(player, 10.0f);
@@ -199,12 +199,15 @@ namespace GTS
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
             if (!AnimationVars::Action::IsInCleavageState(giantref)) {
                 return false;
             }
 
-            ApplyActionCooldown(giant, Source);
+            ApplyActionCooldown(giantref, Source);
 
 			return true;
 		});

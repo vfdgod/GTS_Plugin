@@ -24,7 +24,7 @@ namespace Hooks {
 						if (actor) {
 							if (actor->IsPlayerRef()) {
 								float scale = get_visual_scale(actor);
-								if (TinyCalamityActive(actor)) {
+								if (TinyCalamityBonusActive(actor)) {
 									scale *= 2.0f;
 								}
 								if (scale > 1.75f) {

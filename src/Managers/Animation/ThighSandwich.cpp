@@ -49,7 +49,7 @@ namespace {
 			float additionaldamage = 1.0f + sizemanager.GetSizeVulnerability(tiny); // Get size damage debuff from enemy
 			float normaldamage = std::clamp(SizeManager::GetSizeAttribute(giant, SizeAttribute::Normal), 1.0f, 999.0f);
 			damage *= sizedifference * additionaldamage * normaldamage * GetPerkBonus_Thighs(giant);
-			if (TinyCalamityActive(giant)) {
+			if (TinyCalamityBonusActive(giant)) {
 				damage *= 1.5f;
 			}
 
@@ -312,7 +312,7 @@ namespace {
 		
 		float shake_power = Rumble_ThighSandwich_DropDown/2 * GetHighHeelsBonusDamage(&data.giant, true);
 
-		if (TinyCalamityActive(&data.giant)) {
+		if (TinyCalamityBonusActive(&data.giant)) {
 			shake_power *= 2.0f;
 		}
 

@@ -125,6 +125,9 @@ namespace {
 			const double timepassed = Time::WorldTimeElapsed() - Start;
 			if (timepassed > a_revertAfterTime) {
 				auto tiny = tinyhandle.get().get();
+				if (!tiny) {
+					return false;
+				}
 				if (auto data = Persistent::GetActorData(tiny)) {
 					data->fHalfLife = old_halflife;
 				}
@@ -216,6 +219,9 @@ namespace GTS {
 				return false;
 			}
 			auto tiny = tinyhandle.get().get();
+			if (!tiny) {
+				return false;
+			}
 			double Finish = Time::WorldTimeElapsed();
 			double timepassed = Finish - Start;
 			if (timepassed < 1.0) {
@@ -262,6 +268,9 @@ namespace GTS {
 						return false;
 					}
 					auto giantref = gianthandle.get().get();
+					if (!giantref) {
+						return false;
+					}
 					float& original_weight = giantref->GetActorBase()->weight;
 					if (original_weight >= 100.0f) {
 						return false;
@@ -492,6 +501,9 @@ namespace GTS {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			ApplyShakeAtNode(giantref, Rumble_Misc_MightOfDragons, "NPC COM [COM ]");
 			update_target_scale(giantref, 0.0026f * Gigantism * TimeScale(), SizeEffectType::kGrow);
 			giantref->AsActorValueOwner()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, ActorValue::kHealth, HpRegen * TimeScale());

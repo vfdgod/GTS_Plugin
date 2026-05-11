@@ -34,6 +34,9 @@ namespace {
 				return false;
 			}
 			Actor* giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			double Finish = Time::WorldTimeElapsed();
 
 			double timepassed = Finish - Start;
@@ -52,7 +55,7 @@ namespace {
 		float smt = 1.0f;
 		float dust = 1.0f;
 		
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}
@@ -68,6 +71,9 @@ namespace {
 
 			double Finish = Time::WorldTimeElapsed();
 			auto GiantRef = giantHandle.get().get();
+			if (!GiantRef) {
+				return false;
+			}
 
 			if (Finish - Start > 0.06) { 
 				DoDamageEffect(GiantRef, Damage_Trample * perk, Radius_Trample, 100, 0.10f, Event, 1.10f, Source);
@@ -96,7 +102,7 @@ namespace {
 		float dust = 1.15f;
 		float smt = 1.0f;
 		
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			smt = 1.5f;
 			dust *= 1.25f;
 		}
@@ -118,7 +124,7 @@ namespace {
 		float dust = 1.65f;
 		float smt = 1.0f;
 		
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			smt = 1.5f;
 			dust *= 1.25f;
 		}

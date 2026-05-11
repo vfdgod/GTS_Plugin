@@ -158,7 +158,7 @@ namespace GTS {
 
     void TinyCalamity_ShrinkActor(Actor* giant, Actor* tiny, float shrink) {
        GTS_PROFILE_SCOPE("TinyCalamity: ShrinkActor");
-        if (TinyCalamityActive(giant)) {
+        if (TinyCalamityBonusActive(giant)) {
             bool HasPerk = Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamitySizeSteal);
             float limit = Minimum_Actor_Scale;
             if (HasPerk) {
@@ -298,7 +298,7 @@ namespace GTS {
     void TinyCalamity_SeekActors(Actor* giant, const std::vector<Actor*>& actors) {
        GTS_PROFILE_SCOPE("TinyCalamity: SeekActors");
         if (giant->IsPlayerRef()) {
-            if (giant->AsActorState()->IsSprinting() && TinyCalamityActive(giant)) {
+            if (giant->AsActorState()->IsSprinting() && TinyCalamityBonusActive(giant)) {
                 auto node = find_node(giant, "NPC Pelvis [Pelv]");
                 if (!node) {
                     return;
@@ -375,6 +375,9 @@ namespace GTS {
     // Manages SMT bonus speed
     void TinyCalamity_BonusSpeed(Actor* giant) {
 		auto Attributes = Persistent::GetActorData(giant);
+		if (!Attributes) {
+			return;
+		}
 		float Gigantism = 1.0f + (Ench_Aspect_GetPower(giant) * 0.25f);
 
         float speed = 1.0f; 
@@ -383,7 +386,7 @@ namespace GTS {
 
 		float& currentspeed = Attributes->fSMTRunSpeed;
         // SMT Active and sprinting
-		if (giant->AsActorState()->IsSprinting() && TinyCalamityActive(giant)) {
+		if (giant->AsActorState()->IsSprinting() && TinyCalamityBonusActive(giant)) {
 
 			if (Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamityAug)) {
 				speed = 1.25f;

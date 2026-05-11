@@ -129,6 +129,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			if (!AnimationVars::Action::IsThighCrushing(giantref)) {
 				return false; //Disable it once we leave Thigh Crush state
@@ -148,6 +151,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			auto ThighL = find_node(giantref, "NPC L Thigh [LThg]");
 			auto ThighR = find_node(giantref, "NPC R Thigh [RThg]");
 
@@ -172,7 +178,7 @@ namespace {
 
 		float shake_power = Rumble_ThighCrush_StandUp * mult * GetHighHeelsBonusDamage(giant, true);
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			shake_power = 2.0f;
 		}
 		

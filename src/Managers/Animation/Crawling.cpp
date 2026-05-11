@@ -158,6 +158,9 @@ namespace {
 				return false;
 			}
 			auto giant = gianthandle.get().get();
+			if (!giant) {
+				return false;
+			}
 			auto Uarm = find_node(giant, "NPC R Forearm [RLar]");
 			auto Arm = find_node(giant, "NPC R Hand [RHnd]");
 			if (Uarm) {
@@ -183,6 +186,9 @@ namespace {
 				return false;
 			}
 			auto giant = gianthandle.get().get();
+			if (!giant) {
+				return false;
+			}
 			auto Uarm = find_node(giant, "NPC L Forearm [LLar]");
 			auto Arm = find_node(giant, "NPC L Hand [LHnd]");
 			if (Uarm) {
@@ -212,6 +218,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			auto FrameB = Time::FramesElapsed() - FrameA;
 			if (FrameB <= 60.0f/GetAnimationSlowdown(giantref)) {
 				return true;

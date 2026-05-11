@@ -44,7 +44,7 @@ namespace {
             auto giantref = gianthandle.get().get();
             auto tinyref = tinyhandle.get().get();
 
-            if (!tinyref) {
+            if (!giantref || !tinyref) {
                 return false; // end task in that case
             }
 
@@ -98,7 +98,7 @@ namespace {
             auto giantref = gianthandle.get().get();
             auto tinyref = tinyhandle.get().get();
 
-            if (!tinyref) {
+            if (!giantref || !tinyref) {
                 return false; // end task in that case
             }
 
@@ -114,7 +114,7 @@ namespace {
             float speed = AnimationManager::GetBonusAnimationSpeed(giantref);
 
             float damage = Damage_Breast_Strangle * power * additionaldamage * sizeDiff * TimeScale() * speed;
-            TinyCalamityActive(giantref) ? damage *= 1.5f : damage *= 1.0f;
+            TinyCalamityBonusActive(giantref) ? damage *= 1.5f : damage *= 1.0f;
 
             if (!AnimationVars::Cleavage::IsBoobsDoting(giantref) && !AnimationVars::General::IsGTSBusy(giantref)) {
                 AnimationManager::ResetAnimationSpeedData(giantref);

@@ -40,6 +40,9 @@ namespace {
 
 			float Elapsed = static_cast<float>(Time::WorldTimeElapsed() - Start);
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			if (Elapsed >= 0.6f) {
 				DamageAV(giantref, ActorValue::kStamina, damage);
@@ -96,6 +99,9 @@ namespace {
 				}
 
 				auto giantref = gianthandle.get().get();
+				if (!giantref) {
+					return false;
+				}
 
 				float Elapsed = static_cast<float>(Time::WorldTimeElapsed() - Start);
 				float formula = bezier_curve(Elapsed, 0.2f, 1.9f, 0, 0, 3.0f, 4.0f); // Reuse formula from GrowthAnimation::Growth_2/5
@@ -127,6 +133,9 @@ namespace {
 	void Hugs_ManageFriendlyTiny(ActorHandle gianthandle, ActorHandle tinyhandle) {
 		Actor* giantref = gianthandle.get().get();
 		Actor* tinyref = tinyhandle.get().get();
+		if (!giantref || !tinyref) {
+			return;
+		}
 
 		AnimationManager::StartAnim("Huggies_Spare", giantref);
 		AnimationManager::StartAnim("Huggies_Spare", tinyref);
@@ -327,10 +336,13 @@ namespace {
 			ActorHandle gianthandle = data.giant.CreateRefHandle();
 			TaskManager::Run(name, [=](auto& progressData) {
 				if (!gianthandle) {
-					return false;
-				}
-				Actor* giantref = gianthandle.get().get();
-				if (!AnimationVars::Hug::IsHugging(giantref) && !AnimationVars::Hug::IsHugCrushing(giantref) && !AnimationVars::General::IsGTSBusy(giantref)) {
+				return false;
+			}
+			Actor* giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
+			if (!AnimationVars::Hug::IsHugging(giantref) && !AnimationVars::Hug::IsHugCrushing(giantref) && !AnimationVars::General::IsGTSBusy(giantref)) {
 					ManageCamera(giantref, false, CameraTracking::None);
 					return false;
 				}
@@ -376,7 +388,7 @@ namespace {
 					AnimationManager::StartAnim("Huggies_HugCrush", player);
 					AnimationManager::StartAnim("Huggies_HugCrush_Victim", huggedActor);
 					return;
-				} else if (TinyCalamityActive(player)) {
+				} else if (TinyCalamityBonusActive(player)) {
 					AnimationManager::StartAnim("Huggies_HugCrush", player);
 					AnimationManager::StartAnim("Huggies_HugCrush_Victim", huggedActor);
 					AddSMTPenalty(player, 10.0f); // Mostly called inside ShrinkUntil
@@ -501,6 +513,9 @@ namespace GTS {
 			}
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			float sizedifference = get_scale_difference(giantref, tinyref, SizeType::VisualScale, false, true);
 			float steal = GetHugStealRate(giantref) * 0.85f;
@@ -554,6 +569,9 @@ namespace GTS {
 			}
 			auto tinyref = tinyhandle.get().get();
 			auto giantref = gianthandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			float DrainReduction = 3.4f;
 

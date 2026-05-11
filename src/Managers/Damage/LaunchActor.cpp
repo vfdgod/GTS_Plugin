@@ -111,7 +111,7 @@ namespace GTS {
 		float DamageMult = 0.5f * Config::Balance.fSizeDamageMult;
 		float giantSize = get_visual_scale(giant);
 		float tinySize = std::clamp(get_visual_scale(tiny), 0.5f, 1000000.0f); // clamp else they will fly into the sky
-		float highheel = GetHighHeelsBonusDamage(tiny, true);
+		float highheel = GetHighHeelsBonusDamage(giant, true);
 
 		float startpower = Push_Actor_Upwards * highheel * (1.0f + Potion_GetMightBonus(giant)); // determines default power of launching someone
 		
@@ -124,7 +124,7 @@ namespace GTS {
 
 		bool OwnsPerk = false;
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			threshold = 0.92f;
 			force += 0.02f;
 		}
@@ -174,14 +174,17 @@ namespace GTS {
 					double startTime = Time::WorldTimeElapsed();
 
 					TaskManager::Run(name, [=](auto& update){
-						if (tinyHandle) {
-							double endTime = Time::WorldTimeElapsed();
-							auto tinyref = tinyHandle.get().get();
-							if ((endTime - startTime) > 0.05) {
-								ApplyManualHavokImpulse(tinyref, Push.x, Push.y, Push.z, 1.0f);
-								return false;
-							}
-							return true;
+						if (!tinyHandle) {
+							return false;
+						}
+						double endTime = Time::WorldTimeElapsed();
+						auto tinyref = tinyHandle.get().get();
+						if (!tinyref) {
+							return false;
+						}
+						if ((endTime - startTime) > 0.05) {
+							ApplyManualHavokImpulse(tinyref, Push.x, Push.y, Push.z, 1.0f);
+							return false;
 						}
 						return true;
 					});
@@ -226,17 +229,14 @@ namespace GTS {
 
 	void LaunchActor::LaunchAtCustomNode(Actor* giant, float radius, float min_radius, float power, NiAVObject* node) {
 		GTS_PROFILE_SCOPE("LaunchActor: LaunchAtCustomNode");
+		if (!giant || !node) {
+			return;
+		}
 		if (giant->IsPlayerRef() || IsTeammate(giant) || EffectsForEveryone(giant)) {
-			if (!node) {
-				return;
-			}
-			if (!giant) {
-				return;
-			}
 			float giantScale = get_visual_scale(giant);
 
 			float SCALE_RATIO = GetLaunchThreshold(giant)/GetMovementModifier(giant);
-			if (TinyCalamityActive(giant)) {
+			if (TinyCalamityBonusActive(giant)) {
 				SCALE_RATIO = 1.0f/GetMovementModifier(giant);
 				giantScale *= 1.5f;
 			}
@@ -279,7 +279,7 @@ namespace GTS {
 		}
 		float giantScale = get_visual_scale(giant);
 		float SCALE_RATIO = GetLaunchThreshold(giant)/GetMovementModifier(giant);
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			SCALE_RATIO = 1.0f / GetMovementModifier(giant);
 			giantScale *= 1.5f;
 		}

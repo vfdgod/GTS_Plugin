@@ -196,6 +196,9 @@ namespace {
 				return false; // end task
 			}
 			auto giant = gianthandle.get().get();
+			if (!giant) {
+				return false;
+			}
 			double timepassed = Time::WorldTimeElapsed() - Start;
 			float ClampedJump = std::clamp(fallmod, 1.0f, 2.0f);
 			
@@ -231,6 +234,9 @@ namespace GTS {
 		if (a_event) {
 			GTS_PROFILE_SCOPE("Impact: HookProcessEvent");
 			auto actor = a_event->actor.get().get();
+			if (!actor) {
+				return;
+			}
 
 			auto id = a_event->pad04;
 			if (id != 10000001) { // .dll sends fake footstep events to fix missing foot sounds during some animations

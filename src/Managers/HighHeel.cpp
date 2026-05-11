@@ -82,6 +82,9 @@ namespace GTS {
 			}
 
 			auto get_actor = actorHandle.get().get();
+			if (!get_actor) {
+				return;
+			}
 			this->ApplyHH(get_actor, true);
 		});
 	}
@@ -95,6 +98,9 @@ namespace GTS {
 			}
 
 			auto get_actor = actorHandle.get().get();
+			if (!get_actor) {
+				return;
+			}
 			this->ApplyHH(get_actor, true);
 		});
 	}

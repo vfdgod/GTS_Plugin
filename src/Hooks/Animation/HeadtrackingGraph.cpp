@@ -25,10 +25,13 @@ namespace {
 				double timepassed = Finish - Start;
 				if (timepassed > 0.10) {
 					auto giant = giantHandle.get().get();
+					if (!giant) {
+						return false;
+					}
 
 					bool Disable = !(AnimationVars::Crawl::IsCrawling(giant) || AnimationVars::Prone::IsProne(giant) ||
-						AnimationVars::Crawl::IsHandStomping(actor) || 
-						AnimationVars::Crawl::IsHandStompingStrong(actor));
+						AnimationVars::Crawl::IsHandStomping(giant) ||
+						AnimationVars::Crawl::IsHandStompingStrong(giant));
 
 					AnimationVars::Other::SetSpineRotationEnabled(giant, Disable);
 					//log::info("Setting {} for {}", Disable, giant->GetDisplayFullName());

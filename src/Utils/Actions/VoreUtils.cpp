@@ -228,6 +228,9 @@ namespace GTS {
 				const float timeMultStr = (80.0f / static_cast<float>(Config::Gameplay.ActionSettings.iVoreDigestSpeedTime)) / DurationMult;
 				double timepassed = Time::WorldTimeElapsed() - start_time;
 				auto giantref = gianthandle.get().get();
+				if (!giantref) {
+					return false;
+				}
 				
 				float regen_attributes = GetMaxAV(giantref, ActorValue::kHealth) * 0.0006f;
 				float health = std::clamp(Regeneration/4000.0f, 0.0f, regen_attributes) * timeMultStr;
@@ -242,7 +245,10 @@ namespace GTS {
 				}
 
 				if (timepassed >= Config::Gameplay.ActionSettings.iVoreDigestSpeedTime * DurationMult) {
-					Task_Vore_FinishVoreBuff(VoreInfo, tinyhandle.get().get(), amount_of_tinies, false);
+					auto tinyref = tinyhandle.get().get();
+					auto voreInfo = VoreInfo;
+					voreInfo.giantess = giantref;
+					Task_Vore_FinishVoreBuff(voreInfo, tinyref, amount_of_tinies, false);
 					if (giantref->IsPlayerRef()) {
 						shake_camera(giantref, 0.50f, 0.75f);
 					}

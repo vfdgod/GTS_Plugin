@@ -71,6 +71,9 @@ namespace {
 				return false;
 			} 
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			if (!AnimationVars::Action::IsFootGrinding(giantref)) {
 				return false; 
 			}
@@ -120,7 +123,7 @@ namespace {
 
 		float shake_power = Rumble_FootGrind_Impact * GetHighHeelsBonusDamage(giant, true);
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			shake_power *= 1.5f;
 		}
 		

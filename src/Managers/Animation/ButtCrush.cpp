@@ -72,6 +72,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			double Finish = Time::WorldTimeElapsed();
 			if ((Finish - Start) / AnimationManager::GetAnimSpeed(giantref) > 12.0f || !AnimationVars::ButtCrush::IsButtCrushing(giantref) && !AnimationVars::General::IsGTSBusy(giantref)) {
@@ -87,7 +90,7 @@ namespace {
 		float perk = GetPerkBonus_Basics(giant);
 		float smt = 1.0f;
 		float dust = 1.0f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}
@@ -208,7 +211,7 @@ namespace {
 		float dust = 1.0f;
 		float smt = 1.0f;
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}
@@ -226,10 +229,13 @@ namespace {
 
 			double Finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			if (Finish - Start > 0.04) { 
 
-				SetButtCrushSize(giant, 0.0f, true);
+				SetButtCrushSize(giantref, 0.0f, true);
 
 				float damage = GetButtCrushDamage(giantref);
 				auto ThighL = find_node(giantref, "NPC L Thigh [LThg]");

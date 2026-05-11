@@ -71,7 +71,7 @@ namespace {
 		constexpr float MinGrabScale = Action_Grab;
 		float MinDistance            = MINIMUM_GRAB_DISTANCE;
 
-		if (TinyCalamityActive(a_Performer) || AnimationVars::Crawl::IsCrawling(a_Performer)) {
+		if (TinyCalamityBonusActive(a_Performer) || AnimationVars::Crawl::IsCrawling(a_Performer)) {
 			MinDistance *= 1.5f;
 		}
 

@@ -58,7 +58,11 @@ namespace {
 		NiPoint3 origin = GameUnitToMeter(in_origin);
 		pick_data.rayInput.from = origin;
 
-		NiPoint3 normed = direction / direction.Length();
+		const float directionLength = direction.Length();
+		if (directionLength <= 1e-4f) {
+			return;
+		}
+		NiPoint3 normed = direction / directionLength;
 		NiPoint3 end = origin + normed * length;
 		pick_data.rayInput.to = end;
 

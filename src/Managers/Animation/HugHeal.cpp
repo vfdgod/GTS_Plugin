@@ -115,6 +115,9 @@ namespace {
 			}
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			float sizedifference = get_scale_difference(giantref, tinyref, SizeType::VisualScale, false, true);
 			float threshold = 3.0f;

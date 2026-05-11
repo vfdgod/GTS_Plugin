@@ -11,7 +11,6 @@ namespace GTS {
 	hkaRagdollInstance* GetRagdoll(Actor* a_actor);
 	Actor* GetCharContActor(bhkCharacterController* a_charController);
 
-	bool CalculateThrowDirection(RE::Actor* a_ActorGiant, RE::Actor* a_ActorTiny, RE::NiPoint3& a_From, RE::NiPoint3& a_To, float a_HorizontalAngleOffset, float a_VerticalAngleOffset);
 	RE::NiPoint3 RotateAngleAxis(const RE::NiPoint3& a_vec, const float a_angle, const RE::NiPoint3& a_axis);
 
 	void SetSneaking(Actor* a_target, bool a_doOverrideSneak, int a_sneakState);

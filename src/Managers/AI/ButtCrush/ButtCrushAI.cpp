@@ -72,6 +72,9 @@ namespace {
 			}
 
 			Actor* ActorRef = PerformerHandle.get().get();
+			if (!ActorRef) {
+				return false;
+			}
 
 			const bool CanGrow = ButtCrush_IsAbleToGrow(ActorRef, GetGrowthLimit(ActorRef));
 			const bool BlockGrowth = IsActionOnCooldown(ActorRef, CooldownSource::Misc_AiGrowth);

@@ -38,6 +38,9 @@ namespace {
 				return false;
 			}
 			auto giant = gianthandle.get().get();
+			if (!giant) {
+				return false;
+			}
 			auto Leg = find_node(giant, node);
 			if (Leg) {
 				auto coords = GetFootCoordinates(giant, Right, false);

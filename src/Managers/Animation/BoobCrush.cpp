@@ -111,6 +111,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			auto BreastL = find_node(giantref, "NPC L Breast");
 			auto BreastR = find_node(giantref, "NPC R Breast");
@@ -164,6 +167,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			float stamina = GetAV(giantref, ActorValue::kStamina);
 			DamageAV(giantref, ActorValue::kStamina, 0.12f * GetButtCrushCost(giantref, false));
@@ -207,7 +213,7 @@ namespace {
 
 		InflictBodyDamage(giant);
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}

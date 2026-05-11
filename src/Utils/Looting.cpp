@@ -19,6 +19,9 @@ namespace {
 			}
 			const double Finish = Time::WorldTimeElapsed();
 			const auto dropboxPtr = dropboxHandle.get().get();
+			if (!dropboxPtr) {
+				return false;
+			}
 			if (!dropboxPtr->Is3DLoaded()) {
 				return true;
 			}
@@ -61,6 +64,9 @@ namespace {
 				return false;
 			}
 			auto dropboxPtr = dropboxHandle.get().get();
+			if (!dropboxPtr) {
+				return false;
+			}
 			if (!dropboxPtr->Is3DLoaded()) {
 				return true; // retry
 			}
@@ -142,14 +148,17 @@ namespace GTS {
 			}
 			auto tiny = tinyhandle.get().get();
 			auto giant = gianthandle.get().get();
+			if (!tiny || !giant) {
+				return false;
+			}
 
-			if (tiny && !tiny->IsDead()) {
+			if (!tiny->IsDead()) {
 				KillActor(giant, tiny); // just to make sure
 			}
 
 			float hp = GetAV(tiny, ActorValue::kHealth);
 
-			if (tiny && (tiny->IsDead() || hp <= 0.0f)) {
+			if (tiny->IsDead() || hp <= 0.0f) {
 				double Finish = Time::WorldTimeElapsed();
 				double timepassed = Finish - Start;
 				if (timepassed < expectedtime) {
@@ -284,6 +293,9 @@ namespace GTS {
 			}
 			auto giant = giantHandle.get().get();
 			auto tiny = tinyHandle.get().get();
+			if (!giant || !tiny) {
+				return;
+			}
 			float scale = get_visual_scale(tiny) * GetSizeFromBoundingBox(tiny);
 			TransferInventory(tiny, giant, scale, false, true, Cause, true);
 			// ^ transferInventory>TransferInventoryToDropBox also plays crush audio on loot pile

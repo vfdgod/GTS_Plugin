@@ -110,11 +110,16 @@ namespace {
                     return false;
                 }
                 if (!tinyhandle) {
-                    SetReattachingState(gianthandle.get().get(), false);
+                    if (auto giantref = gianthandle.get().get()) {
+                        SetReattachingState(giantref, false);
+                    }
                     return false;
                 }
                 auto giantref = gianthandle.get().get();
                 auto tinyref = tinyhandle.get().get();
+                if (!giantref || !tinyref) {
+                    return false;
+                }
 
                 double Finish = Time::WorldTimeElapsed();
                 double timepassed = Finish - Start;

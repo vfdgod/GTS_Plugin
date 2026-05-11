@@ -164,6 +164,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			if (!TinyCalamityActive(giantref)) {
 				return false;
 			}

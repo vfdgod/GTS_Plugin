@@ -20,7 +20,7 @@ namespace {
         float scale = get_visual_scale(giant);
         float massscale = (scale * scale * scale);
         float modify = 0.0f;
-        if (TinyCalamityActive(giant)) {
+        if (TinyCalamityBonusActive(giant)) {
             modify = (in * 4.0f + 80) * scale;
         }
         else {

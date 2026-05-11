@@ -34,6 +34,9 @@ namespace {
 				return false;
 			}
 			auto caster = gianthandle.get().get();
+			if (!caster) {
+				return false;
+			}
 			double timepassed = Time::WorldTimeElapsed() - Start;
 			float elapsed = static_cast<float>(std::clamp(timepassed * AnimationManager::GetAnimSpeed(caster), 0.01, 1.2));
 			float multiply = bezier_curve(elapsed, 0, 1.9f, 0.6f, 0, 2.0f, 1.0f);

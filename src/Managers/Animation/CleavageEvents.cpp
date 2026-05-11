@@ -163,7 +163,7 @@ namespace {
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
 
-			if (!tinyref) {
+			if (!giantref || !tinyref) {
 				return false; // end task in that case
 			}
             float damage = 0.0f;//0.0015f * starting_hppercentage * TimeScale();
@@ -197,7 +197,7 @@ namespace {
 			float damage = (Damage_Breast_Squish * damage_mult) * power * additionaldamage * additionaldamage * sizeDiff;
 			float experience = std::clamp(damage/1600, 0.0f, 0.06f);
 
-			if (TinyCalamityActive(giant)) {
+			if (TinyCalamityBonusActive(giant)) {
 				bonus = 1.65f;
 			}
 
@@ -450,6 +450,9 @@ namespace {
 
                 auto giantref = giantHandle.get().get();
                 auto tinyref = tinyHandle.get().get();
+                if (!giantref || !tinyref) {
+                    return;
+                }
 
                 PerkHandler::UpdatePerkValues(giantref, PerkUpdate::Perk_LifeForceAbsorption);
 

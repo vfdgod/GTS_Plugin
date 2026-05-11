@@ -50,6 +50,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			CollisionDamage::DoFootCollision(giantref, damage, radius, random, bbmult, crush_threshold, DamageSource::Crushed, right, CooldownCheck, false, false); // Foot damage
 			ApplyThighDamage(giantref, right, CooldownCheck, radius, damage, bbmult, crush_threshold, random, DamageSource::ThighCrushed); // Thigh Damage
@@ -64,7 +67,7 @@ namespace {
 		}
 		float BASE_CHECK_DISTANCE = 90.0f;
 		float SCALE_RATIO = 3.0f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			SCALE_RATIO = 0.8f;
 		}
 		float giantScale = get_visual_scale(giant);

@@ -18,7 +18,7 @@ namespace {
 
     void DoImpactRumble(Actor* giant, std::string_view node, std::string_view name) {
 		float shake_power = Rumble_Stomp_Under_Light;
-		float smt = TinyCalamityActive(giant) ? 1.5f : 1.0f;
+		float smt = TinyCalamityBonusActive(giant) ? 1.5f : 1.0f;
 		smt *= GetHighHeelsBonusDamage(giant, true);
 		Rumbling::Once(name, giant, shake_power * smt, 0.0f, node, 1.25f);
 	}
@@ -47,7 +47,7 @@ namespace {
             damage *= 0.75f;
         }
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			SMT = 1.75f; // Larger Dust
 			damage *= 1.25f;
 		}

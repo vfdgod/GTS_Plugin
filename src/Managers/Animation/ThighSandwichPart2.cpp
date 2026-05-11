@@ -98,6 +98,9 @@ namespace AnimLogic {
 				}
 				auto g = giantref.get().get();
 				auto t = tinyref.get().get();
+				if (!g || !t) {
+					return;
+				}
 
 				if (!t->IsPlayerRef()) {
 					Disintegrate(t);
@@ -115,7 +118,7 @@ namespace DamageLogic {
 		bool DealDamage = true;
 		float threshold = 0.15f;
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			mult *= 1.5f;
 		}
 
@@ -196,6 +199,9 @@ namespace DamageLogic {
 				return true;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			if (!AnimationVars::Action::IsInSecondSandwichBranch(giantref) || !AnimationVars::Action::IsThighGrinding(giantref)) {
 				return false;
 			}

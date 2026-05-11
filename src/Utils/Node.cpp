@@ -5,49 +5,6 @@ using namespace RE;
 
 namespace {
 
-	void UpdateNodeWorldTransform(RE::NiAVObject* node) {
-    	if (!node) {
-			return;
-		}
-
-		if (node->parent) {
-			node->world.rotate = node->local.rotate * node->parent->world.rotate;
-			node->world.scale = node->local.scale * node->parent->world.scale;
-			node->world.translate = node->parent->world.rotate * (node->local.translate * node->parent->world.scale) + node->parent->world.translate;
-		} else {
-			node->world = node->local;
-		}
-	}
-
-	void UpdateTreeTransforms(RE::NiAVObject* node) {
-
-		if (!node) {
-			return;
-		}
-
-		UpdateNodeWorldTransform(node);
-
-		if (auto niNode = node->AsNode()) {
-			for (auto& child : niNode->GetChildren()) {
-				if (child) {
-					UpdateTreeTransforms(child.get());
-				}
-			}
-		}
-	}
-
-	void AttachChildAndUpdate(RE::NiNode* parent, RE::NiAVObject* child) {
-
-		if (!parent || !child) {
-			return;
-		}
-
-		parent->AttachChild(child, true);
-
-		UpdateNodeWorldTransform(child);
-		UpdateTreeTransforms(child);
-	}
-
 	void loop_message(NiAVObject* root, std::string_view message) {
 
 		auto owner_data = root->GetUserData();
@@ -75,163 +32,8 @@ namespace GTS {
 
 	constexpr int loop_threshold = 256;
 
-	void Node_CreateNewNode(Actor* giant, std::string_view name, std::string_view connect_to) {
-		if (find_node(giant, name)) {
-			return; // Don't re-create it
-		}
-		NiNode* newNode = NiNode::Create(1);
-
-		// Give it a name
-		newNode->name = BSFixedString(name);
-
-		// New Coordinates and such
-		newNode->local.translate = NiPoint3(0.0f, 0.0f, 0.0f);
-		newNode->local.scale = 1.0f;
-		newNode->local.rotate = RE::NiMatrix3();
-
-		// Attach to parent
-		NiAVObject* parent = find_node(giant, connect_to);
-		if (auto* parentNode = parent->AsNode()) {
-			// Note: new node seems to inherit parent rotation
-			newNode->local.rotate = parentNode->world.Invert().rotate; // So we compensate rotation, x/y/z adjustment should happen in world coordinates now
-
-			AttachChildAndUpdate(parentNode, newNode);
-		}
-	}
-
-	NiPoint3 Node_WorldToLocal(NiAVObject* node, const NiPoint3& world_pos) { // Wasn't tested, may not work properly
-		if (!node) {
-			return NiPoint3();
-		}
-
-		const NiMatrix3& rot = node->world.rotate;
-		const NiPoint3& trans = node->world.translate;
-
-		return rot.Transpose() * (world_pos - trans);
-	}
-
-	NiPoint3 Node_LocalToWorld(NiAVObject* node, const NiPoint3& local_pos) { // Wasn't tested, may not work properly
-		if (!node) {
-			return NiPoint3();
-		}
-
-		const NiMatrix3& rot = node->world.rotate;
-		const NiPoint3& trans = node->world.translate;
-
-		return rot * local_pos + trans;
-	}
-
-	std::vector<NiAVObject*> GetAllNodes(Actor* actor) {
-		if (!actor->Is3DLoaded()) {
-			return {};
-		}
-		auto model = actor->Get3D();
-
-		std::deque<NiAVObject*> queue;
-		std::vector<NiAVObject*> nodes = {};
-		queue.push_back(model);
-
-		int counter = 0;
-
-		while (!queue.empty()) { 
-
-			counter += 1;
-
-			auto currentnode = queue.front();
-			queue.pop_front();
-			try {
-				if (currentnode) {
-					auto ninode = currentnode->AsNode();
-					if (ninode) {
-						for (auto &child : ninode->GetChildren()) {
-							// Bredth first search
-							nodes.push_back(child.get());
-							// Depth first search
-							//queue.push_front(child.get());
-						}
-					}
-					// Do smth
-					logger::trace("Node {}", currentnode->name);
-				}
-				else if (counter > loop_threshold) {
-					queue.clear();
-				}
-			}
-			catch (const std::overflow_error& e) {
-				logger::warn("Overflow: {}", e.what());
-				return {};
-			} // this executes if f() throws std::overflow_error (same type rule)
-			catch (const std::runtime_error& e) {
-				logger::warn("Underflow: {}", e.what());
-				return {};
-			} // this executes if f() throws std::underflow_error (base class rule)
-			catch (const std::exception& e) {
-				logger::warn("Exception: {}", e.what());
-				return {};
-			} // this executes if f() throws std::logic_error (base class rule)
-			catch (...) {
-				logger::warn("Exception Other");
-				return {};
-			}
-		}
-		return nodes;
-	}
-
-	void walk_nodes(Actor* actor) {
-		if (!actor->Is3DLoaded()) {
-			return;
-		}
-
-		auto model = actor->Get3D();
-		std::deque<NiAVObject*> queue;
-		queue.push_back(model);
-
-		int counter = 0;
-
-		while (!queue.empty()) {
-			auto currentnode = queue.front();
-			queue.pop_front();
-
-			counter += 1;
-
-			try {
-				if (currentnode) {
-					auto ninode = currentnode->AsNode();
-					if (ninode) {
-						for (auto &child : ninode->GetChildren()) {
-							// Bredth first search
-							queue.push_back(child.get());
-							// Depth first search
-							//queue.push_front(child.get());
-						}
-					}
-					// Do smth
-					logger::trace("Node {}", currentnode->name);
-				} else if (counter > loop_threshold) {
-					queue.clear();
-				}
-			}
-			catch (const std::overflow_error& e) {
-				logger::warn("Overflow: {}", e.what());
-				return;
-			} // this executes if f() throws std::overflow_error (same type rule)
-			catch (const std::runtime_error& e) {
-				logger::warn("Underflow: {}", e.what());
-				return;
-			} // this executes if f() throws std::underflow_error (base class rule)
-			catch (const std::exception& e) {
-				logger::warn("Exception: {}", e.what());
-				return;
-			} // this executes if f() throws std::logic_error (base class rule)
-			catch (...) {
-				logger::warn("Exception Other");
-				return;
-			}
-		}
-	}
-
 	NiAVObject* find_node(Actor* actor, std::string_view node_name, bool first_person) {
-		if (!actor->Is3DLoaded()) {
+		if (!actor || !actor->Is3DLoaded()) {
 			return nullptr;
 		}
 		auto model = actor->Get3D(first_person);
@@ -303,6 +105,9 @@ namespace GTS {
 
 
 	NiAVObject* find_object_node(TESObjectREFR* object, std::string_view node_name) { // Used inside Looting.cpp only so far
+		if (!object) {
+			return nullptr;
+		}
 		auto model = object->GetCurrent3D();
 		if (!model) {
 			return nullptr;
@@ -369,7 +174,7 @@ namespace GTS {
 
 	NiAVObject* find_node_regex(Actor* actor, const std::string& node_regex, bool first_person)
 	{
-		if (!actor->Is3DLoaded()) {
+		if (!actor || !actor->Is3DLoaded()) {
 			return nullptr;
 		}
 
@@ -435,138 +240,6 @@ namespace GTS {
 			}
 		}
 		return result;
-	}
-
-	void scale_hkpnodes(Actor* actor, float prev_scale, float new_scale) { // Unused
-		if (!actor->Is3DLoaded()) {
-			return;
-		}
-		auto model = actor->Get3D();
-		if (!model) {
-			return;
-		}
-		// Game lookup failed we try and find it manually
-		std::deque<NiAVObject*> queue;
-		queue.push_back(model);
-
-		int counter = 0;
-
-		while (!queue.empty()) {
-			auto currentnode = queue.front();
-			queue.pop_front();
-
-			counter += 1;
-
-			try {
-				if (currentnode) {
-					auto ninode = currentnode->AsNode();
-					if (ninode) {
-						for (auto &child : ninode->GetChildren()) {
-							// Bredth first search
-							if (child) {
-								queue.push_back(child.get());
-							}
-							// Depth first search
-							//queue.push_front(child.get());
-						}
-					}
-					// Do smth
-					auto collision_object = currentnode->GetCollisionObject();
-					if (collision_object) {
-						auto bhk_rigid_body = collision_object->GetRigidBody();
-						if (bhk_rigid_body) {
-							hkReferencedObject* hkp_rigidbody_ref = bhk_rigid_body->referencedObject.get();
-							if (hkp_rigidbody_ref) {
-								hkpRigidBody* hkp_rigidbody = skyrim_cast<hkpRigidBody*>(hkp_rigidbody_ref);
-								if (hkp_rigidbody) {
-									auto shape = hkp_rigidbody->GetShape();
-									if (shape) {
-										logger::trace("Shape found: {} for {}", typeid(*shape).name(), currentnode->name.c_str());
-										if (shape->type == hkpShapeType::kCapsule) {
-											const hkpCapsuleShape* orig_capsule = skyrim_cast<const hkpCapsuleShape*>(shape);
-											hkTransform identity;
-											identity.rotation.col0 = hkVector4(1.0f,0.0f,0.0f,0.0f);
-											identity.rotation.col1 = hkVector4(0.0f,1.0f,0.0f,0.0f);
-											identity.rotation.col2 = hkVector4(0.0f,0.0f,1.0f,0.0f);
-											identity.translation   = hkVector4(0.0f,0.0f,0.0f,1.0f);
-											hkAabb out;
-											orig_capsule->GetAabbImpl(identity, 1e-3f, out);
-											float min[4] = {0.0f};
-											float max[4] = {0.0f};
-											_mm_store_ps(&min[0], out.min.quad);
-											_mm_store_ps(&max[0], out.max.quad);
-											logger::trace(" - Current bounds: {},{},{}<{},{},{}", min[0], min[1],min[2], max[0],max[1],max[2]);
-											// Here be dragons
-											hkpCapsuleShape* capsule = const_cast<hkpCapsuleShape*>(orig_capsule);
-											logger::trace("  - Capsule found: {}", typeid(*orig_capsule).name());
-											float scale_factor = new_scale / prev_scale;
-											hkVector4 vec_scale = hkVector4(scale_factor);
-											capsule->vertexA = capsule->vertexA * vec_scale;
-											capsule->vertexB = capsule->vertexB * vec_scale;
-											capsule->radius *= scale_factor;
-
-											capsule->GetAabbImpl(identity, 1e-3f, out);
-											_mm_store_ps(&min[0], out.min.quad);
-											_mm_store_ps(&max[0], out.max.quad);
-
-											logger::trace(" - New bounds: {},{},{}<{},{},{}", min[0], min[1],min[2], max[0],max[1],max[2]);
-											logger::trace(" - pad28: {}", orig_capsule->pad28);
-											logger::trace(" - pad2C: {}", orig_capsule->pad2C);
-											logger::trace(" - float(pad28): {}", static_cast<float>(orig_capsule->pad28));
-											logger::trace(" - float(pad2C): {}", static_cast<float>(orig_capsule->pad2C));
-
-											hkp_rigidbody->SetShape(capsule);
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-
-				if (counter > loop_threshold) {
-					queue.clear();
-					return;
-				}
-			}
-			catch (const std::overflow_error& e) {
-				logger::warn("Overflow: {}", e.what());
-				return;
-			} // this executes if f() throws std::overflow_error (same type rule)
-			catch (const std::runtime_error& e) {
-				logger::warn("Underflow: {}", e.what());
-				return;
-			} // this executes if f() throws std::underflow_error (base class rule)
-			catch (const std::exception& e) {
-				logger::warn("Exception: {}", e.what());
-				return;
-			} // this executes if f() throws std::logic_error (base class rule)
-			catch (...) {
-				logger::warn("Exception Other");
-				return;
-			}
-		}
-
-		return;
-	}
-
-	void clone_bound(Actor* actor) {
-		// This is the bound on the NiExtraNodeData
-		// This data is shared between all skeletons and this hopes to correct this
-		auto model = actor->Get3D();
-		if (model) {
-			auto extra_bbx = model->GetExtraData("BBX");
-			if (extra_bbx) {
-				BSBound* bbx = skyrim_cast<BSBound*>(extra_bbx);
-				model->RemoveExtraData("BBX");
-				auto new_extra_bbx = NiExtraData::Create<BSBound>();
-				new_extra_bbx->name = bbx->name;
-				new_extra_bbx->center = bbx->center;
-				new_extra_bbx->extents = bbx->extents;
-				//model->AddExtraData("BBX",  new_extra_bbx);
-				model->InsertExtraData(new_extra_bbx);
-			}
-		}
 	}
 
 	BSBound* get_bound(Actor* actor) {

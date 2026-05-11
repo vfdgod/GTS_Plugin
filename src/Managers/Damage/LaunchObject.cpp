@@ -88,7 +88,7 @@ namespace GTS {
 		power *= GetHighHeelsBonusDamage(giant, true);
 		float HH = HighHeelManager::GetHHOffset(giant).Length();
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			smt = true;
 			power *= 1.25f;
 		}
@@ -178,7 +178,7 @@ namespace GTS {
 			return;
 		}
 
-		bool smt = TinyCalamityActive(giant);
+		bool smt = TinyCalamityBonusActive(giant);
 		float giantScale = get_visual_scale(giant);
 
 		float start_power = Push_Object_Forward * (1.0f + Potion_GetMightBonus(giant));

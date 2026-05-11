@@ -122,10 +122,16 @@ namespace {
 					//log::info("  - targetHead: {}", Vector2Str(targetHead));
 					auto directionToLook = targetHead - meHead;
 					//log::info("  - directionToLook: {}", Vector2Str(directionToLook));
-					directionToLook = directionToLook * (1/directionToLook.Length());
+					const float directionLength = directionToLook.Length();
+					if (directionLength <= 1e-4f) {
+						data.spineSmooth.target = finalAngle;
+						AnimationVars::General::SetPitchOverride(giant, data.spineSmooth.value);
+						return;
+					}
+					directionToLook = directionToLook * (1.0f / directionLength);
 					//log::info("  - Norm(directionToLook): {}", Vector2Str(directionToLook));
 					NiPoint3 upDirection = NiPoint3(0.0f, 0.0f, 1.0f);
-					auto sinAngle = directionToLook.Dot(upDirection);
+					auto sinAngle = std::clamp(directionToLook.Dot(upDirection), -1.0f, 1.0f);
 					//log::info("  - cosAngle: {}", sinAngle);
 					auto angleFromUp = fabs(acos(sinAngle) * 180.0f / PI);
 					//log::info("  - angleFromUp: {}", angleFromUp);

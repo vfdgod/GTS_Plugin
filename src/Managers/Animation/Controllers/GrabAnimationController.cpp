@@ -39,6 +39,9 @@ namespace {
 
 			auto giant = giantHandle.get().get();
 			auto tiny = tinyHandle.get().get();
+			if (!giant || !tiny) {
+				return;
+			}
 			if (!AnimationVars::General::IsGTSBusy(giant)) { // Means anim isn't applied so we cancel everything
 				Grab::CancelGrab(giant, tiny);
 			}
@@ -91,7 +94,7 @@ namespace GTS {
 		float MINIMUM_GRAB_SCALE = Action_Grab;
 		float MINIMUM_DISTANCE = MINIMUM_GRAB_DISTANCE;
 
-		if (TinyCalamityActive(pred) || AnimationVars::Crawl::IsCrawling(pred)) {
+		if (TinyCalamityBonusActive(pred) || AnimationVars::Crawl::IsCrawling(pred)) {
 			MINIMUM_DISTANCE *= 1.6f;
 		}
 

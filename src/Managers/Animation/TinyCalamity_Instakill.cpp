@@ -55,6 +55,9 @@ namespace {
 				return false;
 			}
 			auto tinyref = tinyhandle.get().get();
+			if (!tinyref) {
+				return false;
+			}
 
 			bool IsDead = tinyref->IsDead();
 			bool OnCooldown = IsActionOnCooldown(tinyref, CooldownSource::Misc_ShrinkParticle);
@@ -87,6 +90,9 @@ namespace {
 					}
 					auto tinyref = tinyhandle.get().get();
 					auto giantref = gianthandle.get().get();
+					if (!tinyref || !giantref) {
+						return false;
+					}
 					
 					ShutUp(tinyref);
 					ShutUp(giantref);
@@ -161,6 +167,9 @@ namespace {
 				return false;
 			}
 			Actor* giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			double Finish = Time::WorldTimeElapsed();
 
 			double timepassed = Finish - Start;
@@ -178,7 +187,7 @@ namespace {
 		float perk = GetPerkBonus_Basics(giant);
 		float smt = 1.0f;
 		float dust = 1.25f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			smt = 1.5f;
 			dust = 1.45f;
 		}

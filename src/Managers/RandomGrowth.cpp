@@ -137,6 +137,9 @@ namespace GTS {
 												return false;// remove task, lifetime is over
 											}
 											auto giantref = gianthandle.get().get();
+											if (!giantref) {
+												return false;
+											}
 											// Grow
 											float delta_time = Time::WorldTimeDelta();
 											update_target_scale(giantref, base_power * delta_time * Gigantism, SizeEffectType::kGrow);

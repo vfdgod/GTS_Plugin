@@ -149,11 +149,6 @@ namespace GTS {
     ////////////////Vore
     constexpr float Damage_Vore_Standing_Footstep = 8.8f;
 
-    ////////////////Throw
-
-    constexpr float Damage_Throw_Collision = 10.0f; // unused for now, buggy: 
-    // actor collides with air and that deals damage, need to fix that first
-
 	//-----------------------------------------Default Push Power variables
     // For crawling
     constexpr float Push_Crawl_HandSwipe = 1.35f;           // Used for both Push Actor and Push Object

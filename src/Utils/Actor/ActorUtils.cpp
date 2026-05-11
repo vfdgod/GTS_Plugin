@@ -112,80 +112,6 @@ namespace GTS {
 		return nullptr;
 	}
 
-	//Function that creates a fake throw vector using Actor3D instead of bones
-	bool CalculateThrowDirection(RE::Actor* a_ActorGiant, RE::Actor* a_ActorTiny, RE::NiPoint3& a_From, RE::NiPoint3& a_To, float a_HorizontalAngleOffset, float a_VerticalAngleOffset) {
-
-		constexpr float DegToRadConst = 0.017453292f;
-		NiPoint3& t = a_ActorTiny->GetCurrent3D()->world.translate;
-		NiMatrix3& m = a_ActorGiant->GetCurrent3D()->world.rotate;
-		a_From = { t.x, t.y, t.z };
-
-		// Get the original forward direction
-		a_To = {
-			m.entry[0][1],
-			m.entry[1][1],
-			m.entry[2][1]
-		};
-
-		// Store the original z component before normalizing the 2D vector
-		float originalZ = a_To.z;
-
-		// Normalize the horizontal (XY) component
-		a_To.z = 0.0f;
-		const float len2d = std::sqrt(a_To.x * a_To.x + a_To.y * a_To.y);
-		if (len2d > 0.0f) {
-			a_To.x /= len2d;
-			a_To.y /= len2d;
-		}
-
-		// Apply horizontal angle offset (rotate around Z axis)
-		if (a_HorizontalAngleOffset != 0.0f) {
-
-			float radians = a_HorizontalAngleOffset * DegToRadConst; // Convert degrees to radians
-			float cosTheta = std::cos(radians);
-			float sinTheta = std::sin(radians);
-
-			float originalX = a_To.x;
-			float originalY = a_To.y;
-
-			// Rotate the XY vector
-			a_To.x = originalX * cosTheta - originalY * sinTheta;
-			a_To.y = originalX * sinTheta + originalY * cosTheta;
-		}
-
-		// Apply vertical angle offset (adjust Z component)
-		if (a_VerticalAngleOffset != 0.0f) {
-			float radians = a_VerticalAngleOffset * DegToRadConst; // Convert degrees to radians
-			float verticalComponent = std::sin(radians);
-
-			// The length of the horizontal component needs to be reduced to maintain a unit vector
-			float horizontalScale = std::cos(radians);
-			a_To.x *= horizontalScale;
-			a_To.y *= horizontalScale;
-
-			// Set the Z component based on the vertical angle
-			a_To.z = verticalComponent;
-		}
-		else {
-			// If no vertical offset is specified, restore the original Z component
-			// This preserves any natural vertical aiming that might have been in the original direction
-			a_To.z = originalZ;
-		}
-
-		// Debug visualization
-		if (Config::Advanced.bShowOverlay) {
-			glm::vec3 fromGLM{ a_From.x, a_From.y, a_From.z };
-			glm::vec3 directionGLM{ a_To.x, a_To.y, a_To.z };
-			glm::vec3 toGLM = fromGLM + directionGLM * 500.f;
-			constexpr int lifetimeMS = 5000;
-			glm::vec4 color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
-			float lineThickness = 2.0f;
-			DebugDraw::DrawLineForMS(fromGLM, toGLM, lifetimeMS, color, lineThickness);
-		}
-
-		return true;
-	}
-
 	RE::NiPoint3 RotateAngleAxis(const RE::NiPoint3& a_vec, const float a_angle, const RE::NiPoint3& a_axis) {
 		float S = sin(a_angle);
 		float C = cos(a_angle);
@@ -275,6 +201,9 @@ namespace GTS {
 				return;
 			}
 			Actor* tiny = targetRef.get().get();
+			if (!tiny) {
+				return;
+			}
 			tiny->SetCriticalStage(ACTOR_CRITICAL_STAGE::kDisintegrateEnd);
 		});
 	}
@@ -378,7 +307,9 @@ namespace GTS {
 	}
 
 	void PushActorAway(Actor* a_source, Actor* a_receiver, float a_force) {
-		
+		if (!a_source || !a_receiver || a_source == a_receiver) {
+			return;
+		}
 		if (a_receiver->IsDead() || AnimationVars::Tiny::IsBeingShrunk(a_receiver)) {
 			return;
 		}
@@ -386,27 +317,36 @@ namespace GTS {
 		// Force < 1.0 can introduce weird sliding issues to Actors, not recommended to pass force < 1.0.
 		a_force = std::max(1.0f, a_force);
 
-		if (a_source) {
-			if (AIProcess* ai = a_source->GetActorRuntimeData().currentProcess) {
-				if (a_receiver->Is3DLoaded()) {
-					if (a_source->Is3DLoaded()) {
-						NiPoint3 direction = a_receiver->GetPosition() - a_source->GetPosition();
-						direction = direction / direction.Length();
-						typedef void (*DefPushActorAway)(AIProcess* ai, Actor* actor, NiPoint3& direction, float force);
-						REL::Relocation<DefPushActorAway> RealPushActorAway{ REL::RelocationID(38858, 39895, NULL) };
-						RealPushActorAway(ai, a_receiver, direction, a_force);
-					}
-				}
-			}
+		AIProcess* ai = a_source->GetActorRuntimeData().currentProcess;
+		if (!ai || !a_receiver->Is3DLoaded() || !a_source->Is3DLoaded()) {
+			return;
 		}
+
+		NiPoint3 direction = a_receiver->GetPosition() - a_source->GetPosition();
+		const float directionLength = direction.Length();
+		if (directionLength <= 1e-4f) {
+			return;
+		}
+		direction = direction / directionLength;
+		typedef void (*DefPushActorAway)(AIProcess* ai, Actor* actor, NiPoint3& direction, float force);
+		REL::Relocation<DefPushActorAway> RealPushActorAway{ REL::RelocationID(38858, 39895, NULL) };
+		RealPushActorAway(ai, a_receiver, direction, a_force);
 	}
 
 	void ApplyManualHavokImpulse(Actor* a_target, float a_forceX, float a_forceY, float a_forceZ, float a_multiplier) {
 		// For this function to work, actor must be pushed away first. 
 		// It may be a good idea to wait about 0.05 sec before callind it after actor has been pushed, else it may not work
+		if (!a_target || !a_target->Is3DLoaded()) {
+			return;
+		}
+		auto model = a_target->Get3D(false);
+		if (!model) {
+			return;
+		}
+
 		hkVector4 impulse = hkVector4(a_forceX * a_multiplier, a_forceY * a_multiplier, a_forceZ * a_multiplier, 1.0f);
 
-		if (bhkCollisionObject* collision = a_target->Get3D(false)->GetCollisionObject()) {
+		if (bhkCollisionObject* collision = model->GetCollisionObject()) {
 			if (auto rigidbody = collision->GetRigidBody()) {
 				if (auto body = rigidbody->AsBhkRigidBody()) {
 					body->SetLinearImpulse(impulse);
@@ -485,6 +425,9 @@ namespace GTS {
 							return false;
 						}
 						Actor* Tiny = tinyHandle.get().get();
+						if (!Tiny) {
+							return false;
+						}
 						double Finish = Time::WorldTimeElapsed();
 
 						object->local.scale = 0.01f;
@@ -642,7 +585,7 @@ namespace GTS {
 							}
 							else {
 								float launch_power = 0.33f;
-								if (TinyCalamityActive(a_source)) {
+								if (TinyCalamityBonusActive(a_source)) {
 									launch_power *= 6.0f;
 								}
 								LaunchActor::ApplyLaunchTo(a_source, otherActor, 1.0f, launch_power);
@@ -655,6 +598,10 @@ namespace GTS {
 	}
 
 	void PushForward(Actor* a_source, Actor* a_target, float a_power) {
+		if (!a_source || !a_target) {
+			return;
+		}
+
 		double startTime = Time::WorldTimeElapsed();
 		ActorHandle tinyHandle = a_target->CreateRefHandle();
 		ActorHandle gianthandle = a_source->CreateRefHandle();
@@ -669,15 +616,21 @@ namespace GTS {
 			}
 			Actor* giant = gianthandle.get().get();
 			Actor* tiny = tinyHandle.get().get();
+			if (!giant || !tiny) {
+				return false;
+			}
 
-			auto playerRotation = giant->GetCurrent3D()->world.rotate;
-			RE::NiPoint3 localForwardVector{ 0.f, 1.f, 0.f };
-			RE::NiPoint3 globalForwardVector = playerRotation * localForwardVector;
-
-			RE::NiPoint3 direction = globalForwardVector;
 			double endTime = Time::WorldTimeElapsed();
 
 			if ((endTime - startTime) > 0.08) {
+				auto model = giant->GetCurrent3D();
+				if (!giant->Is3DLoaded() || !model) {
+					return false;
+				}
+
+				auto playerRotation = model->world.rotate;
+				RE::NiPoint3 localForwardVector{ 0.f, 1.f, 0.f };
+				RE::NiPoint3 direction = playerRotation * localForwardVector;
 				ApplyManualHavokImpulse(tiny, direction.x, direction.y, direction.z, a_power);
 				return false;
 			}
@@ -710,7 +663,7 @@ namespace GTS {
 			Actor* tiny = a_targetHandle.get().get();
 
 			double endTime = Time::WorldTimeElapsed();
-			if (!tiny) {
+			if (!giant || !tiny) {
 				return false;
 			}
 			if (!tiny->Is3DLoaded()) {
@@ -724,9 +677,12 @@ namespace GTS {
 
 				NiPoint3 vector = a_endCoords - a_startCoords;
 				float distanceTravelled = vector.Length();
+				if (distanceTravelled <= 1e-4f) {
+					return false;
+				}
 				float timeTaken = static_cast<float>(endTime - startTime);
 				float speed = (distanceTravelled / timeTaken) / GetAnimationSlowdown(giant);
-				NiPoint3 direction = vector / vector.Length();
+				NiPoint3 direction = vector / distanceTravelled;
 
 				if (a_doSizeCheck) {
 					float giantscale = get_visual_scale(giant);
@@ -736,7 +692,7 @@ namespace GTS {
 						tinyscale *= 0.4f;
 					}
 
-					if (TinyCalamityActive(giant)) {
+					if (TinyCalamityBonusActive(giant)) {
 						giantscale *= 6.0f;
 					}
 					float sizedifference = giantscale / tinyscale;
@@ -780,6 +736,9 @@ namespace GTS {
 				return false;
 			}
 			Actor* giant = giantHandle.get().get();
+			if (!giant) {
+				return false;
+			}
 
 			if (!giant->Is3DLoaded()) {
 				return true;
@@ -821,9 +780,9 @@ namespace GTS {
 		float giantSize = get_visual_scale(a_source);
 		float tinySize = get_visual_scale(a_target);
 
-		if (TinyCalamityActive(a_source)) {
+		if (TinyCalamityBonusActive(a_source)) {
 			giantSize += 1.0f;
-		} if (a_target->IsPlayerRef() && TinyCalamityActive(a_target)) {
+		} if (a_target->IsPlayerRef() && TinyCalamityBonusActive(a_target)) {
 			tinySize += 1.25f;
 		}
 

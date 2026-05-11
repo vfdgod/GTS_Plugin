@@ -41,6 +41,9 @@ namespace {
 			}
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			auto node = find_node(giantref, "AnimObjectB");
 			if (!node) {
@@ -262,6 +265,9 @@ namespace GTS {
 				}
 
 				auto giantref = giantHandle.get().get();
+				if (!giantref) {
+					return;
+				}
 				DamageAV(giantref, ActorValue::kMagicka, 180 * GetButtCrushCost(giantref, true));
 				DamageAV(giantref, ActorValue::kStamina, WasteStamina);
 			});

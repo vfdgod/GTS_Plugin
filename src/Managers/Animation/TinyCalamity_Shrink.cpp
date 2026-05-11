@@ -36,6 +36,9 @@ namespace {
 					return false;
 				}
 				auto giantref = gianthandle.get().get();
+				if (!giantref) {
+					return false;
+				}
 				double Finish = Time::WorldTimeElapsed();
 				auto node = find_node(giantref, node_name, false);
 				double timepassed = std::clamp(((Finish - Start) * AnimationManager::GetAnimSpeed(giantref)) * speed, 0.01, 0.98);
@@ -54,6 +57,9 @@ namespace {
 					return false;
 				}
 				auto giantref = gianthandle.get().get();
+				if (!giantref) {
+					return false;
+				}
 				double Finish = Time::WorldTimeElapsed();
 				auto node = find_node(giantref, node_name, false);
 				double timepassed = std::clamp(((Finish - Start) * GetAnimationSlowdown(giantref)) * speed, 0.01, 9999.0);

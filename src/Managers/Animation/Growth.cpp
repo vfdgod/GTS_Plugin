@@ -23,6 +23,9 @@ namespace {
 					return false;
 				}
 				auto giant = gianthandle.get().get();
+				if (!giant) {
+					return false;
+				}
 				double timepassed = Time::WorldTimeElapsed() - Start;
 				if (timepassed >= 0.15f / AnimationManager::GetAnimSpeed(giant)) {
 					Task_FacialEmotionTask_Moan(giant, 1.25f, "GrowthMoan", 0.15f);
@@ -48,6 +51,9 @@ namespace {
 					return false;
 				}
 				auto caster = gianthandle.get().get();
+				if (!caster) {
+					return false;
+				}
 				double timepassed = Time::WorldTimeElapsed() - Start;
 				float animspeed = AnimationManager::GetAnimSpeed(caster);
 				float elapsed = static_cast<float>(std::clamp(timepassed * animspeed, 0.01, 1.2));
@@ -61,7 +67,7 @@ namespace {
 				
 				DamageAV(caster, ActorValue::kStamina, 0.60f * perk * caster_scale * stamina * TimeScale() * multiply);
 
-				float modify = CalcPower(actor, 0.0080f * stamina * multiply * animspeed, 0.0f, false);
+				float modify = CalcPower(caster, 0.0080f * stamina * multiply * animspeed, 0.0f, false);
 
 				override_actor_scale(caster, modify, SizeEffectType::kGrow);
 				// value*scale ^  ; ^ static value, not affected by scale

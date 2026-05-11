@@ -189,6 +189,9 @@ namespace GTS {
 
 					auto giant = giantHandle.get().get();
 					auto tiny = tinyHandle.get().get();
+					if (!giant || !tiny) {
+						return;
+					}
 					TransferInventory(tiny, giant, currentSize * GetSizeFromBoundingBox(tiny), false, true, DamageSource::Crushed, true);
 					// Actor Reset is done inside TransferInventory:StartActorResetTask!
 				});

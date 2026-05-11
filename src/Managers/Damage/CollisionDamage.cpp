@@ -168,7 +168,7 @@ namespace GTS {
 		float SCALE_RATIO = 1.15f;
 		float Calamity = 1.0f;
 
-		bool SMT = TinyCalamityActive(actor);
+		bool SMT = TinyCalamityBonusActive(actor);
 		if (SMT) {
 			if (SupportCalamity) {
 				Calamity = 4.0f;
@@ -275,7 +275,7 @@ namespace GTS {
 			return;
 		}
 		
-		bool SMT = TinyCalamityActive(giant);
+		bool SMT = TinyCalamityBonusActive(giant);
 		auto& sizemanager = SizeManager::GetSingleton();
 		float size_difference = get_scale_difference(giant, tiny, SizeType::VisualScale, false, true);
 

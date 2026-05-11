@@ -266,7 +266,7 @@ namespace GTS {
 		float MINIMUM_VORE_SCALE = Action_Vore;
 		float MINIMUM_DISTANCE = MINIMUM_VORE_DISTANCE;
 
-		if (TinyCalamityActive(pred)) {
+		if (TinyCalamityBonusActive(pred)) {
 			MINIMUM_DISTANCE *= 1.75f;
 		}
 

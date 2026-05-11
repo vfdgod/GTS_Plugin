@@ -2,19 +2,11 @@
 
 namespace GTS {
 
-	void Node_CreateNewNode(Actor* giant, std::string_view name, std::string_view connect_to);
-	NiPoint3 Node_WorldToLocal(NiAVObject* node, const NiPoint3& world_pos);
-	NiPoint3 Node_LocalToWorld(NiAVObject* node, const NiPoint3& local_pos);
-
-	std::vector<NiAVObject*> GetAllNodes(Actor* actor);
-	void walk_nodes(Actor* actor);
 	NiAVObject* find_node(Actor* actor, std::string_view node_name, bool first_person = false);
 	NiAVObject* find_node_regex(Actor* actor, const std::string& node_regex, bool first_person = false);
 	NiAVObject* find_object_node(TESObjectREFR* object, std::string_view node_name);
 	NiAVObject* find_node_any(Actor* actor, std::string_view node_name);
 	NiAVObject* find_node_regex_any(Actor* actor, const std::string& node_regex);
-	void scale_hkpnodes(Actor* actor, float prev_scale, float new_scale);
-	void clone_bound(Actor* actor);
 
 	BSBound* get_bound(Actor* actor);
 	NiPoint3 get_bound_values(Actor* actor);

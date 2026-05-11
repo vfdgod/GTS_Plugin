@@ -31,6 +31,9 @@ namespace {
 			}
 
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			if (AnimationVars::Action::IsFootGrinding(giantref)) {
 				NiAVObject* node = find_node(giantref, NodeLookup);
@@ -52,6 +55,9 @@ namespace {
 				return;
 			}
 			auto giantRef = giantHandle.get().get();
+			if (!giantRef) {
+				return;
+			}
 			FingerGrindCheck(giantRef, Event, right, Radius_Sneak_HandSlam);
 			Finger_StartShrinkTask(giantRef, right, Radius_Sneak_FingerGrind_DOT, Damage_Sneak_FingerGrind_DOT, 3.0f);
 		});

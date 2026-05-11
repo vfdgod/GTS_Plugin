@@ -208,6 +208,9 @@ namespace {
 				return false;
 			}
 			auto giantref = gianthandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			double Finish = Time::WorldTimeElapsed();
 			double timepassed = Finish - Start;
 			if (timepassed > 0.5f) {
@@ -324,6 +327,9 @@ namespace {
 
 						auto target = targetHandle.get().get();
 						auto caster = casterHandle.get().get();
+						if (!target || !caster) {
+							return false;
+						}
 
 						float target_scale = get_target_scale(target);
 						float magicka = std::clamp(GetMagikaPercentage(caster), 0.05f, 1.0f);
@@ -371,6 +377,9 @@ namespace {
 
 						auto target = targetHandle.get().get();
 						auto caster = casterHandle.get().get();
+						if (!target || !caster) {
+							return false;
+						}
 
 						float target_scale = get_target_scale(target);
 						float magicka = std::clamp(GetMagikaPercentage(caster), 0.05f, 1.0f);
@@ -413,6 +422,9 @@ namespace {
 				}
 
 				auto caster = casterHandle.get().get();
+				if (!caster) {
+					return false;
+				}
 
 				float caster_scale = get_visual_scale(caster);
 				float target_scale = get_target_scale(caster);
@@ -455,6 +467,9 @@ namespace {
 				}
 
 				Actor* caster = casterHandle.get().get();
+				if (!caster) {
+					return false;
+				}
 
 				float caster_scale = get_visual_scale(caster);
 				float target_scale = get_target_scale(caster);

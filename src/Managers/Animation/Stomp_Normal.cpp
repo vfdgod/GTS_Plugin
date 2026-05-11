@@ -138,6 +138,9 @@ namespace {
 				return false;
 			}
 			Actor* giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 			double Finish = Time::WorldTimeElapsed();
 
 			double timepassed = Finish - Start;
@@ -155,7 +158,7 @@ namespace {
 		float perk = GetPerkBonus_Basics(giant);
 		float smt = 1.0f;
 		float dust = 1.25f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			smt = 1.5f;
 			dust = 1.45f;
 		}
@@ -177,6 +180,9 @@ namespace {
 
 			double Finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 		
 			if (Finish - Start > 0.02) { 
 
@@ -206,7 +212,7 @@ namespace {
 		float smt = 1.0f;
 		float dust = 0.85f;
 		
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			dust = 1.35f;
 			smt = 1.5f;
 		}
@@ -227,6 +233,9 @@ namespace {
 
 			if (Finish - Start > 0.075) { 
 				auto giant = giantHandle.get().get();
+				if (!giant) {
+					return false;
+				}
 
 				Rumbling::Once(rumble, giant, shake_power, 0.0f, Node, 0.0f);
 				DoDamageEffect(giant, Damage_Stomp * perk, Radius_Stomp, 25, 0.25f, Event, 1.0f, DamageSource::CrushedRight);

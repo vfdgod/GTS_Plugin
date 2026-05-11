@@ -178,6 +178,9 @@ namespace GTS {
 						return false;
 					}
 					Actor* giantref = giantHandle.get().get();
+					if (!giantref) {
+						return false;
+					}
 					bool Busy = AnimationVars::General::IsGTSBusy(giantref);
 					if (!Busy) {
 						if (Time::WorldTimeElapsed() - start < 0.15) {

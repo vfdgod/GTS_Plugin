@@ -16,7 +16,7 @@ namespace {
 
     void DoImpactRumble(Actor* giant, std::string_view node, std::string_view name, bool hh, float magnitude) {
 		float shake_power = Rumble_Stomp_Under_Strong;
-		float smt = TinyCalamityActive(giant) ? 1.5f : 1.0f;
+		float smt = TinyCalamityBonusActive(giant) ? 1.5f : 1.0f;
         if (hh) {
 		    smt *= GetHighHeelsBonusDamage(giant, true);
         }
@@ -28,7 +28,7 @@ namespace {
 		float damage = 1.0f;
 		float SMT = 1.0f;
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			damage = 1.25f;
 			SMT = 1.75f; // Larger Dust
 		}
@@ -46,7 +46,7 @@ namespace {
 		float perk = GetPerkBonus_Basics(giant);
 		float SMT = 1.0f;
 		float damage = 1.0f;
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			damage = 1.25f;
 			SMT = 1.75f; // Larger Dust
 		}
@@ -62,6 +62,9 @@ namespace {
 
 			double Finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			if (Finish - Start >= 0.0) { 
 				DoDamageEffect(giantref, Damage_Stomp_Under_LegLand * damage * perk, Radius_Stomp_Strong, 8, 0.20f, Event, 1.0f, Source, false);
@@ -93,7 +96,7 @@ namespace {
 		float dust = 1.0f;
 		float smt = 1.0f;
 
-		if (TinyCalamityActive(giant)) {
+		if (TinyCalamityBonusActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}
@@ -110,6 +113,9 @@ namespace {
 
 			double Finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			if (Finish - Start > 0.07) { 
 				auto ThighL = find_node(giantref, "NPC L Thigh [LThg]");

@@ -122,6 +122,9 @@ namespace {
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
 
+			if (!giantref) {
+				return false;
+			}
 			if (!tinyref) {
 				return false;
 			}
@@ -406,6 +409,9 @@ namespace {
 
 			double Finish = Time::WorldTimeElapsed();
 			auto tinyget = tinyref.get().get();
+			if (!tinyget) {
+				return false;
+			}
 
 			double timepassed = Finish - Start;
 			if (timepassed > 0.50) {
@@ -435,6 +441,9 @@ namespace GTS {
             }
             auto tiny = tinyref.get().get();
             auto giantess = giantref.get().get();
+            if (!tiny || !giantess) {
+                return;
+            }
 
             if (tiny && tiny->Is3DLoaded() && (GetAV(tiny, ActorValue::kHealth) <= 1.0f || tiny->IsDead())) {
 
@@ -499,7 +508,7 @@ namespace GTS {
 			float additionaldamage = 1.0f + sizemanager.GetSizeVulnerability(grabbed);
 			float damage = (Damage * sizeDiff) * power * additionaldamage * additionaldamage;
 			float experience = std::clamp(damage/1600, 0.0f, 0.06f);
-			if (TinyCalamityActive(giant)) {
+			if (TinyCalamityBonusActive(giant)) {
 				bonus = 1.65f;
 			}
 
@@ -555,6 +564,9 @@ namespace GTS {
 			}
 			auto giantref = gianthandle.get().get();
 			auto tinyref = tinyhandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 			ReattachTiny(giantref, tinyref);
 			
 			if (tinyref && (tinyref->Is3DLoaded() || IsCurrentlyReattaching(giantref))) {

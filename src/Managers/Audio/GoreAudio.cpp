@@ -69,12 +69,15 @@ namespace GTS {
 
         TaskManager::RunOnce(taskname, [=](auto& update){ // Run check next frame
             if (!giantHandle) {
-                return;
-            }
-            auto Giant = giantHandle.get().get();
-            int Crushed = GetCrushedCount(Giant);
+				return;
+			}
+			auto Giant = giantHandle.get().get();
+			if (!Giant) {
+				return;
+			}
+			int Crushed = GetCrushedCount(Giant);
 
-            PlayMatchingSound(Giant, node, StrongSound, Crushed, giantess_scale, TinyScale);
+			PlayMatchingSound(Giant, node, StrongSound, Crushed, giantess_scale, TinyScale);
 
             ModCrushedCount(Giant, true); // Reset the value
         });

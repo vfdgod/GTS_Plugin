@@ -50,6 +50,9 @@ namespace Grab_Fixes {
 				}
 				Actor* giantref = gianthandle.get().get();
 				Actor* tinyref = tinyhandle.get().get();
+				if (!giantref || !tinyref) {
+					return false;
+				}
 				if (!AnimationVars::Action::IsInGrabPlayState(giantref)) { // Exit Grab Play state as soon as attack bool is false
 					Anims_FixAnimationDesync(giantref, tinyref, true);
 					return false;
@@ -96,6 +99,9 @@ namespace Grab_Fixes {
 
 					Actor* giant = gianthandle.get().get();
 					Actor* tiny = tinyhandle.get().get();
+					if (!giant || !tiny) {
+						return false;
+					}
 					
 					// Wait for 3D to be ready
 					if (!giant->Is3DLoaded()   || 
@@ -114,7 +120,7 @@ namespace Grab_Fixes {
 
 					PushActorAway(giant, tiny, 1.0f);
 
-					const float Flick_Power = TinyCalamityActive(giant) ? 9.0f : 4.0f;
+					const float Flick_Power = TinyCalamityBonusActive(giant) ? 9.0f : 4.0f;
 
 					Animation_GrabThrow::Throw_Actor(gianthandle, tinyhandle, startCoords, endCoords, pass_name, Flick_Power, 20.0f);
 					
@@ -191,7 +197,7 @@ namespace Grab_Fixes {
 
 	void GTSGrab_Do_Damage(Actor* giant, float base_damage) {
 		auto& sizemanager = SizeManager::GetSingleton();
-		float bonus = TinyCalamityActive(giant) ? 1.65f : 1.0f;
+		float bonus = TinyCalamityBonusActive(giant) ? 1.65f : 1.0f;
 		auto grabbedActor = Grab::GetHeldActor(giant);
 
 		if (grabbedActor) {
@@ -239,6 +245,9 @@ namespace Grab_Fixes {
 			}
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
 
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 
@@ -270,6 +279,9 @@ namespace Grab_Fixes {
 			double finish = Time::WorldTimeElapsed();
 			auto giantref = giantHandle.get().get();
 			auto tinyref = tinyHandle.get().get();
+			if (!giantref || !tinyref) {
+				return false;
+			}
 
 			float timepassed = static_cast<float>(finish - start) * AnimationManager::GetAnimSpeed(giantref);
 

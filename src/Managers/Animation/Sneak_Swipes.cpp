@@ -18,6 +18,9 @@ namespace {
 				return false;
 			}
 			auto giant = gianthandle.get().get();
+			if (!giant) {
+				return false;
+			}
 			auto Uarm = find_node(giant, "NPC R Forearm [RLar]");
 			auto Arm = find_node(giant, "NPC R Hand [RHnd]");
 			if (Uarm) {
@@ -46,6 +49,9 @@ namespace {
 				return false;
 			}
 			auto giant = gianthandle.get().get();
+			if (!giant) {
+				return false;
+			}
 			auto Uarm = find_node(giant, "NPC L Forearm [LLar]");
 			auto Arm = find_node(giant, "NPC L Hand [LHnd]");
 			if (Uarm) {

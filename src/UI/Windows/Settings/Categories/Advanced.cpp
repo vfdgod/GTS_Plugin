@@ -62,11 +62,18 @@ namespace GTS {
             PSString T2 = "限制滑条的手动输入范围。\n"
                           "开启后，Ctrl+单击滑条输入数值时会被限制在 UI 范围内。\n"
                           "关闭后，可以手动输入超出范围的值；普通拖动滑条本身始终受范围限制。";
+            PSString T3 = "开启后，玩家不使用龙吼也会获得 Tiny Calamity 的部分被动特性：\n"
+                          "- 冲刺蓄力冲撞/碾碎\n"
+                          "- 尺寸动作、脚步、踩踏、投掷、抓握等强化\n"
+                          "- Absorb 额外缩小强度\n"
+                          "- 生命抗性、攻击和负重按 Tiny Calamity 规则结算\n\n"
+                          "不会启动龙吼本体的持续时间、体型压制或 Shrinking Gaze；真正使用龙吼时不会重复叠加。";
 
             if (ImGui::CollapsingHeader("调试/作弊", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("启用属性消耗", &Config::Advanced.bDamageAV, T0);
                 ImGuiEx::CheckBox("启用尺寸技能冷却", &Config::Advanced.bCooldowns, T1);
                 ImGuiEx::CheckBox("限制手动输入范围", &Config::Advanced.bEnforceUIClamps, T2);
+                ImGuiEx::CheckBox("玩家常驻 Tiny Calamity 特性", &Config::Advanced.bPlayerTinyCalamityBonus, T3);
 
                 if (ImGuiEx::Button("清空技能冷却")) {
                     CooldownManager::GetSingleton().Reset();
