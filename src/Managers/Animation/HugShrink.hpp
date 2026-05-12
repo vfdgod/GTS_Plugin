@@ -4,7 +4,7 @@ namespace GTS {
 
 	struct HugShrinkData {
 		HugShrinkData(TESObjectREFR* tiny, float strength);
-		TESObjectREFR* tiny;
+		ObjectRefHandle tiny;
 		float strength;
 	};
 

@@ -588,7 +588,18 @@ namespace GTS {
 
 
 	void Grab::GrabActor(Actor* giant, TESObjectREFR* tiny, float strength) {
-		Grab::GetSingleton().data.try_emplace(giant, tiny, strength);
+		auto& data = Grab::GetSingleton().data;
+		if (auto it = data.find(giant); it != data.end()) {
+			bool stale = !it->second.tiny;
+			if (!stale) {
+				auto tinyPtr = it->second.tiny.get();
+				stale = tinyPtr.get() == nullptr;
+			}
+			if (stale) {
+				data.erase(it);
+			}
+		}
+		data.try_emplace(giant, tiny, strength);
 	}
 
 	void Grab::GrabActor(Actor* giant, TESObjectREFR* tiny) {
@@ -611,8 +622,15 @@ namespace GTS {
 
 	TESObjectREFR* Grab::GetHeldObj(Actor* giant) {
 		auto& me = Grab::GetSingleton();
-		if (auto data = me.data.find(giant); data != me.data.end()) {
-			return data->second.tiny;
+		if (auto it = me.data.find(giant); it != me.data.end()) {
+			auto tinyHandle = it->second.tiny;
+			if (tinyHandle) {
+				auto tinyPtr = tinyHandle.get();
+				if (auto tiny = tinyPtr.get()) {
+					return tiny;
+				}
+			}
+			me.data.erase(it);
 		}
 
 		return nullptr;
@@ -722,7 +740,9 @@ namespace GTS {
 		AnimationManager::RegisterEvent("GTSBEH_AbortGrab", "Grabbing", GTSBEH_AbortGrab);
 	}
 
-	GrabData::GrabData(TESObjectREFR* tiny, float strength) : tiny(tiny), strength(strength) {
+	GrabData::GrabData(TESObjectREFR* tiny, float strength) :
+		tiny(tiny ? tiny->CreateRefHandle() : ObjectRefHandle{}),
+		strength(strength) {
 
 	}
 }

@@ -664,7 +664,18 @@ namespace GTS {
 
 	void HugShrink::HugActor_Actor(Actor* giant, TESObjectREFR* tiny, float strength) {
 		std::unique_lock lock(GetSingleton()._lock);
-		HugShrink::GetSingleton().data.try_emplace(giant, tiny, strength);
+		auto& data = HugShrink::GetSingleton().data;
+		if (auto it = data.find(giant); it != data.end()) {
+			bool stale = !it->second.tiny;
+			if (!stale) {
+				auto tinyPtr = it->second.tiny.get();
+				stale = tinyPtr.get() == nullptr;
+			}
+			if (stale) {
+				data.erase(it);
+			}
+		}
+		data.try_emplace(giant, tiny, strength);
 	}
 	void HugShrink::HugActor(Actor* giant, TESObjectREFR* tiny) {
 		// Default strength 1.0: normal grab for actor of their size
@@ -705,8 +716,15 @@ namespace GTS {
 	TESObjectREFR* HugShrink::GetHuggiesObj(Actor* giant) {
 		std::unique_lock lock(GetSingleton()._lock);
 		auto& me = HugShrink::GetSingleton();
-		if (auto data = me.data.find(giant); data != me.data.end()) {
-			return data->second.tiny;
+		if (auto it = me.data.find(giant); it != me.data.end()) {
+			auto tinyHandle = it->second.tiny;
+			if (tinyHandle) {
+				auto tinyPtr = tinyHandle.get();
+				if (auto tiny = tinyPtr.get()) {
+					return tiny;
+				}
+			}
+			me.data.erase(it);
 		}
 
 		return nullptr;
@@ -729,7 +747,8 @@ namespace GTS {
 
 		for (auto& val : data | std::views::values) {
 			if (val.tiny) {
-				if (val.tiny->formID == aTiny->formID) {
+				auto tinyPtr = val.tiny.get();
+				if (auto tiny = tinyPtr.get(); tiny && tiny->formID == aTiny->formID) {
 					return true;
 				}
 			}
@@ -786,6 +805,8 @@ namespace GTS {
 		AnimationManager::RegisterTrigger("Huggies_HugCrush_Victim", "Hugs", "GTSBEH_HugCrushStart_V");
 	}
 
-	HugShrinkData::HugShrinkData(TESObjectREFR* tiny, float strength) : tiny(tiny), strength(strength) {
+	HugShrinkData::HugShrinkData(TESObjectREFR* tiny, float strength) :
+		tiny(tiny ? tiny->CreateRefHandle() : ObjectRefHandle{}),
+		strength(strength) {
 	}
 }

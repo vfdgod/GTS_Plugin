@@ -100,9 +100,9 @@ namespace GTS {
 		NiPoint3 POSLastHandL = { 0.0f, 0.0f, 0.0f };
 		NiPoint3 POSLastHandR = { 0.0f, 0.0f, 0.0f };
 
-		Actor* IsInControl = nullptr;
+		ActorHandle IsInControl{};
 
-		TESObjectREFR* DisableColissionWith = nullptr;
+		ObjectRefHandle DisableColissionWith{};
 		TESObjectREFR* ThrowOffender = nullptr;
 
 		AttachToNode AttachmentNode = AttachToNode::None;
@@ -114,7 +114,7 @@ namespace GTS {
 		Timer RecallPauseTimer = Timer(0);
 		Timer DelayedShrinkTimer = Timer(10);
 
-		std::vector<Actor*> shrinkies;
+		std::vector<ActorHandle> shrinkies;
 		float fRecordedFurnScale = 1.0f;
 		bool bIsUsingFurniture = false;
 		bool IsBeingSizeDamaged = false;

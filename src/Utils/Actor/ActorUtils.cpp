@@ -359,7 +359,7 @@ namespace GTS {
 	void DisableCollisions(Actor* a_actor, TESObjectREFR* a_target) {
 		if (a_actor) {
 			if (TransientActorData* data = Transient::GetActorData(a_actor)) {
-				data->DisableColissionWith = a_target;
+				data->DisableColissionWith = a_target ? a_target->CreateRefHandle() : ObjectRefHandle{};
 				ActorCollisionData colliders = ActorCollisionData(a_actor);
 				colliders.UpdateCollisionFilter();
 				if (a_target) {
@@ -375,14 +375,17 @@ namespace GTS {
 	void EnableCollisions(Actor* a_actor) {
 		if (a_actor) {
 			if (TransientActorData* data = Transient::GetActorData(a_actor)) {
-				TESObjectREFR* otherActor = data->DisableColissionWith;
-				data->DisableColissionWith = nullptr;
+				ObjectRefHandle otherActorHandle = data->DisableColissionWith;
+				data->DisableColissionWith = ObjectRefHandle{};
 				ActorCollisionData colliders = ActorCollisionData(a_actor);
 				colliders.UpdateCollisionFilter();
-				if (otherActor) {
-					if (Actor* asOtherActor = skyrim_cast<Actor*>(otherActor)) {
-						auto otherColliders = ActorCollisionData(asOtherActor);
-						otherColliders.UpdateCollisionFilter();
+				if (otherActorHandle) {
+					auto otherActorPtr = otherActorHandle.get();
+					if (auto otherActor = otherActorPtr.get()) {
+						if (Actor* asOtherActor = skyrim_cast<Actor*>(otherActor)) {
+							auto otherColliders = ActorCollisionData(asOtherActor);
+							otherColliders.UpdateCollisionFilter();
+						}
 					}
 				}
 			}

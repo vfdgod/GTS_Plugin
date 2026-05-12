@@ -157,7 +157,7 @@ namespace GTS {
 	void Animation_TinyCalamity::ResetActors(Actor* actor) {
 		auto tranData = Transient::GetActorData(actor);
 		if (tranData) {
-			tranData->shrinkies = {}; // Reset array of actors to shrink
+			tranData->shrinkies.clear(); // Reset array of actors to shrink
 		}
 	}
 
@@ -165,8 +165,8 @@ namespace GTS {
         auto tranData_gts = Transient::GetActorData(giant);
 		auto tranData_tiny = Transient::GetActorData(tiny);
 
-		if (tranData_gts) {
-			tranData_gts->shrinkies.push_back(tiny);
+		if (tranData_gts && tiny) {
+			tranData_gts->shrinkies.push_back(tiny->CreateRefHandle());
 		}
 		if (tranData_tiny) {
 			tranData_tiny->ShrinkUntil = until;
@@ -177,7 +177,17 @@ namespace GTS {
     std::vector<Actor*> Animation_TinyCalamity::GetShrinkActors(Actor* giant) {
 		 auto tranData_gts = Transient::GetActorData(giant);
 		 if (tranData_gts) {
-			return tranData_gts->shrinkies;
+			std::vector<Actor*> actors;
+			actors.reserve(tranData_gts->shrinkies.size());
+			for (auto& handle : tranData_gts->shrinkies) {
+				if (handle) {
+					auto actorPtr = handle.get();
+					if (auto actor = actorPtr.get()) {
+						actors.push_back(actor);
+					}
+				}
+			}
+			return actors;
 		 }
 		 return {};
 	}

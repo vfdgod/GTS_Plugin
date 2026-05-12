@@ -4,7 +4,7 @@ namespace GTS {
 
 	struct BoobCrushData {
 		BoobCrushData(Actor* tiny);
-		Actor* tiny;
+		ActorHandle tiny;
 	};
 
 	class AnimationBoobCrush : public EventListener, public CInitSingleton <AnimationBoobCrush>{

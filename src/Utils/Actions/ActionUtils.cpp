@@ -114,10 +114,10 @@ namespace GTS {
 		auto transient = Transient::GetActorData(player);
 		if (transient) {
 			if (reset) {
-				transient->IsInControl = nullptr;
+				transient->IsInControl = ActorHandle{};
 				return;
 			}
-			transient->IsInControl = target;
+			transient->IsInControl = target ? target->CreateRefHandle() : ActorHandle{};
 		}
 	}
 
@@ -501,8 +501,12 @@ namespace GTS {
 		Actor* controlled = PlayerCharacter::GetSingleton();
 		auto transient = Transient::GetActorData(controlled);
 		if (transient) {
-			if (transient->IsInControl != nullptr) {
-				return transient->IsInControl;
+			if (transient->IsInControl) {
+				auto actorPtr = transient->IsInControl.get();
+				if (auto actor = actorPtr.get()) {
+					return actor;
+				}
+				transient->IsInControl = ActorHandle{};
 			}
 		}
 		return controlled;

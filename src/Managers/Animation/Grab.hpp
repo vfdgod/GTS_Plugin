@@ -4,7 +4,7 @@ namespace GTS {
 
 	struct GrabData {
 		GrabData(TESObjectREFR* tiny, float strength);;
-		TESObjectREFR* tiny;
+		ObjectRefHandle tiny;
 		bool holding = false;
 		float strength;
 	};

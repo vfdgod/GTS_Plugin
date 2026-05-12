@@ -84,15 +84,21 @@ namespace {
 
 			auto tranDataA = Transient::GetActorData(actor_a);
 			if (tranDataA) {
-				if (tranDataA->DisableColissionWith == otherActor) {
-					return true;
+				if (tranDataA->DisableColissionWith) {
+					auto disabledRef = tranDataA->DisableColissionWith.get();
+					if (disabledRef.get() == otherActor) {
+						return true;
+					}
 				}
 			}
 
 			auto tranDataB = Transient::GetActorData(actor_b);
 			if (tranDataB) {
-				if (tranDataB->DisableColissionWith == actor) {
-					return true;
+				if (tranDataB->DisableColissionWith) {
+					auto disabledRef = tranDataB->DisableColissionWith.get();
+					if (disabledRef.get() == actor) {
+						return true;
+					}
 				}
 			}
 

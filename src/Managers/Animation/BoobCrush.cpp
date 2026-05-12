@@ -334,7 +334,18 @@ namespace GTS {
 	}
 
 	void AnimationBoobCrush::AttachActor(Actor* giant, Actor* tiny) {
-		AnimationBoobCrush::GetSingleton().data.try_emplace(giant, tiny);
+		auto& data = AnimationBoobCrush::GetSingleton().data;
+		if (auto it = data.find(giant); it != data.end()) {
+			bool stale = !it->second.tiny;
+			if (!stale) {
+				auto tinyPtr = it->second.tiny.get();
+				stale = tinyPtr.get() == nullptr;
+			}
+			if (stale) {
+				data.erase(it);
+			}
+		}
+		data.try_emplace(giant, tiny);
 	}
 
 	void AnimationBoobCrush::Reset() {
@@ -347,8 +358,15 @@ namespace GTS {
 
 	Actor* AnimationBoobCrush::GetBoobCrushVictim(Actor* giant) {
 		auto& me = AnimationBoobCrush::GetSingleton();
-		if (auto data = me.data.find(giant); data != me.data.end()) {
-			return data->second.tiny;
+		if (auto it = me.data.find(giant); it != me.data.end()) {
+			auto tinyHandle = it->second.tiny;
+			if (tinyHandle) {
+				auto tinyPtr = tinyHandle.get();
+				if (auto tiny = tinyPtr.get()) {
+					return tiny;
+				}
+			}
+			me.data.erase(it);
 		}
 
 		return nullptr;
@@ -379,6 +397,7 @@ namespace GTS {
 		AnimationManager::RegisterEvent("GTS_BoobCrush_LoseSize", "BoobCrush", GTS_BoobCrush_LoseSize);
 	}
 
-	BoobCrushData::BoobCrushData(Actor* tiny) : tiny(tiny) {
+	BoobCrushData::BoobCrushData(Actor* tiny) :
+		tiny(tiny ? tiny->CreateRefHandle() : ActorHandle{}) {
 	}
 }
