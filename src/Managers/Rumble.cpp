@@ -33,6 +33,10 @@ namespace GTS {
 
 	ActorRumbleData::ActorRumbleData()  : delay(Timer(0.40)) {}
 
+	ActorRumbleData::ActorRumbleData(Actor* actor) :
+		delay(Timer(0.40)),
+		actor(actor ? actor->CreateRefHandle() : ActorHandle{}) {}
+
 	std::string Rumbling::DebugName() {
 		return "::Rumbling";
 	}
@@ -42,7 +46,9 @@ namespace GTS {
 	}
 
 	void Rumbling::ResetActor(Actor* actor) {
-		this->data.erase(actor);
+		if (actor) {
+			this->data.erase(actor->formID);
+		}
 	}
 
 	void Rumbling::Start(std::string_view tag, Actor* giant, float intensity, float halflife, std::string_view node) {
@@ -60,7 +66,7 @@ namespace GTS {
 
 		std::string tag = std::string(tagsv);
 		auto& me = Rumbling::GetSingleton();
-		if (auto actorIt = me.data.find(giant); actorIt != me.data.end()) {
+		if (auto actorIt = me.data.find(giant->formID); actorIt != me.data.end()) {
 			if (auto tagIt = actorIt->second.tags.find(tag); tagIt != actorIt->second.tags.end()) {
 				tagIt->second.state = RumbleState::RampingDown;
 			}
@@ -75,8 +81,9 @@ namespace GTS {
 		std::string tag = std::string(tagsv);
 		std::string node = std::string(nodesv);
 		auto& me = Rumbling::GetSingleton();
-		me.data.try_emplace(giant);
-		auto& tags = me.data.at(giant).tags;
+		auto& actorData = me.data.try_emplace(giant->formID, giant).first->second;
+		actorData.actor = giant->CreateRefHandle();
+		auto& tags = actorData.tags;
 		tags.try_emplace(tag, intensity, duration, halflife, shake_duration, ignore_scaling, node);
 		// Reset if already there (but don't reset the intensity this will let us smooth into it)
 		tags.at(tag).ChangeTargetIntensity(intensity);
@@ -94,9 +101,18 @@ namespace GTS {
 
 	void Rumbling::Update() {
 		GTS_PROFILE_SCOPE("Rumbling: Update");
-		for (auto& [actor, data]: this->data) {
+		for (auto it = this->data.begin(); it != this->data.end();) {
+			auto& data = it->second;
+			Actor* actor = nullptr;
+			if (data.actor) {
+				actor = data.actor.get().get();
+			}
+			if (!actor) {
+				it = this->data.erase(it);
+				continue;
+			}
+
 			// Update values based on time passed
-			std::vector<std::string> tagsToErase = {};
 			for (auto& rumbleData : data.tags | std::views::values) {
 				switch (rumbleData.state) {
 					case RumbleState::RampingUp: {
@@ -127,7 +143,7 @@ namespace GTS {
 					}
 					case RumbleState::Still: {
 						// All finished cleanup
-						this->data.erase(actor);
+						this->data.erase(it);
 						return;
 					}
 				}
@@ -174,6 +190,7 @@ namespace GTS {
 			}
 
 			if (totalWeight <= 0.0f) {
+				++it;
 				continue;
 			}
 
@@ -183,6 +200,7 @@ namespace GTS {
 			// There is a way to patch camera not shaking more than once so we won't need totalWeight hacks, but it requires ASM hacks
 			// Done by this mod: https://github.com/jarari/ImmersiveImpactSE/blob/b1e0be03f4308718e49072b28010c38c455c394f/HitStopManager.cpp#L67
 			// Edit: seems to be unstable to do it
+			++it;
 		}
 	}
 

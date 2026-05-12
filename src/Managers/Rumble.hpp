@@ -32,7 +32,9 @@ namespace GTS {
 	// This is needed because an actor can have many sources of rumble
 	struct ActorRumbleData {
 		ActorRumbleData();
+		explicit ActorRumbleData(Actor* actor);
 		Timer delay;
+		ActorHandle actor;
 		// Tagged rumble data
 		std::unordered_map<std::string, RumbleData> tags;
 	};
@@ -63,7 +65,7 @@ namespace GTS {
 		static void Once(std::string_view tag, Actor* giant, float intensity, float halflife, const bool ignore_scaling = false);
 
 		private:
-		std::unordered_map<Actor*, ActorRumbleData> data;
+		std::unordered_map<FormID, ActorRumbleData> data;
 	};
 
 	void ApplyShake(Actor* caster, float modifier, float radius);
