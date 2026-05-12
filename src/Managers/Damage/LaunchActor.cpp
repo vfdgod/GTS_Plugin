@@ -9,6 +9,7 @@
 
 #include "Managers/HighHeel.hpp"
 #include "Managers/Damage/LaunchObject.hpp"
+#include "Managers/Animation/StompAssist.hpp"
 
 #include "Managers/Animation//Utils/CooldownManager.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
@@ -106,6 +107,9 @@ namespace GTS {
 		}
 		if (AnimationVars::Tiny::IsBeingGrinded(tiny)) {
 			return; // Disallow to launch if we're grinding an actor
+		}
+		if (IsStompAssistActive(tiny)) {
+			return; // Keep stomp-assist targets underfoot until the selected stomp starts dealing damage.
 		}
 
 		float DamageMult = 0.5f * Config::Balance.fSizeDamageMult;

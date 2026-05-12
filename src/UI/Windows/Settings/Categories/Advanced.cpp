@@ -110,6 +110,36 @@ namespace GTS {
                 ImGui::Spacing();
             }
         }
+
+        ImUtil_Unique
+		{
+
+            PSString T0 = "按下启用的玩家踩踏动作时，把附近足够小的目标预吸附到对应脚下。";
+            PSString T1 = "普通轻踩按键是否使用踩踏辅助。";
+            PSString T2 = "重踩按键是否使用踩踏辅助。";
+            PSString T3 = "践踏 Trample 按键是否使用踩踏辅助。";
+            PSString T4 = "开启后，一次踩踏可预吸附多个目标；关闭时只吸附最近目标。";
+            PSString T5 = "允许多目标时，一次踩踏最多预吸附多少目标。";
+            PSString T6 = "预吸附后阻止目标移动的持续时间。";
+            PSString T7 = "搜索目标的基础半径。实际距离会乘以玩家当前体型。";
+            PSString T8 = "只有玩家与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。";
+
+            if (ImGui::CollapsingHeader("踩踏辅助", ImUtil::HeaderFlagsDefaultOpen)) {
+                ImGuiEx::CheckBox("启用踩踏辅助", &Config::Advanced.bStompAssist, T0);
+                ImGuiEx::CheckBox("普通踩踏", &Config::Advanced.bStompAssistNormal, T1, !Config::Advanced.bStompAssist);
+                ImGui::SameLine();
+                ImGuiEx::CheckBox("重踩", &Config::Advanced.bStompAssistStrong, T2, !Config::Advanced.bStompAssist);
+                ImGui::SameLine();
+                ImGuiEx::CheckBox("践踏", &Config::Advanced.bStompAssistTrample, T3, !Config::Advanced.bStompAssist);
+                ImGuiEx::CheckBox("允许多目标", &Config::Advanced.bStompAssistMultiTarget, T4, !Config::Advanced.bStompAssist);
+                ImGuiEx::SliderU8("最大目标数量", &Config::Advanced.iStompAssistMaxTargets, 1, 8, T5, "%d", !Config::Advanced.bStompAssist || !Config::Advanced.bStompAssistMultiTarget);
+                ImGuiEx::SliderF("预吸附持续时间", &Config::Advanced.fStompAssistDuration, 0.2f, 2.0f, T6, "%.1f 秒", !Config::Advanced.bStompAssist);
+                ImGuiEx::SliderF("目标搜索半径", &Config::Advanced.fStompAssistSearchRadius, 8.0f, 60.0f, T7, "%.1f", !Config::Advanced.bStompAssist);
+                ImGuiEx::SliderF("目标体型阈值", &Config::Advanced.fStompAssistSizeThreshold, 1.5f, 20.0f, T8, "%.1fx", !Config::Advanced.bStompAssist);
+
+                ImGui::Spacing();
+            }
+        }
     }
 
     void CategoryAdvanced::DrawRight() {

@@ -1,5 +1,6 @@
 #include "Managers/Animation/Stomp_Normal.hpp"
 #include "Managers/Animation/Stomp_Under.hpp"
+#include "Managers/Animation/StompAssist.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
@@ -9,63 +10,26 @@
 #include "Managers/Rumble.hpp"
 
 #include "Utils/Actions/InputConditions.hpp"
-#include "Utils/AttachPoint.hpp"
-
 using namespace GTS;
 
 namespace {
 
 	constexpr std::string_view RNode = "NPC R Foot [Rft ]";
 	constexpr std::string_view LNode = "NPC L Foot [Lft ]";
-	std::random_device rd;
-	std::mt19937 e2(rd());
 
-	void DoStompOrUnderStomp(Actor* giant, const std::string_view name) {
+	void DoStompOrUnderStomp(Actor* giant, const std::string_view name, bool right, bool useAssist) {
 		float WasteStamina = 25.0f;
 		if (Runtime::HasPerk(giant, Runtime::PERK.GTSPerkDestructionBasics)) {
 			WasteStamina *= 0.65f;
 		}
 		if (GetAV(giant, ActorValue::kStamina) > WasteStamina) {
+			if (useAssist) {
+				TryStompAssist(giant, right, StompAssistAction::Normal);
+			}
 			AnimationManager::StartAnim(name, giant);
 		} else {
 			NotifyWithSound(giant, "You're too tired to perform stomp");
 		}
-	}
-
-	std::vector<Actor*> FindSquished(Actor* giant) {
-		/*
-		Find actor that are being pressed underfoot
-		*/
-		std::vector<Actor*> result = {};
-		if (!giant) {
-			return result;
-		}
-		float giantScale = get_visual_scale(giant);
-		auto giantLoc = giant->GetPosition();
-		for (auto tiny: find_actors()) {
-			if (tiny) {
-				float tinyScale = get_visual_scale(tiny);
-				float scaleRatio = giantScale / tinyScale;
-				
-				float actorRadius = 35.0f;
-				auto bounds = get_bound_values(tiny);
-				actorRadius = (bounds.x + bounds.y + bounds.z) / 6.0f;
-				
-
-				actorRadius *= tinyScale;
-				
-				if (scaleRatio > 3.5f) {
-					// 3.5 times bigger
-					auto tinyLoc = tiny->GetPosition();
-					auto distance = (giantLoc - tinyLoc).Length() - actorRadius;
-					if (distance < giantScale * 15.0f) {
-						// About 1.5 the foot size
-						result.push_back(tiny);
-					}
-				}
-			}
-		}
-		return result;
 	}
 
 	void StopLoopRumble(Actor* giant) {
@@ -85,45 +49,6 @@ namespace {
 		data.animSpeed = 1.35f;
 		if (!data.giant.IsPlayerRef()) {
 			data.animSpeed = 1.35f + GetRandomBoost()/2;
-		}
-	}
-
-	void MoveUnderFoot(Actor* giant, std::string_view node) {
-		auto footNode = find_node(giant, RNode);
-		if (footNode) {
-			auto footPos = footNode->world.translate;
-			for (auto tiny: FindSquished(giant)) {
-				if (tiny) {
-					std::uniform_real_distribution<float> dist(-10.f, 10.f);
-					float dx = dist(e2);
-					float dy = dist(e2);
-					auto randomOffset = NiPoint3(dx, dy, 0.0f);
-					tiny->SetPosition(footPos + randomOffset, true);
-				}
-			}
-		}
-	}
-
-	/*
-	Will keep the tiny in place for a second
-	*/
-	void KeepInPlace(Actor* giant, float duration) {
-		for (auto tiny: FindSquished(giant)) {
-			if (tiny) {
-				auto giantRef = giant->CreateRefHandle();
-				auto tinyRef = tiny->CreateRefHandle();
-				auto currentPos = tiny->GetPosition();
-				TaskManager::RunFor(duration, [=](const auto& data){
-					if (!tinyRef) {
-						return false;	
-					}
-					if (!giantRef) {
-						return false;	
-					}
-					AttachTo(giantRef, tinyRef, currentPos);
-					return true;
-				});
-			}
 		}
 	}
 
@@ -163,8 +88,6 @@ namespace {
 			dust = 1.45f;
 		}
 
-		// TO ANDY: i commented it out for tests
-		//MoveUnderFoot(giant, Node); 
 		float hh = GetHighHeelsBonusDamage(giant, true);
 		float shake_power = Rumble_Stomp_Normal * smt * hh;
 
@@ -251,7 +174,6 @@ namespace {
 			return true;
 		});
 		
-		//KeepInPlace(giant, 1.5);
 	}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////// Events
@@ -321,14 +243,14 @@ namespace {
 		auto player = PlayerCharacter::GetSingleton();
 		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
 		const std::string_view StompType = UnderStomp ? "UnderStompRight" : "StompRight";
-		DoStompOrUnderStomp(player, StompType);
+		DoStompOrUnderStomp(player, StompType, true, !UnderStomp);
 	}
 
 	void LeftStompEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
 		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
 		const std::string_view StompType = UnderStomp ? "UnderStompLeft" : "StompLeft";
-		DoStompOrUnderStomp(player, StompType);
+		DoStompOrUnderStomp(player, StompType, false, !UnderStomp);
 	}
 }
 

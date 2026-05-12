@@ -1,5 +1,6 @@
 #include "Managers/Animation/Stomp_Strong.hpp"
 #include "Managers/Animation/Stomp_Under.hpp"
+#include "Managers/Animation/StompAssist.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
@@ -34,7 +35,7 @@ namespace {
 	const std::string_view RNode = "NPC R Foot [Rft ]";
 	const std::string_view LNode = "NPC L Foot [Lft ]";
 
-	void DoStompOrUnderStomp(Actor* player, const std::string_view name) {
+	void DoStompOrUnderStomp(Actor* player, const std::string_view name, bool right, bool useAssist) {
 		float WasteStamina = 70.0f * GetWasteMult(player);
 
 		std::string_view message = "You're too tired to perform heavy stomp";
@@ -52,6 +53,9 @@ namespace {
 		}
 
 		if (GetAV(player, ActorValue::kStamina) > WasteStamina) {
+			if (useAssist) {
+				TryStompAssist(player, right, StompAssistAction::Strong);
+			}
 			AnimationManager::StartAnim(name, player);
 		} else {
 			NotifyWithSound(player, message);
@@ -253,14 +257,14 @@ namespace {
 		auto player = PlayerCharacter::GetSingleton();
 		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
 		const std::string_view StompType = UnderStomp ? "UnderStompStrongRight" : "StrongStompRight";
-		DoStompOrUnderStomp(player, StompType);
+		DoStompOrUnderStomp(player, StompType, true, !UnderStomp);
 	}
 
 	void LeftStrongStompEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
 		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
 		const std::string_view StompType = UnderStomp ? "UnderStompStrongLeft" : "StrongStompLeft";
-		DoStompOrUnderStomp(player, StompType);
+		DoStompOrUnderStomp(player, StompType, false, !UnderStomp);
 	}
 }
 

@@ -1,4 +1,5 @@
 #include "Managers/Animation/FootTrample.hpp"
+#include "Managers/Animation/StompAssist.hpp"
 #include "Managers/Audio/Stomps.hpp"
 
 #include "Stomp_Under.hpp"
@@ -254,6 +255,9 @@ namespace {
 		const std::string_view TrampleType_L = UnderTrample ? "UnderTrampleL" : "TrampleL";
 
 		if (GetAV(player, ActorValue::kStamina) > WasteStamina) {
+			if (!UnderTrample) {
+				TryStompAssist(player, false, StompAssistAction::Trample);
+			}
 			AnimationManager::StartAnim(TrampleType_L, player);
 		} else {
 			NotifyWithSound(player, "You're too tired to perform trample");
@@ -268,6 +272,9 @@ namespace {
 		const std::string_view TrampleType_R = UnderTrample ? "UnderTrampleR" : "TrampleR";
 
 		if (GetAV(player, ActorValue::kStamina) > WasteStamina) {
+			if (!UnderTrample) {
+				TryStompAssist(player, true, StompAssistAction::Trample);
+			}
 			AnimationManager::StartAnim(TrampleType_R, player);
 		} else {
 			NotifyWithSound(player, "You're too tired to perform trample");
