@@ -224,7 +224,7 @@ namespace {
 		const float currentOtherScale = Get_Other_Scale(actor);
 		trans_actor_data->OtherScales = currentOtherScale;
 
-		const float natural_scale = get_natural_scale(actor, false);
+		const float natural_scale = get_natural_scale(actor, true);
 		float target_scale = persi_actor_data->fTargetScale;
 		const float max_scale = persi_actor_data->fMaxScale / natural_scale;
 

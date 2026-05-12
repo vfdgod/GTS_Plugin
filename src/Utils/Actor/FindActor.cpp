@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "Utils/Actor/FindActor.hpp"
 
 namespace GTS {
@@ -7,8 +9,11 @@ namespace GTS {
 	 */
 
 	namespace {
+		using ActorPtr = decltype(std::declval<ActorHandle>().get());
+
 		struct ActorCache {
 			std::uint64_t frame = std::numeric_limits<std::uint64_t>::max();
+			std::vector<ActorPtr> actorRefs;
 			std::vector<Actor*> actors;
 			std::vector<Actor*> teammates;
 			std::vector<Actor*> femaleTeammates;
@@ -25,6 +30,7 @@ namespace GTS {
 			cache.actors.clear();
 			cache.teammates.clear();
 			cache.femaleTeammates.clear();
+			cache.actorRefs.clear();
 
 			const ProcessLists* const process_list = ProcessLists::GetSingleton();
 			if (!process_list) {
@@ -32,20 +38,26 @@ namespace GTS {
 			}
 
 			const auto& handles = process_list->highActorHandles;
+			cache.actorRefs.reserve(handles.size() + 1);
 			cache.actors.reserve(handles.size() + 1);
 
 			for (const auto& handle : handles) {
-				if (const auto actorPtr = handle.get(); actorPtr && actorPtr->Get3D1(false)) {
-					auto* actor = actorPtr.get();
-					if (!actor) {
-						continue;
-					}
-					cache.actors.emplace_back(actor);
-					if (IsTeammate(actor)) {
-						cache.teammates.emplace_back(actor);
-						if (IsFemale(actor)) {
-							cache.femaleTeammates.emplace_back(actor);
-						}
+				if (!handle) {
+					continue;
+				}
+
+				auto actorPtr = handle.get();
+				auto* actor = actorPtr.get();
+				if (!actor || !actor->Get3D1(false)) {
+					continue;
+				}
+
+				cache.actorRefs.emplace_back(actorPtr);
+				cache.actors.emplace_back(actor);
+				if (IsTeammate(actor)) {
+					cache.teammates.emplace_back(actor);
+					if (IsFemale(actor)) {
+						cache.femaleTeammates.emplace_back(actor);
 					}
 				}
 			}

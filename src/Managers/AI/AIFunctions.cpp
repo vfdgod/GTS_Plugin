@@ -476,6 +476,9 @@ namespace GTS {
 			return; // Disallow Panic if bool is false.
 		}
 		for (auto tiny: FindSomeActors("AiActors", 2)) {
+			if (!tiny) {
+				continue;
+			}
 			if (tiny != giant && !tiny->IsPlayerRef() && !IsTeammate(tiny)) {
 				if (tiny->IsDead() || IsInSexlabAnim(tiny, giant)) {
 					continue;
