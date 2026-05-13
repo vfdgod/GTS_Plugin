@@ -130,7 +130,8 @@ namespace GTS {
             PSString T5 = "允许多目标时，一次踩踏最多预吸附多少目标。";
             PSString T6 = "预吸附后阻止目标移动的持续时间。";
             PSString T7 = "搜索目标的基础半径。实际距离会再乘以 1.6 倍和玩家当前体型。";
-            PSString T8 = "只有玩家与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。";
+            PSString T8 = "只有玩家与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。\n"
+                          "这个值只影响辅助吸附，不等于踩爆阈值；普通踩爆通常还需要约 10x 体型差。";
 
             if (ImGui::CollapsingHeader("踩踏辅助", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("启用踩踏辅助", &Config::Advanced.bStompAssist, T0);

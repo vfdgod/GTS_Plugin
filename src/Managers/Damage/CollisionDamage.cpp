@@ -103,6 +103,17 @@ namespace {
 		);
 	}
 
+	float GetPostTinyCalamityShrinkDifference(Actor* tiny, float original_difference) {
+		const float visual_tiny_scale = get_visual_scale(tiny) * GetSizeFromBoundingBox(tiny);
+		const float target_tiny_scale = get_target_scale(tiny) * GetSizeFromBoundingBox(tiny);
+		if (visual_tiny_scale <= 0.0f || target_tiny_scale <= 0.0f || target_tiny_scale >= visual_tiny_scale) {
+			return original_difference;
+		}
+
+		// Tiny Calamity shrink updates target scale first; use that for the same stomp's crush check.
+		return original_difference * (visual_tiny_scale / target_tiny_scale);
+	}
+
 	bool ApplyHighHeelBonus(Actor* giant, DamageSource cause) {
 		bool HighHeel = false;
 		switch (cause) {
@@ -356,7 +367,10 @@ namespace GTS {
 					ModVulnerability(giant, tiny, damage_result);
 					InflictSizeDamage(giant, tiny, damage_result, applyMercy);
 					if (!applyMercy) {
-						CrushCheck(giant, tiny, size_difference, crush_threshold, Cause);
+						const float crush_difference = SMT
+							? GetPostTinyCalamityShrinkDifference(tiny, size_difference)
+							: size_difference;
+						CrushCheck(giant, tiny, crush_difference, crush_threshold, Cause);
 					}
 				}
 			}
