@@ -671,18 +671,22 @@ namespace GTS {
 	}
 
 	void DoDamageEffect(Actor* giant, float damage, float radius, int random, float bonedamage, FootEvent kind, float crushmult, DamageSource Cause, bool ignore_rotation) {
+		DoDamageEffect(giant, damage, radius, random, bonedamage, kind, crushmult, Cause, ignore_rotation, false);
+	}
+
+	void DoDamageEffect(Actor* giant, float damage, float radius, int random, float bonedamage, FootEvent kind, float crushmult, DamageSource Cause, bool ignore_rotation, bool preserve_one_health) {
 		if (kind == FootEvent::Left) {
-			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, false, false, ignore_rotation, true);
+			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, false, false, ignore_rotation, true, preserve_one_health);
 		}
 		if (kind == FootEvent::Right) {
-			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, true, false, ignore_rotation, true);
+			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, true, false, ignore_rotation, true, preserve_one_health);
 			//                                                                                  ^         ^         ^ - - - - Normal Crush
 			//                                                       Chance to trigger bone crush   Damage of            Threshold multiplication
 			//                                                                                      Bone Crush
 		}
 	}
 
-	void InflictSizeDamage(Actor* attacker, Actor* receiver, float value) {
+	void InflictSizeDamage(Actor* attacker, Actor* receiver, float value, bool preserve_one_health) {
 
 		if (attacker->IsPlayerRef() && IsTeammate(receiver)) {
 			if (Config::Balance.bFollowerFriendlyImmunity) {
@@ -716,6 +720,18 @@ namespace GTS {
 			//The correct thing to do here is to pass the attacker.
 			//This however results in size damage causing overkills due to how the hook for TakeDamage is setup.
 			float damageDealt = value * difficulty * Config::Balance.fSizeDamageMult;
+			if (preserve_one_health) {
+				const float health = GetAV(receiver, ActorValue::kHealth);
+				if (health > 1.0f) {
+					damageDealt = std::min(damageDealt, health - 1.0f);
+				} else {
+					damageDealt = 0.0f;
+				}
+			}
+
+			if (damageDealt <= 0.0f) {
+				return;
+			}
 			
 			if (TransientActorData* data = Transient::GetActorData(receiver))
 			{

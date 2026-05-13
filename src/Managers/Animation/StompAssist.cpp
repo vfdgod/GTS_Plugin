@@ -97,8 +97,9 @@ namespace {
 
 	std::vector<StompAssistTarget> CollectTargets(Actor* giant, const NiPoint3& footPosition) {
 		std::vector<StompAssistTarget> targets;
+		constexpr float SEARCH_RADIUS_MULT = 1.6f;
 		const float giantScale = get_visual_scale(giant);
-		const float maxDistance = std::max(0.0f, Config::Advanced.fStompAssistSearchRadius) * giantScale;
+		const float maxDistance = std::max(0.0f, Config::Advanced.fStompAssistSearchRadius) * SEARCH_RADIUS_MULT * giantScale;
 		const float maxDistanceSquared = maxDistance * maxDistance;
 		const float sizeThreshold = std::max(1.0f, Config::Advanced.fStompAssistSizeThreshold);
 		const NiPoint3 giantPosition = giant->GetPosition();

@@ -38,6 +38,7 @@ struct SettingsAdvanced_t {
     bool bCooldowns = true;
     bool bEnforceUIClamps = true;
     bool bPlayerTinyCalamityBonus = false;
+    bool bPlayerTinyCalamityMercy = false;
     bool bStompAssist = false;
     bool bStompAssistNormal = true;
     bool bStompAssistStrong = true;
@@ -45,7 +46,7 @@ struct SettingsAdvanced_t {
     bool bStompAssistMultiTarget = false;
     uint8_t iStompAssistMaxTargets = 3;
     float fStompAssistDuration = 1.0f;
-    float fStompAssistSearchRadius = 22.0f;
+    float fStompAssistSearchRadius = 36.0f;
     float fStompAssistSizeThreshold = 3.5f;
     bool bPlayerAI = false;
     float fAnimSpeedAdjMultPlayer = 1.0f;

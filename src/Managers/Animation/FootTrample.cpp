@@ -77,7 +77,7 @@ namespace {
 			}
 
 			if (Finish - Start > 0.06) { 
-				DoDamageEffect(GiantRef, Damage_Trample * perk, Radius_Trample, 100, 0.10f, Event, 1.10f, Source);
+				DoDamageEffect(GiantRef, Damage_Trample * perk, Radius_Trample, 100, 0.10f, Event, 1.10f, Source, false, true);
 				DrainStamina(GiantRef, "StaminaDrain_Trample", Runtime::PERK.GTSPerkDestructionBasics, true, 0.6f); // start stamina drain
 
 				float shake_power = Rumble_Trample_Stage1 * smt * GetHighHeelsBonusDamage(GiantRef, true);

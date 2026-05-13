@@ -68,12 +68,15 @@ namespace GTS {
                           "- Absorb 额外缩小强度\n"
                           "- 生命抗性、攻击和负重按 Tiny Calamity 规则结算\n\n"
                           "不会启动龙吼本体的持续时间、体型压制或 Shrinking Gaze；真正使用龙吼时不会重复叠加。";
+            PSString T4 = "开启后，玩家处于常驻 Tiny Calamity 特性时，普通踩踏、践踏和下踩的首次落脚会尽量保留目标 1 点生命，方便接续碾磨或持续踩踏。\n"
+                          "碾磨和持续踩踏本身仍可正常杀死目标。";
 
             if (ImGui::CollapsingHeader("调试/作弊", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("启用属性消耗", &Config::Advanced.bDamageAV, T0);
                 ImGuiEx::CheckBox("启用尺寸技能冷却", &Config::Advanced.bCooldowns, T1);
                 ImGuiEx::CheckBox("限制手动输入范围", &Config::Advanced.bEnforceUIClamps, T2);
                 ImGuiEx::CheckBox("玩家常驻 Tiny Calamity 特性", &Config::Advanced.bPlayerTinyCalamityBonus, T3);
+                ImGuiEx::CheckBox("Tiny Calamity 仁慈模式", &Config::Advanced.bPlayerTinyCalamityMercy, T4, !Config::Advanced.bPlayerTinyCalamityBonus);
 
                 if (ImGuiEx::Button("清空技能冷却")) {
                     CooldownManager::GetSingleton().Reset();
@@ -121,7 +124,7 @@ namespace GTS {
             PSString T4 = "开启后，一次踩踏可预吸附多个目标；关闭时只吸附最近目标。";
             PSString T5 = "允许多目标时，一次踩踏最多预吸附多少目标。";
             PSString T6 = "预吸附后阻止目标移动的持续时间。";
-            PSString T7 = "搜索目标的基础半径。实际距离会乘以玩家当前体型。";
+            PSString T7 = "搜索目标的基础半径。实际距离会再乘以 1.6 倍和玩家当前体型。";
             PSString T8 = "只有玩家与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。";
 
             if (ImGui::CollapsingHeader("踩踏辅助", ImUtil::HeaderFlagsDefaultOpen)) {
@@ -134,7 +137,7 @@ namespace GTS {
                 ImGuiEx::CheckBox("允许多目标", &Config::Advanced.bStompAssistMultiTarget, T4, !Config::Advanced.bStompAssist);
                 ImGuiEx::SliderU8("最大目标数量", &Config::Advanced.iStompAssistMaxTargets, 1, 8, T5, "%d", !Config::Advanced.bStompAssist || !Config::Advanced.bStompAssistMultiTarget);
                 ImGuiEx::SliderF("预吸附持续时间", &Config::Advanced.fStompAssistDuration, 0.2f, 2.0f, T6, "%.1f 秒", !Config::Advanced.bStompAssist);
-                ImGuiEx::SliderF("目标搜索半径", &Config::Advanced.fStompAssistSearchRadius, 8.0f, 60.0f, T7, "%.1f", !Config::Advanced.bStompAssist);
+                ImGuiEx::SliderF("目标搜索半径", &Config::Advanced.fStompAssistSearchRadius, 8.0f, 120.0f, T7, "%.1f", !Config::Advanced.bStompAssist);
                 ImGuiEx::SliderF("目标体型阈值", &Config::Advanced.fStompAssistSizeThreshold, 1.5f, 20.0f, T8, "%.1fx", !Config::Advanced.bStompAssist);
 
                 ImGui::Spacing();
