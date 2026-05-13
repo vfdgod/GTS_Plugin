@@ -42,12 +42,17 @@ namespace GTS {
 		{
 
             PSString T0 = "设置日志级别。级别越高，写入 GTSPlugin.log 的信息越多。";
+            PSString T1 = "开启后，当前存档会优先读取并写入 Data/SKSE/Plugins/GTSPlugin/SharedSettings.toml，\n"
+                          "用于共享除角色/世界进度外的模组配置。\n"
+                          "关闭后不会恢复旧的存档配置，只是从下一次保存开始改回按存档保存。";
 
             if (ImGui::CollapsingHeader("日志", ImUtil::HeaderFlagsDefaultOpen)) {
 
                 if (ImGuiEx::ComboEx<spdlog::level::level_enum>("日志级别", Config::Advanced.sLogLevel, T0, false, true)) {
 	                logger::SetLevel(Config::Advanced.sLogLevel.c_str());
 				}
+
+                ImGuiEx::CheckBox("全局共享配置", &Config::Advanced.bShareSettingsGlobally, T1);
 
 				ImGui::Spacing();
 

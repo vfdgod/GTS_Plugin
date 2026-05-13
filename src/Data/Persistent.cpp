@@ -108,6 +108,10 @@ namespace GTS {
 
 		logger::info("De-Serializing Persistent...");
 
+		// Always start from clean defaults so missing records in older saves
+		// do not inherit stale values from the previously loaded save/session.
+		ClearData();
+
 		while (serde->GetNextRecordInfo(RecordType, RecordVersion, RecordSize)) {
 
 			//----- Actor Data structs
@@ -265,6 +269,7 @@ namespace GTS {
 		MSGSeenGrowthSpurt       = false;
 		MSGSeenAspectOfGTS       = false;
 		UnlockMaxSizeSliders     = false;
+		ModSettings.value.clear();
 
 	}
 

@@ -22,8 +22,10 @@ namespace GTS {
         private:
         static constexpr const char* _LegacyConfigFile = "Settings.toml";
         static constexpr const char* _PersistentConfigFile = "Persistent.toml";
+        static constexpr const char* _SharedConfigFile = "SharedSettings.toml";
         static inline std::filesystem::path LegacyConfigFilePath = FileUtils::_basePath / _LegacyConfigFile;
         static inline std::filesystem::path PersistentFilePath = FileUtils::_basePath / _PersistentConfigFile;
+        static inline std::filesystem::path SharedConfigFilePath = FileUtils::_basePath / _SharedConfigFile;
         static inline FileUtils _fileManager = {};
         static inline toml::ordered_value TomlData = {};
 		static inline toml::ordered_value PersistentTomlData = {};
@@ -50,6 +52,9 @@ namespace GTS {
 
         static bool LoadPersistentToml();
         static bool SavePersistentToml();
+        static bool LoadSharedToml();
+        static bool SaveSharedToml();
+        static bool IsSharedSettingsEnabled(const toml::ordered_value& a_toml);
 
         static bool SerializeStructsToTOML();
         static bool DeserializeStructsFromTOML();

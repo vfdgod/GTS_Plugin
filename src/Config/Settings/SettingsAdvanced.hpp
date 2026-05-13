@@ -53,6 +53,7 @@ struct SettingsAdvanced_t {
     float fAnimSpeedAdjMultTeammate = 1.0f;
     bool bEnableExperimentalDevourmentAI = false;
     float fExperimentalDevourmentAIProb = 25.0f;
+    bool bShareSettingsGlobally = true;
     std::array<float, 5> fAnimSpeedSoftCore = 
     {
         // https://www.desmos.com/calculator/vyofjrqmrn

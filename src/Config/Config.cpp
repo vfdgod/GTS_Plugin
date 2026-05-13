@@ -53,6 +53,15 @@ namespace GTS {
             return false;
         }
 
+        if (IsSharedSettingsEnabled(TomlData)) {
+            if (LoadSharedToml()) {
+                Advanced.bShareSettingsGlobally = true;
+                logger::info("Loaded shared settings instead of save-local settings");
+                return true;
+            }
+            logger::warn("Shared settings requested but unavailable, falling back to save-local settings");
+        }
+
         return DeserializeStructsFromTOML();
     }
 
@@ -67,7 +76,18 @@ namespace GTS {
 			logger::error("Failed to serialize settings for save");
             return false;
         }
-        return SaveTOMLToString(TomlData);
+
+        bool saveLocalResult = SaveTOMLToString(TomlData);
+        if (!saveLocalResult) {
+            logger::error("Failed to save settings into the current save");
+            return false;
+        }
+
+        if (Advanced.bShareSettingsGlobally && !SaveSharedToml()) {
+            logger::error("Failed to save shared settings TOML");
+            return false;
+        }
+        return true;
 
     }
 
@@ -214,6 +234,89 @@ namespace GTS {
         }
         catch (const std::exception& e) {
             logger::error("Exception saving persistent settings: {}", e.what());
+            return false;
+        }
+    }
+
+    bool Config::LoadSharedToml() {
+        try {
+            if (!_fileManager.CheckOrCreateFile(SharedConfigFilePath)) {
+                logger::error("Could not check or create shared settings file");
+                return false;
+            }
+
+            if (std::filesystem::file_size(SharedConfigFilePath) == 0) {
+                logger::warn("Shared settings file is empty");
+                return false;
+            }
+
+            auto sharedData = toml::parse<toml::ordered_type_config>(SharedConfigFilePath.string());
+            TomlData = std::move(sharedData).as_table();
+            if (TomlData.is_empty()) {
+                logger::warn("Parsed shared settings TOML is empty");
+                return false;
+            }
+
+            return DeserializeStructsFromTOML();
+        }
+        catch (const toml::exception& e) {
+            logger::error("TOML exception loading shared settings: {}", e.what());
+            return false;
+        }
+        catch (const std::exception& e) {
+            logger::error("Exception loading shared settings: {}", e.what());
+            return false;
+        }
+        catch (...) {
+            logger::error("Unknown exception loading shared settings");
+            return false;
+        }
+    }
+
+    bool Config::SaveSharedToml() {
+        try {
+            if (!_fileManager.CheckOrCreateFile(SharedConfigFilePath)) {
+                logger::error("Could not check or create shared settings file");
+                return false;
+            }
+
+            if (!SaveTOMLToFile(TomlData, SharedConfigFilePath)) {
+                logger::error("Failed to save shared settings TOML to file");
+                return false;
+            }
+
+            logger::info("Shared settings saved successfully");
+            return true;
+        }
+        catch (const toml::exception& e) {
+            logger::error("TOML exception saving shared settings: {}", e.what());
+            return false;
+        }
+        catch (const std::exception& e) {
+            logger::error("Exception saving shared settings: {}", e.what());
+            return false;
+        }
+        catch (...) {
+            logger::error("Unknown exception saving shared settings");
+            return false;
+        }
+    }
+
+    bool Config::IsSharedSettingsEnabled(const toml::ordered_value& a_toml) {
+        try {
+            const auto advanced = toml::find_or<SettingsAdvanced_t>(a_toml, "Advanced", SettingsAdvanced_t{});
+            return advanced.bShareSettingsGlobally;
+        }
+        catch (const toml::exception& e) {
+            logger::warn("Could not inspect shared settings flag from save-local TOML: {}", e.what());
+            return false;
+        }
+        catch (const std::exception& e) {
+            logger::warn("Exception inspecting shared settings flag: {}", e.what());
+            return false;
+        }
+        catch (...) {
+            logger::warn("Unknown exception inspecting shared settings flag");
             return false;
         }
     }
