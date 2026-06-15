@@ -97,71 +97,7 @@ namespace {
 		}
 	}
 
-	void PlaySoundAtNodeFallOffImpl(RE::BSISoundDescriptor* a_soundDescriptor, const float& a_volume, RE::NiAVObject* a_node, float a_falloff, float a_frequency) {
 
-		if (!a_node) {
-			logger::warn("Tried to play a sound on a null node");
-			return;
-		}
-
-		if (!a_soundDescriptor) {
-			logger::error("Ivallid Sound Descriptor");
-			return;
-		}
-
-		auto audioManager = RE::BSAudioManager::GetSingleton();
-		if (!audioManager) {
-			logger::error("Audio Manager invalid");
-			return;
-		}
-
-		RE::BSSoundHandle soundHandle;
-		if (audioManager->BuildSoundDataFromDescriptor(soundHandle, a_soundDescriptor)) {
-			float falloff = GTS::Sound_GetFallOff(a_node, a_falloff);
-			soundHandle.SetVolume(a_volume * falloff);
-
-			audioManager->SetSoundHandleFrequency(soundHandle.soundID, a_frequency);
-
-			soundHandle.SetObjectToFollow(a_node);
-			soundHandle.Play();
-			return;
-		}
-
-		logger::error("Could not build sound");
-
-	}
-
-	void PlaySoundAtNodeImpl(RE::BSISoundDescriptor* a_soundDescriptor, const float& a_volume, RE::NiAVObject* a_node, float a_frequency) {
-
-		if (!a_node) {
-			logger::warn("Tried to play a sound on a null node");
-			return;
-		}
-
-		if (!a_soundDescriptor) {
-			logger::error("Ivallid Sound Descriptor");
-			return;
-		}
-
-		auto audioManager = RE::BSAudioManager::GetSingleton();
-		if (!audioManager) {
-			logger::error("Audio Manager invalid");
-			return;
-		}
-
-		RE::BSSoundHandle soundHandle;
-		if (audioManager->BuildSoundDataFromDescriptor(soundHandle, a_soundDescriptor)) {
-			soundHandle.SetVolume(a_volume);
-
-			audioManager->SetSoundHandleFrequency(soundHandle.soundID, a_frequency);
-
-			soundHandle.SetObjectToFollow(a_node);
-			soundHandle.Play();
-
-			return;
-		}
-		logger::error("Could not build sound");
-	}
 
 	template <class T>
 	bool HasMagicEffectImpl(RE::Actor* a_actor, const T& a_entry) {
@@ -490,7 +426,7 @@ namespace GTS {
 	void Runtime::PlaySoundAtNode(const std::string_view& a_tag, const float& a_volume, NiAVObject* a_node, float a_frequency) {
 		PlaySoundAtNodeImpl(GetSound(a_tag), a_volume, a_node, a_frequency);
 	}
-	
+
 	void Runtime::PlaySoundAtNode_FallOff(const std::string_view& a_tag, Actor* a_actor, const float& a_volume, const std::string_view& a_node, float a_falloff, float a_frequency) {
 		PlaySoundAtNodeFallOffImpl(GetSound(a_tag), a_volume, find_node(a_actor, a_node), a_falloff, a_frequency);
 	}
@@ -1009,4 +945,77 @@ namespace GTS {
 	bool Runtime::IsAltConversationCamInstalled() {
 		return AltConversationCamInstalled;
 	}
+
+
+	//----------------
+	//Implementations
+	//----------------
+
+	void Runtime::PlaySoundAtNodeFallOffImpl(RE::BSISoundDescriptor* a_soundDescriptor, const float& a_volume, RE::NiAVObject* a_node, float a_falloff, float a_frequency) {
+
+		if (!a_node) {
+			logger::warn("Tried to play a sound on a null node");
+			return;
+		}
+
+		if (!a_soundDescriptor) {
+			logger::error("Ivallid Sound Descriptor");
+			return;
+		}
+
+		auto audioManager = RE::BSAudioManager::GetSingleton();
+		if (!audioManager) {
+			logger::error("Audio Manager invalid");
+			return;
+		}
+
+		RE::BSSoundHandle soundHandle;
+		if (audioManager->BuildSoundDataFromDescriptor(soundHandle, a_soundDescriptor)) {
+			float falloff = GTS::Sound_GetFallOff(a_node, a_falloff);
+			soundHandle.SetVolume(a_volume * falloff);
+
+			audioManager->SetSoundHandleFrequency(soundHandle.soundID, a_frequency);
+
+			soundHandle.SetObjectToFollow(a_node);
+			soundHandle.Play();
+			return;
+		}
+
+		logger::error("Could not build sound");
+
+	}
+
+	void Runtime::PlaySoundAtNodeImpl(RE::BSISoundDescriptor* a_soundDescriptor, const float& a_volume, RE::NiAVObject* a_node, float a_frequency) {
+
+		if (!a_node) {
+			logger::warn("Tried to play a sound on a null node");
+			return;
+		}
+
+		if (!a_soundDescriptor) {
+			logger::error("Ivallid Sound Descriptor");
+			return;
+		}
+
+		auto audioManager = RE::BSAudioManager::GetSingleton();
+		if (!audioManager) {
+			logger::error("Audio Manager invalid");
+			return;
+		}
+
+		RE::BSSoundHandle soundHandle;
+		if (audioManager->BuildSoundDataFromDescriptor(soundHandle, a_soundDescriptor)) {
+			soundHandle.SetVolume(a_volume);
+
+			audioManager->SetSoundHandleFrequency(soundHandle.soundID, a_frequency);
+
+			soundHandle.SetObjectToFollow(a_node);
+			soundHandle.Play();
+
+			return;
+		}
+		logger::error("Could not build sound");
+	}
+
+
 }

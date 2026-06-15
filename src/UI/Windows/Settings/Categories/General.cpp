@@ -286,6 +286,9 @@ namespace GTS {
 					ImGui::SameLine();
 
 					if (ImGuiEx::Button("获得全部 Perk", T3, !Complete)) {
+						if (auto win = dynamic_cast<SettingsWindow*>(GTSMenu::WindowManager->wSettings)){
+							win->RequestClose();
+						}
 						GiveAllPerksToPlayer();
 					}
 

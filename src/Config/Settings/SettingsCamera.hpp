@@ -112,6 +112,7 @@ struct SettingsCamera_t {
     bool bCamCollideStatics = true;
     float fModifyCamCollideAt = 3.0f;
 
+
 };
 TOML_SERIALIZABLE(SettingsCamera_t);
 TOML_REGISTER_NAME(SettingsCamera_t, "Camera");

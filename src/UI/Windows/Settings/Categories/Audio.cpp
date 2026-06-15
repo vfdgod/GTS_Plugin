@@ -10,44 +10,6 @@
 
 using namespace GTS;
 
-namespace {
-
-	void SelectVoiceBank(RE::Actor* a_actor) {
-
-		if (!a_actor) return;
-
-		static constexpr std::array<const char*, 9> EntriesFemale = {
-			"GTS 语音",
-			"SL 女性语音 1",
-			"SL 女性语音 2",
-			"SL 女性语音 3",
-			"SL 女性语音 4",
-			"SL 女性语音 5",
-			"SL 女性语音 6",
-			"SL 女性语音 7",
-			"SL 女性语音 8"
-		};
-
-		if (auto ActorData = Persistent::GetActorData(a_actor)) {
-			ImGui::PushID(a_actor);
-			int CurrentIndex = ActorData->iVoiceBankIndex;
-			if (ImGui::BeginCombo(a_actor->GetName(), EntriesFemale[CurrentIndex])) {
-				for (int i = 0; i < EntriesFemale.size(); ++i) {
-					const bool IsSelected = (CurrentIndex == i);
-					if (ImGui::Selectable(EntriesFemale[i], IsSelected)) {
-						ActorData->iVoiceBankIndex = static_cast<uint8_t>(i);
-					}
-					if (IsSelected) {
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-				ImGui::EndCombo();
-			}
-			ImGui::PopID();
-		}
-	}
-}
-
 namespace GTS {
 
 	CategoryAudio::CategoryAudio() {
@@ -122,11 +84,12 @@ namespace GTS {
 
 		if (Runtime::IsSexlabInstalled()) {
 
-			ImUtil_Unique 
+			ImUtil_Unique
 			{
 
 				PSString THelp = "已安装 SexLab。\n"
-								 "本模组现在可以把它的语音文件作为替代语音使用。\n\n"
+								 "本模组现在可以把它的语音文件作为呻吟/笑声的替代语音使用。\n"
+								 "具体语音类型请在 SL 的 MCM 中调整。\n\n"
 								 "注意：为避免菜单过于杂乱，这里只会列出玩家/当前追随者。\n"
 								 "如果此菜单为空，表示当前加载的 NPC 都不符合此功能条件。";
 				ImGui::BeginDisabled(!Config::Audio.bMoanEnable);
@@ -134,16 +97,44 @@ namespace GTS {
 					ImGuiEx::HelpText("这是什么", THelp);
 
 					static const auto Player = PlayerCharacter::GetSingleton();
+					const auto ActiveTeammates = FindTeammates();
 
-					if (IsFemale(Player)){
-						SelectVoiceBank(Player);
+					// Build actor list
+					std::vector<RE::Actor*> Actors;
+					Actors.reserve(8);
+					if (Player) {
+						Actors.push_back(Player);
+					}
+					for (const auto T : ActiveTeammates) {
+						if (T) {
+							Actors.push_back(T);
+						}
 					}
 
-					const auto& ActiveTeammates = FindFemaleTeammates();
+					static int SelectedIdx = 0;
+					SelectedIdx = Actors.empty() ? 0 : std::clamp(SelectedIdx, 0, static_cast<int>(Actors.size()) - 1);
 
-					if (!ActiveTeammates.empty()) {
-						for (const auto Teammate : ActiveTeammates) {
-							SelectVoiceBank(Teammate);
+					if (Actors.empty()) {
+						ImGui::Text("没有可用角色");
+					}
+					else {
+						const char* PreviewName = Actors[SelectedIdx]->GetName();
+						if (ImGui::BeginCombo("角色", PreviewName)) {
+							for (int i = 0; i < static_cast<int>(Actors.size()); ++i) {
+								bool Selected = (SelectedIdx == i);
+								if (ImGui::Selectable(Actors[i]->GetName(), Selected)) {
+									SelectedIdx = i;
+								}
+								if (Selected) {
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}
+
+						if (auto ActorData = Persistent::GetActorData(Actors[SelectedIdx])) {
+							ImGui::SameLine();
+							ImGuiEx::CheckBox("使用 SL 语音", &ActorData->bUseSLVoice);
 						}
 					}
 

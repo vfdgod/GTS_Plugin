@@ -6,7 +6,7 @@ namespace GTS {
 		
 		public:
 
-		DynamicCollisionController(const RE::ActorHandle& a_handle);
+		DynamicCollisionController(const RE::ActorHandle& a_handle, bool a_hasInSkeletonCollision);
 		void Update();
 
 		private:

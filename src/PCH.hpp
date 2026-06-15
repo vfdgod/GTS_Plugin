@@ -98,6 +98,12 @@
 #include <wincodec.h>
 #include <wrl/client.h>
 
+//WinAPI Fix
+#undef PlaySound
+#undef DeleteFile
+#undef LoadImage
+#undef GetObject
+
 #include <RE/Skyrim.h>
 #include <REL/Relocation.h>
 #include <SKSE/SKSE.h>
@@ -139,13 +145,13 @@
 #include <tbb/concurrent_queue.h>
 
 //Abseil - https://github.com/abseil/abseil-cpp
-#include <absl/container/flat_hash_map.h> 
-#include <absl/container/flat_hash_set.h> 
+#include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 #include <absl/container/inlined_vector.h>
 #include <absl/container/node_hash_map.h>
 #include <absl/container/node_hash_set.h>
-#include <absl/container/btree_map.h> 
-#include <absl/container/btree_set.h> 
+#include <absl/container/btree_map.h>
+#include <absl/container/btree_set.h>
 
 using namespace std::literals;
 using namespace REL::literals;
@@ -164,10 +170,7 @@ namespace Hooks {
 //#define GTS_PROFILER_ENABLED //<---- Enable The Performance Profiller. Accessible by opening the debug menu.
 //#define GTS_DISABLE_PLUGIN   //<---- If defined, Disables the entire plugin but keeps serialization active to preserve cosave data.
 
-//WinAPI Fix
-#undef PlaySound 
-#undef DeleteFile
-#undef LoadImage
+
 
 // ---- Own Includes ----
 #include "Constants.hpp"

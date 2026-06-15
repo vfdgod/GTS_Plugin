@@ -32,7 +32,7 @@ namespace {
         ImGuiEx::CheckBox("启用动作", &Config::AI.Stomp.bEnableAction, T0);
         ImGuiEx::SliderF("开始概率", &Config::AI.Stomp.fProbability, 1.0f, 100.0f, T1, "%.0f%%",!Config::AI.Stomp.bEnableAction);
         ImGuiEx::SliderF("脚下踩踏碾磨概率", &Config::AI.Stomp.fUnderstompGrindProbability, 0.0f, 100.0f, T2, "%.0f%%", !Config::AI.Stomp.bEnableAction);
-            
+
     }
 
     void DrawAIAction_KickSwipe() {
@@ -42,7 +42,7 @@ namespace {
 
         ImGuiEx::CheckBox("启用动作", &Config::AI.KickSwipe.bEnableAction, T0);
         ImGuiEx::SliderF("开始概率", &Config::AI.KickSwipe.fProbability, 1.0f, 100.0f, T1,"%.0f%%",!Config::AI.KickSwipe.bEnableAction);
-            
+
     }
 
     void DrawAIAction_ThighSandwich() {
@@ -56,19 +56,41 @@ namespace {
 
         PSString T3 = "调整开始重攻击的概率。";
         PSString T4 = "调整开始轻攻击的概率。";
+        PSString T5 = "调整进入臀部碾磨模式的概率。";
+        PSString T6 = "调整臀部模式中开始轻攻击的概率。";
+        PSString T7 = "调整臀部模式中开始重攻击的概率。";
+        PSString T8 = "调整臀部模式中触发成长爆发的概率。";
+        PSString T9 = "调整开始臀部碾磨动作的概率。";
+        PSString T10 = "调整停止臀部碾磨动作的概率。";
+        PSString T11 = "调整离开臀部模式并返回基础大腿夹击状态的概率。";
 
-        
         ImGuiEx::CheckBox("启用动作", &Config::AI.ThighSandwich.bEnableAction, T0);
-    
+
         ImGui::BeginDisabled(!Config::AI.ThighSandwich.bEnableAction);
         {
             ImGuiEx::SliderF("开始概率", &Config::AI.ThighSandwich.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
+            ImGuiEx::SliderF("动作间隔", &Config::AI.ThighSandwich.fInterval, 1.0f, 5.0f, T2, "每 %.1f 秒");
 
             ImGui::Spacing();
+            ImGui::Text("基础大腿夹击");
 
-            ImGuiEx::SliderF("动作间隔", &Config::AI.ThighSandwich.fInterval, 1.0f, 5.0f, T2, "每 %.1f 秒");
-            ImGuiEx::SliderF("重攻击概率", &Config::AI.ThighSandwich.fProbabilityHeavy, 0.0f, 100.0f, T3, "%.0f%%");
-            ImGuiEx::SliderF("轻攻击概率", &Config::AI.ThighSandwich.fProbabilityLight, 0.0f, 100.0f, T4, "%.0f%%");
+            ImGuiEx::SliderF("重攻击概率", &Config::AI.ThighSandwich.fHeavyAttackPob, 0.0f, 100.0f, T3, "%.0f%%");
+            ImGuiEx::SliderF("轻攻击概率", &Config::AI.ThighSandwich.fLightAttackProb, 0.0f, 100.0f, T4, "%.0f%%");
+
+            ImGui::Spacing();
+            ImGui::Text("臀部模式选项");
+
+            ImGuiEx::SliderF("进入臀部模式概率", &Config::AI.ThighSandwich.fEnterButtModeProb, 0.0f, 100.0f, T5, "%.0f%%");
+
+            ImGuiEx::SliderF("臀部模式轻攻击概率", &Config::AI.ThighSandwich.fButtLAtkProb, 0.0f, 100.0f, T6, "%.0f%%");
+            ImGuiEx::SliderF("臀部模式重攻击概率", &Config::AI.ThighSandwich.fButtHAtkProb, 0.0f, 100.0f, T7, "%.0f%%");
+
+            ImGuiEx::SliderF("臀部模式成长概率", &Config::AI.ThighSandwich.fButtGrowProb, 0.0f, 100.0f, T8, "%.0f%%");
+
+            ImGuiEx::SliderF("开始臀部碾磨概率", &Config::AI.ThighSandwich.fButtGrindStart, 0.0f, 100.0f, T9, "%.0f%%");
+            ImGuiEx::SliderF("停止臀部碾磨概率", &Config::AI.ThighSandwich.fButtGrindStop, 0.0f, 100.0f, T10, "%.0f%%");
+
+            ImGuiEx::SliderF("退出臀部模式概率", &Config::AI.ThighSandwich.fButtExitProb, 0.0f, 100.0f, T11, "%.0f%%");
         }
         ImGui::EndDisabled();
 
@@ -128,7 +150,7 @@ namespace {
 
         ImGuiEx::HelpText("为什么没有触发拥抱", T11);
         ImGuiEx::CheckBox("启用动作", &Config::AI.Hugs.bEnableAction, T0);
-        
+
         ImGui::BeginDisabled(!Config::AI.Hugs.bEnableAction);
         {
             ImGuiEx::SliderF("开始概率", &Config::AI.Hugs.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
@@ -169,7 +191,7 @@ namespace {
 
         ImGuiEx::CheckBox("启用动作", &Config::AI.ButtCrush.bEnableAction, T0);
 
-        
+
         ImGui::BeginDisabled(!Config::AI.ButtCrush.bEnableAction);
         {
             ImGuiEx::SliderF("开始概率", &Config::AI.ButtCrush.fProbability, 1.0f, 100.0f, T1, "%.0f%%");
@@ -264,7 +286,7 @@ namespace {
         ImGui::EndDisabled();
     }
 
-} 
+}
 
 namespace GTS {
 
@@ -274,7 +296,7 @@ namespace GTS {
 
     void CategoryAI::DrawLeft() {
 
-        ImUtil_Unique 
+        ImUtil_Unique
 		{
 
             PSString T0 = "全局启用/禁用追随者动作 AI。";
@@ -330,9 +352,9 @@ namespace GTS {
             }
         }
 
-        ImUtil_Unique 
+        ImUtil_Unique
 		{
-            
+
             PSString T0 = "切换追随者超过 x1.25 体型后，是否进一步降低移动速度。\n"
                             "- 此开关会根据体型降低追随者冲刺概率，使其更倾向于行走而不是冲刺。\n"
                             "- 会修改 SpeedMult Actor Value，最多可降低 15。\n\n"

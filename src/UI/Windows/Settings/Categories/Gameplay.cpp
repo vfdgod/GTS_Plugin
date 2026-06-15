@@ -27,7 +27,9 @@ namespace GTS {
                       "- 成长诅咒：像“成长”一样持续成长，但会以不同强度的爆发方式成长，直到达到你在下方设定的上限。\n"
                       "- 巨人诅咒：当你低于指定体型时，会迅速成长到该体型；像“恢复体型”这类法术不会把你缩到这个值以下。\n"
                       "- 衰减诅咒：在非战斗状态或未执行巨化动作时，如果体型过大，会缓慢缩回目标值。\n"
-                      "- 体型锁定：结合两种诅咒效果。你会成长到指定体型，并在超过时缓慢缩回该值。";
+                      "- 体型锁定：结合两种诅咒效果。你会成长到指定体型，并在超过时缓慢缩回该值。\n"
+                      "- 等级锁定：类似“巨人诅咒”，最低体型会根据普通等级或 GTS 技能等级计算。\n\n"
+                      "注意：多数游戏模式需要拥有“巨型成长” Perk 才能使用。";
 
         PSString T1 = "修改每次更新时的成长/缩小量。\n"
                       "成长速率 | 缩小速率";
@@ -46,15 +48,32 @@ namespace GTS {
                       "实际每次会在你设定值基础上额外浮动 +/- 10%。";
 
 
-        ImGuiEx::ComboEx<LActiveGamemode_t>("游戏模式", a_Settings->sGameMode, T0);
+        const bool hasPerk = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth);
 
-		auto currentMode = magic_enum::enum_cast<LActiveGamemode_t>(a_Settings->sGameMode);
+        ImGuiEx::ComboExFiltered<LActiveGamemode_t>("游戏模式", a_Settings->sGameMode, [hasPerk](LActiveGamemode_t val) {
+            constexpr std::array perkGated = {
+                LActiveGamemode_t::kGrow,
+                    LActiveGamemode_t::kShrink,
+                    LActiveGamemode_t::kCombatGrowth,
+                    LActiveGamemode_t::kSlowCombatGrowth,
+                    LActiveGamemode_t::kCurseOfGrowth,
+                    LActiveGamemode_t::kCurseOfTheGiantess,
+                    LActiveGamemode_t::kCurseOfDiminishing,
+                    LActiveGamemode_t::kSizeLocked
+            };
+            return !hasPerk && std::ranges::contains(perkGated, val);
+        },
+            nullptr,  // nothing hidden
+            T0
+        );
+
+        auto currentMode = magic_enum::enum_cast<LActiveGamemode_t>(a_Settings->sGameMode);
 
         ImGui::BeginDisabled(a_Settings->sGameMode == "kNone");
 
         ImGui::Spacing();
         static std::array const pTemp = { &a_Settings->fGrowthRate, &a_Settings->fShrinkRate };
-        
+
 
         if (currentMode.has_value()) {
 
@@ -65,7 +84,7 @@ namespace GTS {
                                     currentMode.value() == LActiveGamemode_t::kLevelLocked;
 
             const bool UsesMultiplier = !CurseModes;
-			const bool UsesRate = currentMode.value() != LActiveGamemode_t::kLevelLocked;
+            const bool UsesRate = currentMode.value() != LActiveGamemode_t::kLevelLocked;
 
             ImGui::Spacing();
 
@@ -91,12 +110,14 @@ namespace GTS {
 
                 if (a_isPlayer) {
                     Actor* Target = PlayerCharacter::GetSingleton();
-                    float TargetScale = (a_Settings->bUseGTSSkill ? GetGtsSkillLevel(Target) : Target->GetLevel()) * a_Settings->fScalePerLevel;
+                    float natScale = get_natural_scale(Target);
+                    float TargetScale = natScale + ((a_Settings->bUseGTSSkill ? GetGtsSkillLevel(Target) : Target->GetLevel()) * a_Settings->fScalePerLevel);
                     ImGui::Text("%s 的最低体型会变成：%.2fx", Target->GetName(), TargetScale);
                 }
                 else {
                     for (const auto& teammate : GTSMenu::WindowManager->GetCachedTeamMateList()) {
-                        float TargetScale = (a_Settings->bUseGTSSkill ? GetGtsSkillLevel(teammate) : teammate->GetLevel()) * a_Settings->fScalePerLevel;
+                        float natScale = get_natural_scale(teammate);
+                        float TargetScale = natScale + ((a_Settings->bUseGTSSkill ? GetGtsSkillLevel(teammate) : teammate->GetLevel()) * a_Settings->fScalePerLevel);
                         ImGui::PushID(teammate);
                         ImGui::Text("%s 的最低体型会变成：%.2fx", teammate->GetName(), TargetScale);
                         ImGui::PopID();
@@ -122,7 +143,7 @@ namespace GTS {
 
         //----- Perk Settings
 
-        ImUtil_Unique 
+        ImUtil_Unique
 	{
 
             if (ImGui::CollapsingHeader("Perk 设置", ImUtil::HeaderFlagsDefaultOpen)) {
@@ -162,7 +183,7 @@ namespace GTS {
 
 	//----- Armor Stripping
 
-        ImUtil_Unique 
+        ImUtil_Unique
 	{
 
             if (ImGui::CollapsingHeader("装备破损/脱落", ImUtil::HeaderFlagsDefaultOpen)) {
@@ -188,7 +209,7 @@ namespace GTS {
 
 	//----- Size Effects
 
-        ImUtil_Unique 
+        ImUtil_Unique
 	{
 
             if (ImGui::CollapsingHeader("体型效果", ImUtil::HeaderFlagsDefaultOpen)) {
@@ -213,7 +234,7 @@ namespace GTS {
 
         //----- Random Growth
 
-        ImUtil_Unique 
+        ImUtil_Unique
 	{
 
             const bool HasPerk = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkRandomGrowth);
@@ -262,11 +283,6 @@ namespace GTS {
             shouldDisable = true;
             Reason = "平衡模式已启用";
         }
-        else if (!Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth)) {
-            shouldDisable = true;
-            Reason = "缺少 Perk：\"巨型成长\"";
-        }
-
         {
             GameModeSettingsHeader.SetExtraInfo(Reason);
             GameModeSettingsHeader.SetDisabledState(shouldDisable);

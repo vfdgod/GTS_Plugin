@@ -23,7 +23,7 @@ Reflection based serializer limitations:
 */
 
 //-------------------------------------------------------------------------------------------------------------------
-//  CHILD STRUCTS 
+//  CHILD STRUCTS
 //  (Not Directly Serialized, but used within other structs)
 //-------------------------------------------------------------------------------------------------------------------
 
@@ -135,6 +135,31 @@ struct AIWorshipAction_t {
 };
 TOML_SERIALIZABLE(AIWorshipAction_t);
 
+// Complex action: Thigh Sandwich
+struct AIThighSandwichAction_t {
+    bool bEnableAction = true;
+    float fProbability = 20.0f;
+
+    // Base Attacks
+    float fLightAttackProb = 33.0f;
+    float fHeavyAttackPob = 50.0f;
+    float fEnterButtModeProb = 50.0f;
+
+    //Butt Mode
+    float fButtLAtkProb = 35.0f;
+    float fButtHAtkProb = 35.0f;
+    float fButtGrowProb = 100.f;
+    float fButtGrindStart = 35.0f;
+    float fButtGrindStop = 5.0f;
+    float fButtVoreProb = 10.f;
+    float fButtExitProb = 5.f;
+
+    // Timing
+    float fInterval = 1.5f;
+
+};
+TOML_SERIALIZABLE(AIThighSandwichAction_t);
+
 //-------------------------------------------------------------------------------------------------------------------
 //  BASE STRUCT
 //  (Directly Serialized)
@@ -151,13 +176,13 @@ struct SettingsAI_t {
 
     // Statefull Actions
     AIStatefullAction_t ThighCrush    = { .bEnableAction = true, .fProbability = 15.0f, .fInterval = 1.0f };
-    AIStatefullAction_t ThighSandwich = { .bEnableAction = true, .fProbability = 20.0f, .fInterval = 1.5f };
 
-    // Complex Actions
+	// Complex Actions
     AIStompAction_t Stomp    = {};
     AIHugAction_t Hugs       = {};
     AIButtAction_t ButtCrush = {};
     AIGrabAction_t Grab      = {};
+    AIThighSandwichAction_t ThighSandwich = {};
     AIWorshipAction_t WorshipActions = {};
 
     // Additional AI toggles

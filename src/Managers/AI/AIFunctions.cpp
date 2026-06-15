@@ -442,12 +442,7 @@ namespace GTS {
 				restoreConfidence(tinyRef);
 				return false;
 			}
-			if (!tinyRef->Is3DLoaded()) {
-				restoreConfidence(tinyRef);
-				return false;
-			}
-
-			if (tinyRef->IsDead()) {
+			if (tinyRef->IsDead() || !tinyRef->Is3DLoaded()) {
 				restoreConfidence(tinyRef);
 				return false; // To be safe
 			}
