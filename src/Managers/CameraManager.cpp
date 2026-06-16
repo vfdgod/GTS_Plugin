@@ -344,7 +344,11 @@ namespace GTS {
 	}
 
 	void CameraManager::ComputeAndApplyFinalCameraTransforms(float a_ActorScale, NiPoint3 a_CameraLocalOffset, NiPoint3 a_ActorLocalOffset) {
-		static PlayerCamera* const PlayerCamera = PlayerCamera::GetSingleton();
+		PlayerCamera* const PlayerCamera = PlayerCamera::GetSingleton();
+		if (!PlayerCamera) {
+			return;
+		}
+
 		NiPointer<NiNode>& CameraRoot = PlayerCamera->cameraRoot;
 		Actor* const CameraTargetActor = GetCameraActor();
 		BSTSmartPointer<TESCameraState>& CurrentCameraState = PlayerCamera->currentState;
@@ -372,6 +376,9 @@ namespace GTS {
 					CameraAdjustments.translate = a_CameraLocalOffset * a_ActorScale;
 					NiPoint3 WorldShifted = CameraWorldTransform * CameraAdjustments * NiPoint3();
 					NiNode* CameraRootParent = CameraRoot->parent;
+					if (!CameraRootParent) {
+						return;
+					}
 					NiTransform InvertedRootTransform = CameraRootParent->world.Invert();
 
 					const NiPoint3 LocalSpacePosition = InvertedRootTransform * WorldShifted;

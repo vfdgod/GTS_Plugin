@@ -219,9 +219,16 @@ namespace GTS {
 
 			Actor* giant = giantHandle.get().get();
 			Actor* tiny = tinyHandle.get().get();
+			if (!giant || !tiny) {
+				return false;
+			}
+
+			auto giant3D = giant->GetCurrent3D();
+			auto tiny3D = tiny->GetCurrent3D();
+
 			// Make sure 3D models are loaded
-			if (!giant->Is3DLoaded() || !giant->GetCurrent3D() ||
-				!tiny->Is3DLoaded() || !tiny->GetCurrent3D()) {
+			if (!giant->Is3DLoaded() || !giant3D ||
+				!tiny->Is3DLoaded() || !tiny3D) {
 				return true;
 			}
 
@@ -239,7 +246,7 @@ namespace GTS {
 			// Base speed calculation
 			float speed = static_cast<float>((distanceTravelled / timeTaken) * 10);
 
-			NiMatrix3 giantRot = giant->GetCurrent3D()->world.rotate;
+			NiMatrix3 giantRot = giant3D->world.rotate;
 			NiMatrix3 pitchRot = CreatePitchMatrix(-upDownAngle + 90.0f);  // Pitch (up/down)
 			NiMatrix3 yawRot = CreateRotationMatrixY(leftRightAngle); // Yaw (left/right)
 
@@ -256,7 +263,7 @@ namespace GTS {
 				direction.z /= len;
 			}
 
-			float timeMultiplier = 1.0f / Time::GGTM();
+			float timeMultiplier = 1.0f / std::max(Time::GGTM(), 1.0e-4f);
 
 			// Apply physics impulse to tiny
 			ApplyManualHavokImpulse(tiny, direction.x, direction.y, direction.z, speed * speedmult * timeMultiplier);

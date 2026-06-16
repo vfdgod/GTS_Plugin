@@ -709,8 +709,8 @@ namespace GTS {
 					}
 				}
 
-				float Time = (1.0f / Time::GGTM());
-				ApplyManualHavokImpulse(tiny, direction.x, direction.y, direction.z, speed * 2.0f * a_power * Time);
+				float timeMultiplier = 1.0f / std::max(Time::GGTM(), 1.0e-4f);
+				ApplyManualHavokImpulse(tiny, direction.x, direction.y, direction.z, speed * 2.0f * a_power * timeMultiplier);
 
 				return false;
 			}

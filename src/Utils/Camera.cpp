@@ -133,6 +133,10 @@ namespace GTS {
 	}
 
 	void SetCameraOverride(Actor* actor, bool enable) {
+		if (!actor) {
+			return;
+		}
+
 		if (actor->IsPlayerRef()) {
 			auto transient = Transient::GetActorData(actor);
 			if (transient) {
@@ -143,7 +147,9 @@ namespace GTS {
 
 	void EnableFreeCamera() {
 		auto playerCamera = PlayerCamera::GetSingleton();
-		playerCamera->ToggleFreeCameraMode(false);
+		if (playerCamera) {
+			playerCamera->ToggleFreeCameraMode(false);
+		}
 	}
 
 	bool IsPlayerFirstPerson(Actor* a_actor) {
@@ -152,11 +158,15 @@ namespace GTS {
 	}
 
 	void ForceThirdPerson(Actor* giant) {
-		if (giant->IsPlayerRef()) {
+		if (giant && giant->IsPlayerRef()) {
 			auto camera = RE::PlayerCamera::GetSingleton();
 			if (camera) {
 				camera->ForceThirdPerson();
 				auto playerCamera = RE::PlayerCamera::GetSingleton();
+				if (!playerCamera || !playerCamera->currentState) {
+					return;
+				}
+
 				auto thirdPersonState = reinterpret_cast<RE::ThirdPersonState*>(playerCamera->cameraStates[RE::CameraState::kThirdPerson].get());
 				auto isInThirdPerson = playerCamera->currentState->id == RE::CameraState::kThirdPerson;
 
@@ -203,6 +213,10 @@ namespace GTS {
 	}
 
 	bool GetCameraOverride(Actor* actor) {
+		if (!actor) {
+			return false;
+		}
+
 		if (actor->IsPlayerRef()) {
 			auto transient = Transient::GetActorData(actor);
 			if (transient) {
@@ -214,6 +228,10 @@ namespace GTS {
 	}
 
 	void ResetCameraTracking(Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
 		auto& sizemanager = SizeManager::GetSingleton();
 		if (actor->Is3DLoaded()) {
 			sizemanager.SetTrackedBone(actor, false, CameraTracking::None);

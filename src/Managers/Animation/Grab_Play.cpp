@@ -23,7 +23,7 @@ namespace Triggers {
 		// Don't allow NPC's to start it if they don't have weapon/magic sheathed too
 		auto player = PlayerCharacter::GetSingleton();
 		auto Camera = PlayerCamera::GetSingleton();
-        bool Sheathed = Camera->isWeapSheathed;
+		bool Sheathed = Camera ? Camera->isWeapSheathed : true;
 		if (!Sheathed && Grab::GetHeldActor(player)) {
 			std::string message = std::format("You need to sheathe weapon/magic first");
 			shake_camera(player, 0.45f, 0.30f);

@@ -91,6 +91,33 @@ namespace {
 		}
 	}
 
+	void StartStompCameraResetTask(Actor* giant) {
+		if (!giant) {
+			return;
+		}
+
+		std::string taskname = std::format("StompCameraReset_{}", giant->formID);
+		ActorHandle giantHandle = giant->CreateRefHandle();
+
+		TaskManager::Cancel(taskname);
+		TaskManager::Run(taskname, [=](auto& update) {
+			if (!giantHandle) {
+				return false;
+			}
+
+			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
+
+			if (update.runtime > 0.10 && !AnimationVars::General::IsBusy(giantref)) {
+				ResetCameraTracking(giantref);
+				return false;
+			}
+			return true;
+		});
+	}
+
 	void DoImpactRumble(Actor* giant, std::string_view node, std::string_view name, float mult = 1.0f) {
 		float shake_power = Rumble_Stomp_Strong;
 		float smt = TinyCalamityBonusActive(giant) ? 1.5f : 1.0f;
@@ -174,6 +201,7 @@ namespace {
 			data.animSpeed += GetRandomBoost()/3;
 		}
 		ManageCamera(giant, true, CameraTracking::R_Foot);
+		StartStompCameraResetTask(giant);
 		DrainStamina(&data.giant, "StaminaDrain_StrongStomp", Runtime::PERK.GTSPerkDestructionBasics, true, 3.4f);
 
 		SetBusyFoot(&data.giant, BusyFoot::RightFoot);
@@ -188,6 +216,7 @@ namespace {
 			data.animSpeed += GetRandomBoost()/3;
 		}
 		ManageCamera(giant, true, CameraTracking::L_Foot);
+		StartStompCameraResetTask(giant);
 		DrainStamina(&data.giant, "StaminaDrain_StrongStomp", Runtime::PERK.GTSPerkDestructionBasics, true, 3.4f);
 
 		SetBusyFoot(&data.giant, BusyFoot::LeftFoot);
@@ -241,6 +270,7 @@ namespace {
 		StopLegRumbling("StrongStompL", data.giant, false);
 		ManageCamera(&data.giant, false, CameraTracking::R_Foot);
 		ManageCamera(&data.giant, false, CameraTracking::L_Foot);
+		ResetCameraTracking(&data.giant);
 	}
 
 

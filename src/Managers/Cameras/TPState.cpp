@@ -54,6 +54,10 @@ namespace GTS {
 
 						NiPoint3 bonePos = NiPoint3();
 						auto bone_count = bones.size();
+						if (bone_count == 0) {
+							return pos;
+						}
+
 						for (auto bone: bones) {
 							auto worldPos = bone->world * NiPoint3();
 							if (DebugDraw::CanDraw()) {

@@ -37,6 +37,33 @@ namespace {
 		Rumbling::Stop("StompL_Loop", giant);
 	}
 
+	void StartStompCameraResetTask(Actor* giant) {
+		if (!giant) {
+			return;
+		}
+
+		std::string taskname = std::format("StompCameraReset_{}", giant->formID);
+		ActorHandle giantHandle = giant->CreateRefHandle();
+
+		TaskManager::Cancel(taskname);
+		TaskManager::Run(taskname, [=](auto& update) {
+			if (!giantHandle) {
+				return false;
+			}
+
+			auto giantref = giantHandle.get().get();
+			if (!giantref) {
+				return false;
+			}
+
+			if (update.runtime > 0.10 && !AnimationVars::General::IsBusy(giantref)) {
+				ResetCameraTracking(giantref);
+				return false;
+			}
+			return true;
+		});
+	}
+
 	void Stomp_ResetAnimSpeed(AnimationEventData& data) {
 		data.stage = 0;
 		data.canEditAnimSpeed = false;
@@ -182,6 +209,7 @@ namespace {
 		DrainStamina(&data.giant, "StaminaDrain_Stomp", Runtime::PERK.GTSPerkDestructionBasics, true, 1.8f);
 		Rumbling::Start("StompR_Loop", &data.giant, 0.25f, 0.15f, RNode);
 		ManageCamera(&data.giant, true, CameraTracking::R_Foot);
+		StartStompCameraResetTask(&data.giant);
 		Stomp_IncreaseAnimSpeed(data);
 
 		SetBusyFoot(&data.giant, BusyFoot::RightFoot);
@@ -192,6 +220,7 @@ namespace {
 		DrainStamina(&data.giant, "StaminaDrain_Stomp", Runtime::PERK.GTSPerkDestructionBasics, true, 1.8f);
 		Rumbling::Start("StompL_Loop", &data.giant, 0.25f, 0.15f, LNode);
 		ManageCamera(&data.giant, true, CameraTracking::L_Foot);
+		StartStompCameraResetTask(&data.giant);
 		Stomp_IncreaseAnimSpeed(data);
 
 		SetBusyFoot(&data.giant, BusyFoot::LeftFoot);
@@ -221,10 +250,12 @@ namespace {
 
 	void GTSStompendR(AnimationEventData& data) {
 		Stomp_ResetAnimSpeed(data);
+		ManageCamera(&data.giant, false, CameraTracking::R_Foot);
 	}
 
 	void GTSStompendL(AnimationEventData& data) {
 		Stomp_ResetAnimSpeed(data);
+		ManageCamera(&data.giant, false, CameraTracking::L_Foot);
 	}
 
 	void GTS_Next(AnimationEventData& data) {
@@ -236,6 +267,7 @@ namespace {
 		DrainStamina(&data.giant, "StaminaDrain_StrongStomp", Runtime::PERK.GTSPerkDestructionBasics, false, 2.8f);
 		ManageCamera(&data.giant, false, CameraTracking::L_Foot);
 		ManageCamera(&data.giant, false, CameraTracking::R_Foot);
+		ResetCameraTracking(&data.giant);
 		StopLoopRumble(&data.giant);
 	}
 

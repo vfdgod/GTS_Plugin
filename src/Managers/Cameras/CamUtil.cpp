@@ -256,6 +256,10 @@ namespace GTS {
 
 	NiCamera* GetNiCamera() {
 		auto camera = PlayerCamera::GetSingleton();
+		if (!camera || !camera->cameraRoot) {
+			return nullptr;
+		}
+
 		auto cameraRoot = camera->cameraRoot.get();
 		NiCamera* niCamera = nullptr;
 		for (auto& child : cameraRoot->GetChildren()) {
@@ -273,6 +277,10 @@ namespace GTS {
 
 	void UpdateWorld2ScreetMat(NiCamera* niCamera) {
 		auto camNi = niCamera ? niCamera : GetNiCamera();
+		if (!camNi) {
+			return;
+		}
+
 		typedef void (*UpdateWorldToScreenMtx)(RE::NiCamera*);
 		static auto toScreenFunc = REL::Relocation<UpdateWorldToScreenMtx>(REL::RelocationID(69271, 70641).address());
 		toScreenFunc(camNi);
@@ -280,6 +288,9 @@ namespace GTS {
 
 	Actor* GetCameraActor() {
 		auto camera = PlayerCamera::GetSingleton();
+		if (!camera) {
+			return nullptr;
+		}
 		return camera->cameraTarget.get().get();
 	}
 
@@ -354,6 +365,7 @@ namespace GTS {
 						currentState->GetTranslation(cameraLocation);
 					}
 				}
+				break;
 			}
 			case CameraDataMode::Transform: {
 				auto camera = PlayerCamera::GetSingleton();
@@ -363,6 +375,7 @@ namespace GTS {
 						cameraLocation = cameraRoot->world.translate;
 					}
 				}
+				break;
 			}
 		}
 		return cameraLocation;
@@ -382,6 +395,7 @@ namespace GTS {
 						cameraRot = QuatToMatrix(cameraQuat);
 					}
 				}
+				break;
 			}
 			case CameraDataMode::Transform: {
 				//log::info("Camera State: Transform");
@@ -392,18 +406,9 @@ namespace GTS {
 						cameraRot = cameraRoot->world.rotate;
 					}
 				}
+				break;
 			}
 		}
-		auto camera = PlayerCamera::GetSingleton();
-		if (camera) {
-			auto currentState = camera->currentState;
-			if (currentState) {
-				NiQuaternion cameraQuat;
-				currentState->GetRotation(cameraQuat);
-				cameraRot = QuatToMatrix(cameraQuat);
-			}
-		}
-			
 		return cameraRot;
 	}
 
@@ -467,22 +472,35 @@ namespace GTS {
 
 	NiPoint3 FirstPersonPoint() {
 		auto camera = PlayerCamera::GetSingleton();
+		if (!camera) {
+			return {};
+		}
 		auto camState = camera->cameraStates[RE::CameraState::kFirstPerson].get();
 		NiPoint3 cameraTrans;
-		camState->GetTranslation(cameraTrans);
+		if (camState) {
+			camState->GetTranslation(cameraTrans);
+		}
 		return cameraTrans;
 	}
 
 	NiPoint3 ThirdPersonPoint() {
 		auto camera = PlayerCamera::GetSingleton();
+		if (!camera) {
+			return {};
+		}
 		auto camState = camera->cameraStates[RE::CameraState::kThirdPerson].get();
 		NiPoint3 cameraTrans;
-		camState->GetTranslation(cameraTrans);
+		if (camState) {
+			camState->GetTranslation(cameraTrans);
+		}
 		return cameraTrans;
 	}
 
 	float ZoomFactor() {
 		auto camera = PlayerCamera::GetSingleton();
+		if (!camera) {
+			return 0.0f;
+		}
 		auto camState = camera->cameraStates[RE::CameraState::kThirdPerson].get();
 		if (camState) {
 			ThirdPersonState* tpState = skyrim_cast<ThirdPersonState*>(camState);
@@ -503,11 +521,15 @@ namespace GTS {
 	}
 
 	NiPoint3 GetAggregateBoneTarget(RE::Actor* a_actor) {
+		if (!a_actor) {
+			return {};
+		}
 
 		if (CameraState* CurrentState = CameraManager::GetSingleton().GetCameraState()) {
 			if (auto TPState = dynamic_cast<ThirdPersonCameraState*>(CurrentState)){
+				BoneTarget boneTarget = TPState->GetBoneTarget();
 
-				if (TPState->GetBoneTarget().boneNames.empty()) {
+				if (boneTarget.boneNames.empty()) {
 
 					if (auto Node = find_node_any(a_actor, "NPC Neck [Neck]")) {
 						return Node->world.translate;
@@ -517,10 +539,13 @@ namespace GTS {
 				}
 
 				NiAVObject* RootModel = a_actor->Get3D(false);
+				if (!RootModel) {
+					return {};
+				}
+
 				NiTransform ActorTranslation = RootModel->world;
-				NiTransform transform = ActorTranslation.Invert();
 				ActorTranslation.scale = RootModel->parent ? RootModel->parent->world.scale : 1.0f;  // Only do translation/rotation
-				BoneTarget boneTarget = TPState->GetBoneTarget();
+				NiTransform transform = ActorTranslation.Invert();
 
 				std::vector<NiAVObject*> bones = {};
 				for (auto bone_name : boneTarget.boneNames) {
@@ -535,6 +560,10 @@ namespace GTS {
 
 				NiPoint3 bonePos = NiPoint3();
 				auto bone_count = bones.size();
+				if (bone_count == 0) {
+					return {};
+				}
+
 				for (NiAVObject* bone : bones) {
 					NiPoint3 worldPos = bone->world.translate;
 					NiPoint3 localPos = transform * worldPos * get_visual_scale(a_actor);;

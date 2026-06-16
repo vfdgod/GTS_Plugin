@@ -96,7 +96,7 @@ namespace GTS {
 				if (ImGui::CollapsingHeader("替代语音选项", ImUtil::HeaderFlagsDefaultOpen)) {
 					ImGuiEx::HelpText("这是什么", THelp);
 
-					static const auto Player = PlayerCharacter::GetSingleton();
+					const auto Player = PlayerCharacter::GetSingleton();
 					const auto ActiveTeammates = FindTeammates();
 
 					// Build actor list

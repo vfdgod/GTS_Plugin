@@ -128,13 +128,17 @@ namespace {
 
     void CleavageEnterEvent(const ManagedInputEvent& data) {
         Actor* giant = GetPlayerOrControlled();
+        if (!giant) {
+            return;
+        }
+
         Utils_UpdateHighHeelBlend(giant, false);
         PassAnimation("Cleavage_EnterState", false);
         Animation_Cleavage::AttemptBreastActionOnTiny("Cleavage_EnterState_Tiny");
 
         if (giant->IsPlayerRef() && Runtime::HasPerkTeam(giant, Runtime::PERK.GTSPerkBreastsIntro) && Grab::GetHeldActor(giant)) {
             auto Camera = PlayerCamera::GetSingleton();
-            bool Sheathed = Camera->isWeapSheathed;
+            bool Sheathed = Camera ? Camera->isWeapSheathed : true;
             if (!Sheathed) {
                 std::string message = std::format("You need to sheathe weapon/magic first");
                 shake_camera(giant, 0.45f, 0.30f);
