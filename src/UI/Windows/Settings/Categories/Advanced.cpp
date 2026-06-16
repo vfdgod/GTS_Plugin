@@ -73,8 +73,8 @@ namespace GTS {
                           "- Absorb 额外缩小强度\n"
                           "- 生命抗性、攻击和负重按 Tiny Calamity 规则结算\n\n"
                           "不会启动龙吼本体的持续时间、体型压制或 Shrinking Gaze；真正使用龙吼时不会重复叠加。";
-            PSString T4 = "开启后，玩家处于常驻 Tiny Calamity 特性时，普通踩踏、践踏和下踩的首次落脚会尽量保留目标 1 点生命，方便接续碾磨或持续踩踏。\n"
-                          "碾磨和持续踩踏本身仍可正常杀死目标。";
+            PSString T4 = "开启后，玩家处于常驻 Tiny Calamity 特性时，普通踩踏、践踏、重踩和下踩会尽量保留目标 1 点生命，方便接续碾磨或持续动作。\n"
+                          "碾磨本身仍可正常杀死目标。";
 
             if (ImGui::CollapsingHeader("调试/作弊", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("启用属性消耗", &Config::Advanced.bDamageAV, T0);

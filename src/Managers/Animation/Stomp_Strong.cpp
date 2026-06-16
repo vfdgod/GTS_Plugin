@@ -128,7 +128,7 @@ namespace {
 				float Augment = PerkHandler::Perks_Cataclysmic_EmpowerStomp(giantref);
 				bool GotStacks = PerkHandler::Perks_Cataclysmic_HasStacks(giantref);
 
-				DoDamageEffect(giantref, Damage_Stomp_Strong * damage * perk * Augment, Radius_Stomp_Strong, 5, 0.35f, Event, 1.0f, Source);
+				DoDamageEffect(giantref, Damage_Stomp_Strong * damage * perk * Augment, Radius_Stomp_Strong, 5, 0.35f, Event, 1.0f, Source, false, true);
 				DoImpactRumble(giantref, Node, rumble);
 
 				if (!GotStacks) { 
@@ -239,6 +239,8 @@ namespace {
 	void GTS_StrongStomp_End(AnimationEventData& data) {
 		StopLegRumbling("StrongStompR", data.giant, true);
 		StopLegRumbling("StrongStompL", data.giant, false);
+		ManageCamera(&data.giant, false, CameraTracking::R_Foot);
+		ManageCamera(&data.giant, false, CameraTracking::L_Foot);
 	}
 
 
@@ -248,6 +250,8 @@ namespace {
 
 	void GTSBEH_Exit(AnimationEventData& data) {
 		auto giant = &data.giant;
+		ManageCamera(giant, false, CameraTracking::R_Foot);
+		ManageCamera(giant, false, CameraTracking::L_Foot);
 		ResetCameraTracking(giant);
 
 		Rumbling::Stop("StompR", &data.giant);
