@@ -154,7 +154,7 @@ namespace Hooks {
                         const bool isObserverGrabbing = Grab::GetHeldActor(a_observer);
                         const bool shouldNotBeDetected = isTargetBeingHugged || isObserverGrabbing;
 
-\tif (shouldNotBeDetected) {
+                        if (shouldNotBeDetected) {
                             *detScore = -1000;
                             *inCone = false;
                             *hasLOS = false;
@@ -174,7 +174,7 @@ namespace Hooks {
     struct Character_CalculateDetectionStrength {
 
         //Unless this is secretly a struct in disguise wtf were they thinking when making the func...
-\t//80% of the function arg names are probably wrong...
+        //80% of the function arg names are probably wrong...
         //Not like it matters since we scale its output anyways.
 
         static int32_t thunk(
