@@ -1,7 +1,6 @@
 find_package(CommonLibSSE CONFIG REQUIRED)
 
-
-#mimicks add_commonlibsse_plugin but without the PluginInfo Insertion
+# Mimics add_commonlibsse_plugin, but without the PluginInfo insertion.
 add_library("${PROJECT_NAME}" SHARED ${headers} ${sources})
 target_compile_definitions("${PROJECT_NAME}" PRIVATE __CMAKE_COMMONLIBSSE_PLUGIN=1)
 target_link_libraries("${PROJECT_NAME}" PUBLIC CommonLibSSE::CommonLibSSE)
@@ -28,17 +27,17 @@ target_precompile_headers(
 
 # Build DLL RC
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/version.rc"
-    @ONLY
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.rc.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/version.rc"
+	@ONLY
 )
 target_sources(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/version.rc")
 
 # Build Version.hpp from project info.
 configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.hpp.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/src/Version.hpp"
-    @ONLY
+	"${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.hpp.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/src/Version.hpp"
+	@ONLY
 )
 target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")
 
@@ -76,15 +75,15 @@ target_compile_options(
     /Zc:threadSafeInit
     /Zc:trigraphs
     /Zc:wchar_t
-    #/Zc:char8_t- JSONCpp needs it
-    /wd4200 # nonstandard extension used : zero-sized array in struct/union
-    /wd4100 # 'identifier' : unreferenced formal parameter
-    /wd4101 # 'identifier': unreferenced local variable
-    /wd4458 # declaration of 'identifier' hides class member
-    /wd4459 # declaration of 'identifier' hides global declaration
-    /wd4456 # declaration of 'identifier' hides previous local declaration
-    /wd4457 # declaration of 'identifier' hides function parameter
-    /wd4189 # 'identifier' : local variable is initialized but not referenced
+	# /Zc:char8_t- JSONCpp needs it.
+	/wd4200 # nonstandard extension used: zero-sized array in struct/union
+	/wd4100 # 'identifier': unreferenced formal parameter
+	/wd4101 # 'identifier': unreferenced local variable
+	/wd4458 # declaration of 'identifier' hides class member
+	/wd4459 # declaration of 'identifier' hides global declaration
+	/wd4456 # declaration of 'identifier' hides previous local declaration
+	/wd4457 # declaration of 'identifier' hides function parameter
+	/wd4189 # 'identifier': local variable is initialized but not referenced
 )
 
 # --- Linker Options ---
@@ -95,9 +94,9 @@ target_link_options(
 )
 
 if(CMAKE_GENERATOR MATCHES "Visual Studio" AND TARGET CommonLibSSE)
-    set_target_properties(CommonLibSSE PROPERTIES
-        FOLDER "ExternalDependencies"
-    )
+	set_target_properties(CommonLibSSE PROPERTIES
+		FOLDER "ExternalDependencies"
+	)
 endif()
 
 target_include_directories(

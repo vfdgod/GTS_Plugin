@@ -44,7 +44,6 @@ namespace GTS {
 	std::string Utf16ToUtf8(std::wstring_view a_utf16);
 
 	bool starts_with(std::string_view arg, std::string_view prefix);
-	bool matches(std::string_view str, std::string_view reg);
 	std::string str_tolower(std::string s);
 	std::string str_toupper(std::string s);
 	std::string trim(const std::string& s);

@@ -1,5 +1,5 @@
 #pragma once
-#include "Magic/magic.hpp"
+#include "Magic/Magic.hpp"
 
 namespace GTS {
 

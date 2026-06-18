@@ -1,5 +1,5 @@
 #include "Managers/Cameras/TP/Alt.hpp"
-#include "Managers/Cameras/Camutil.hpp"
+#include "Managers/Cameras/CamUtil.hpp"
 #include "Managers/GTSSizeManager.hpp"
 #include "Config/Config.hpp"
 

@@ -37,52 +37,40 @@ namespace {
 	FootEvent get_foot_kind(Actor* actor, std::string_view tag) {
 		GTS_PROFILE_SCOPE("Impact: GetFootKind");
 
-		bool hugging = actor ? AnimationVars::General::IsFollower(actor) : false; 
-		bool is_jumping = actor ? AnimationVars::Other::IsJumping(actor) : false;
-		bool in_air = actor ? actor->IsInMidair() : false;
-		FootEvent foot_kind = FootEvent::Unknown;
+		const bool hugging = AnimationVars::General::IsFollower(actor);
+		const bool is_jumping = AnimationVars::Other::IsJumping(actor);
+		const bool in_air = actor->IsInMidair();
+		const bool is_sprinting = actor->AsActorState()->IsSprinting();
+		const bool allow_footstep = !is_jumping || hugging;
+		const bool has_foot = tag.contains("Foot");
+		const bool is_sprint_tag = tag.contains("Sprint");
 	
 		// Hugging is needed to fix missing footsteps once we do friendly release
 		// Footsteps aren't seen by the dll without it (because actor is in air)
 
-		bool isSprinting = actor->AsActorState()->IsSprinting();
-		bool allow = (!is_jumping || hugging);
-		
-
 		// Skip regular foot events if sprinting
-		if (matches(tag, ".*Foot.*Left.*") && allow) {
-			if (isSprinting) {
-				if (matches(tag, ".*Sprint.*")) {
-					foot_kind = FootEvent::Left;
-				}
-			} else {
-				foot_kind = FootEvent::Left;
-			}
+		if (allow_footstep && has_foot && tag.contains("Left") && (!is_sprinting || is_sprint_tag)) {
+			return FootEvent::Left;
 		}
-		else if (matches(tag, ".*Foot.*Right.*") && allow) {
-			if (isSprinting) {
-				if (matches(tag, ".*Sprint.*")) {
-					foot_kind = FootEvent::Right;
-				}
-			} else {
-				foot_kind = FootEvent::Right;
-			}
+		if (allow_footstep && has_foot && tag.contains("Right") && (!is_sprinting || is_sprint_tag)) {
+			return FootEvent::Right;
 		}
-		else if (!isSprinting && matches(tag, ".*Foot.*Front.*") && allow) {
-			foot_kind = FootEvent::Front;
+		if (allow_footstep && !is_sprinting && has_foot && tag.contains("Front")) {
+			return FootEvent::Front;
 		}
-		else if (!isSprinting && matches(tag, ".*Foot.*Back.*") && allow) {
-			foot_kind = FootEvent::Back;
+		if (allow_footstep && !is_sprinting && has_foot && tag.contains("Back")) {
+			return FootEvent::Back;
 		}
-		else if (matches(tag, ".*Jump.*(Down|Land).*") && !in_air) {
-			foot_kind = FootEvent::JumpLand;
+		if (!in_air && tag.contains("Jump") && (tag.contains("Down") || tag.contains("Land"))) {
+			return FootEvent::JumpLand;
 		}
-    return foot_kind;
-}
+		return FootEvent::Unknown;
+	}
 
 	std::vector<NiAVObject*> get_landing_nodes(Actor* actor, const FootEvent& foot_kind) {
 		GTS_PROFILE_SCOPE("Impact: GetLandingNodes");
 		std::vector<NiAVObject*> results;
+		results.reserve(2);
 		const std::string_view left_foot = "NPC L Foot [Lft ]";
 		const std::string_view right_foot = "NPC R Foot [Rft ]";
 		const std::string_view left_arm = "NPC L Hand [LHnd]";
@@ -219,7 +207,7 @@ namespace {
 	void DoDamageAndLaunch(Actor* actor, FootEvent kind, float launch, float radius) {
 		if (kind != FootEvent::JumpLand) { // If just walking
 			DoExplosionAndSound(actor, kind);
-			DoDamageEffect(actor, Damage_Walk_Defaut, Radius_Walk_Default * radius, 25, 0.25f, kind, 1.25f, EventToSource(kind), true);
+			DoDamageEffect(actor, Damage_Walk_Default, Radius_Walk_Default * radius, 25, 0.25f, kind, 1.25f, EventToSource(kind), true);
 			DoLaunch(actor, 1.05f * launch, 2.6f * radius, kind);
 		} else { // If jump landing
 			DoJumpLandEffects(actor);
@@ -231,29 +219,38 @@ namespace GTS {
 
 	void ImpactManager::HookProcessEvent(BGSImpactManager* impact, const BGSFootstepEvent* a_event, BSTEventSource<BGSFootstepEvent>* a_eventSource) {
 		// Applied when Foot Events such as FootScuffLeft/FootScuffRight and FootLeft/FootRight are seen on Actors
-		if (a_event) {
-			GTS_PROFILE_SCOPE("Impact: HookProcessEvent");
-			auto actor = a_event->actor.get().get();
-			if (!actor) {
-				return;
-			}
+		if (!a_event) {
+			return;
+		}
 
-			auto id = a_event->pad04;
-			if (id != 10000001) { // .dll sends fake footstep events to fix missing foot sounds during some animations
-			    // If it matches that number = we don't want to do anything. Done inside FootStepManager::PlayVanillaFootstepSounds function
-				std::string tag = a_event->tag.c_str();
-				ModEventManager::GetSingleton().m_onfootstep.SendEvent(actor, tag);
+		GTS_PROFILE_SCOPE("Impact: HookProcessEvent");
+		auto actor = a_event->actor.get().get();
+		if (!actor) {
+			return;
+		}
 
-				auto kind = get_foot_kind(actor, tag);
+		auto id = a_event->pad04;
+		if (id == 10000001) {
+			// .dll sends fake footstep events to fix missing foot sounds during some animations.
+			// If it matches that number = we don't want to do anything. Done inside FootStepManager::PlayVanillaFootstepSounds function.
+			return;
+		}
 
-				if (CanDoImpact(actor, kind)) { // Prevents earrape and effect spam from followers when they're large
-					float launch = 1.0f;
-					float radius = 1.0f;
-					
-					ApplyPerkBonuses(actor, launch, radius);
-					DoDamageAndLaunch(actor, kind, launch, radius); // Applies sounds as well
-				}	
-			}
+		std::string_view tag_view = a_event->tag.c_str();
+		std::string tag(tag_view);
+		ModEventManager::GetSingleton().m_onfootstep.SendEvent(actor, tag);
+
+		auto kind = get_foot_kind(actor, tag_view);
+		if (kind == FootEvent::Unknown) {
+			return;
+		}
+
+		if (CanDoImpact(actor, kind)) { // Prevents earrape and effect spam from followers when they're large
+			float launch = 1.0f;
+			float radius = 1.0f;
+
+			ApplyPerkBonuses(actor, launch, radius);
+			DoDamageAndLaunch(actor, kind, launch, radius); // Applies sounds as well
 		}
 	}
 }

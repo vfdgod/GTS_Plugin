@@ -51,13 +51,13 @@ namespace {
         
         if (right) {
             Rumbling::Once("FST_R", giant, shake_power * smt, 0.0f, RNode, 0.0f);
-            DoDamageEffect(giant, Damage_Walk_Defaut * power, Radius_Walk_Default, 10, 0.25f, FootEvent::Right, 1.0f, DamageSource::CrushedRight);
+            DoDamageEffect(giant, Damage_Walk_Default * power, Radius_Walk_Default, 10, 0.25f, FootEvent::Right, 1.0f, DamageSource::CrushedRight);
             DoFootstepSound(giant, 1.10f * power, FootEvent::Right, RNode);
             DoDustExplosion(giant, dust * power, FootEvent::Right, RNode);
             DoLaunch(giant, 0.65f * perk * power, 1.35f * power, FootEvent::Right);
         } else {
             Rumbling::Once("FST_L", giant, shake_power * smt, 0.0f, LNode, 0.0f);
-            DoDamageEffect(giant, Damage_Walk_Defaut * power, Radius_Walk_Default, 10, 0.25f, FootEvent::Left, 1.0f, DamageSource::CrushedLeft);
+            DoDamageEffect(giant, Damage_Walk_Default * power, Radius_Walk_Default, 10, 0.25f, FootEvent::Left, 1.0f, DamageSource::CrushedLeft);
             DoFootstepSound(giant, 1.10f * power, FootEvent::Left, LNode);
             DoDustExplosion(giant, dust * power, FootEvent::Left, LNode);
             DoLaunch(giant, 0.65f * perk * power, 1.35f * power, FootEvent::Left);

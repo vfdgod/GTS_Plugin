@@ -1,7 +1,7 @@
 #include "Managers/GTSManager.hpp"
 
 #include "Managers/Animation/Utils/CrawlUtils.hpp"
-#include "Managers/Gamemode/GameModeManager.hpp"
+#include "Managers/GameMode/GameModeManager.hpp"
 #include "Managers/Damage/CollisionDamage.hpp"
 #include "Managers/Damage/TinyCalamity.hpp"
 #include "Managers/Audio/PitchShifter.hpp"

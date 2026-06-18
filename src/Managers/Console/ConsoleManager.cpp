@@ -9,35 +9,34 @@ namespace GTS {
 
 		std::string name(a_cmdName);
 		RegisteredCommands.try_emplace(name, a_callback, a_desc);
-		logger::info("Registered Console Command \"{} {}\"", Default_Preffix, name);
+		logger::info("Registered Console Command \"{} {}\"", DefaultPrefix, name);
 	}
 
 	bool ConsoleManager::Process(const std::string& a_msg) {
 
 		if (RegisteredCommands.empty()) return false;
 
-		//Convert to invariant and trim
+		// Convert to invariant and trim.
 		std::stringstream Msg(trim(str_tolower(a_msg)));
 
 		std::vector<std::string> Args{};
 		std::string TmpArg;
 
 		while (Msg >> TmpArg) {
-
-			//If subcommands are ever needed just increase this value
+			// If subcommands are ever needed just increase this value.
 			if (Args.size() == 2) {
 				break;
 			}
 
 			Args.emplace_back(TmpArg);
-
-			//no "gts" ? then its not our problem to deal with
-			if (Args.at(0) != Default_Preffix) {
-				return false;
-			}
 		}
 
-		//if 1 arg show help
+		// No "gts"? Then it is not our command to handle.
+		if (Args.empty() || Args.at(0) != DefaultPrefix) {
+			return false;
+		}
+
+		// If only the base command was provided, show help.
 		if (Args.size() < 2) {
 			CMD_Help();
 			return true;
@@ -56,7 +55,7 @@ namespace GTS {
 			}
 		}
 
-		Cprint("Command not found type {} help for a list of commands.", Default_Preffix);
+		Cprint("Command not found type {} help for a list of commands.", DefaultPrefix);
 		return true;
 	}
 
@@ -72,7 +71,7 @@ namespace GTS {
 		Cprint("--- List of available commands ---");
 
 		for (const auto& key : RegisteredCommands) {
-			Cprint("* {} {} - {} ", Default_Preffix, key.first, key.second.desc);
+			Cprint("* {} {} - {} ", DefaultPrefix, key.first, key.second.desc);
 		}
 	}
 

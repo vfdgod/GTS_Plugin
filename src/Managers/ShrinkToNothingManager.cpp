@@ -5,7 +5,7 @@
 #include "Managers/AI/AIFunctions.hpp"
 #include "Managers/Perks/PerkHandler.hpp"
 #include "Magic/Effects/Common.hpp"
-#include "Utils/looting.hpp"
+#include "Utils/Looting.hpp"
 
 using namespace GTS;
 

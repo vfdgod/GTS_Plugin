@@ -3,7 +3,7 @@
 #include "Config/Config.hpp"
 #include "Hooks/Other/Values.hpp"
 #include "Managers/CameraManager.hpp"
-#include "Systems/Rays/raycast.hpp"
+#include "Systems/Rays/Raycast.hpp"
 
 
 using namespace GTS;

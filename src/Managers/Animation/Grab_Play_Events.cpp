@@ -304,8 +304,6 @@ namespace {
 	void GTS_HS_SmileOn(AnimationEventData& data) {
 		Task_FacialEmotionTask_SlightSmile(&data.giant, RandomFloat(0.6f, 0.8f), "Grab_Smile", 0.125f);
 	}
-
-	void GTS_HS_SmileOff(AnimationEventData& data) {} // unused
 	
 	// [ C A M E R A ]
 	void GTS_HS_CamOn(AnimationEventData& data) {
@@ -401,7 +399,6 @@ namespace {
 			tiny->AsActorValueOwner()->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kDamage, ActorValue::kHealth, GetMaxAV(tiny, ActorValue::kHealth) * 0.1f);
 		}
 	}
-	void GTS_HS_KissSound_Stop(AnimationEventData& data) {} // Unused
 
 	
 	// [ K I S S  V O R E]
@@ -462,7 +459,6 @@ namespace {
 namespace GTS {
     void Animation_GrabPlay_Events::RegisterEvents() {
 		AnimationManager::RegisterEvent("GTS_HS_SmileOn", "GrabPlay", GTS_HS_SmileOn);
-		AnimationManager::RegisterEvent("GTS_HS_SmileOff", "GrabPlay", GTS_HS_SmileOff);
 
 		AnimationManager::RegisterEvent("GTS_HS_CamOn", "GrabPlay", GTS_HS_CamOn);
 		AnimationManager::RegisterEvent("GTS_HS_CamOff", "GrabPlay", GTS_HS_CamOff);
@@ -493,7 +489,6 @@ namespace GTS {
 		AnimationManager::RegisterEvent("GTS_HS_Kiss_Start", "GrabPlay", GTS_HS_Kiss_Start);
 		AnimationManager::RegisterEvent("GTS_HS_Kiss_Stop", "GrabPlay", GTS_HS_Kiss_Stop);
 		AnimationManager::RegisterEvent("GTS_HS_KissSound_Play", "GrabPlay", GTS_HS_KissSound_Play);
-		AnimationManager::RegisterEvent("GTS_HS_KissSound_Stop", "GrabPlay", GTS_HS_KissSound_Stop);
 		AnimationManager::RegisterEvent("GTS_HS_K_Vore_OpenMouth", "GrabPlay", GTS_HS_K_Vore_OpenMouth);
 		AnimationManager::RegisterEvent("GTS_HS_K_Vore_CloseMouth", "GrabPlay", GTS_HS_K_Vore_CloseMouth);
 		AnimationManager::RegisterEvent("GTS_HS_K_Vore_TinyYell", "GrabPlay", GTS_HS_K_Vore_TinyYell);
@@ -515,7 +510,6 @@ namespace GTS {
 GTS_HS_Exit_NoTiny - Triggered when we want to exit an anim after the Tiny is dead
 ##Facial Anims
 GTS_HS_SmileOn - Makes the GTS smile
-GTS_HS_SmileOff - Stops the GTS Smiling
 
 ###SFX/Cam Stuff
 GTS_HS_CamOn - Triggered when we enter the Hand state to change the camera
@@ -548,7 +542,6 @@ GTS_HS_Fist_Release - Triggered when the GTS lifts her hand from the Tiny
 GTS_HS_Kiss_Start - Used to trigger the Facial anims for kissing
 GTS_HS_Kiss_Stop - Used to end the kissing facial anims
 GTS_HS_KissSound_Play - Plays the Kiss Sound
-GTS_HS_KissSound_Stop - Stops the Kiss Sound - Unused
 GTS_HS_K_Vore_OpenMouth - Used to open the GTS's mouth
 GTS_HS_K_Vore_CloseMouth - Used to close the GTS's mouth
 GTS_HS_K_Vore_TinyYell - ideally makes the tiny yell frightenedly

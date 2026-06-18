@@ -98,7 +98,7 @@
 #include <wincodec.h>
 #include <wrl/client.h>
 
-//WinAPI Fix
+// WinAPI macro cleanup.
 #undef PlaySound
 #undef DeleteFile
 #undef LoadImage
@@ -113,7 +113,7 @@
 #include <tchar.h>
 #include <Windows.h>
 
-// For console sink
+// For console sink.
 #include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -129,7 +129,7 @@
 #include <glaze/json/read.hpp>            //https://github.com/stephenberry/glaze
 #include <re2/re2.h>                      //https://github.com/google/re2
 
-//Imgui
+// ImGui.
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "UI/Lib/imgui.h"
@@ -137,14 +137,14 @@
 #include "UI/Lib/imgui_stdlib.h"
 #include "UI/Lib/imgui_impl_dx11.h"
 
-//Tbb - https://github.com/uxlfoundation/oneTBB
+// oneTBB - https://github.com/uxlfoundation/oneTBB
 #include <tbb/concurrent_vector.h>
 #include <tbb/concurrent_map.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/parallel_for_each.h>
 #include <tbb/concurrent_queue.h>
 
-//Abseil - https://github.com/abseil/abseil-cpp
+// Abseil - https://github.com/abseil/abseil-cpp
 #include <absl/container/flat_hash_map.h>
 #include <absl/container/flat_hash_set.h>
 #include <absl/container/inlined_vector.h>
@@ -166,20 +166,20 @@ namespace Hooks {
 	using namespace GTS;
 }
 
-//Project-Wide Defines
-//#define GTS_PROFILER_ENABLED //<---- Enable The Performance Profiller. Accessible by opening the debug menu.
-//#define GTS_DISABLE_PLUGIN   //<---- If defined, Disables the entire plugin but keeps serialization active to preserve cosave data.
+// Project-wide defines.
+//#define GTS_PROFILER_ENABLED //<---- Enable the performance profiler. Accessible by opening the debug menu.
+//#define GTS_DISABLE_PLUGIN   //<---- If defined, disables the entire plugin but keeps serialization active to preserve cosave data.
 
 
 
 // ---- Own Includes ----
 #include "Constants.hpp"
 
-//Debugging
+// Debugging.
 #include "Debug/Profilers.hpp"
 #include "Debug/DebugDraw.hpp"
 
-//Base Utils
+// Base utils.
 #include "Utils/Misc/Singleton.hpp"
 #include "Utils/Misc/Enum.hpp"
 #include "Utils/Misc/Random.hpp"
@@ -189,7 +189,7 @@ namespace Hooks {
 #include "Utils/Input/DInput.hpp"
 #include "Utils/Win32/Messagebox.hpp"
 
-//Systems
+// Systems.
 #include "Systems/Events/EventListener.hpp"
 #include "Systems/Events/EventDispatcher.hpp"
 #include "Systems/Misc/State.hpp"
@@ -199,7 +199,7 @@ namespace Hooks {
 #include "Systems/Motion/Spring.hpp"
 #include "Systems/Motion/Smooth.hpp"
 
-//GTS Utils
+// GTS utils.
 #include "Utils/PapyrusUtils.hpp"
 #include "Utils/Units.hpp"
 #include "Utils/Camera.hpp"
@@ -208,16 +208,16 @@ namespace Hooks {
 #include "Utils/QuestUtil.hpp"
 #include "Utils/SoundUtils.hpp"
 
-//Scale
+// Scale.
 #include "Scale/Scale.hpp"
 #include "Scale/ModScale.hpp"
 #include "Scale/Height.hpp"
 #include "Scale/ScaleUtils.hpp"
 
-//Other
+// Other.
 #include "Papyrus/ProxyFunctions.hpp"
 
-//Actor
+// Actor.
 #include "Utils/Actions/ActionUtils.hpp"
 #include "Utils/Actor/ActorUtils.hpp"
 #include "Utils/Actor/ActorBools.hpp"
@@ -227,7 +227,7 @@ namespace Hooks {
 #include "Utils/Actor/AV.hpp"
 #include "Utils/Animation/AnimationVars.hpp"
 
-//Data
+// Data.
 #include "Data/Runtime.hpp"
 #include "Data/Persistent.hpp"
 #include "Data/Transient.hpp"

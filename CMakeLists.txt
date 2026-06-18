@@ -2,7 +2,7 @@
 cmake_policy(VERSION 3.21...3.31)
 
 # #######################################################################################################################
-# # Project Defenition
+# # Project Definition
 # #######################################################################################################################
 
 project(
@@ -12,15 +12,16 @@ project(
 	LANGUAGES CXX
 )
 
-# Not Explosed By Cmake, Manually Set Here for version.rc.in
+# Not exposed by CMake; manually set here for version.rc.in.
 set(PROJECT_COPYRIGHT "Apache License 2.0")
 set(PROJECT_DESCRIPTION "${PROJECT_DESCRIPTION}")
 set(PROJECT_NAME "${PROJECT_NAME}")
 set(PROJECT_FRIENDLY_NAME "${PROJECT_NAME}")
-#set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Options
 option(GTS_STRICT_COMPILE "Enable strict compilation flags (treat warnings as errors)" OFF)
-option(GTS_DEPLOY_TO_FOLDER "Copy The Built DLL and PDB to the EnvVar Defined Target location" ON)
+option(GTS_DEPLOY_TO_FOLDER "Copy the built DLL and PDB to the env-var-defined target location" ON)
 option(GTS_BUILD_DISTRIBUTION "Construct a distribution folder after each build" ON)
 
 # #######################################################################################################################
@@ -32,21 +33,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(_DISABLE_EXTENDED_ALIGNED_STORAGE)
 
 if(MSVC)
-    add_compile_options(/utf-8)
+	add_compile_options(/utf-8)
 endif()
 
 # Check if MSVC is the compiler
 if(MSVC)
-    # Extract the version number of the MSVC compiler
-    string(REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\1.\\2" MSVC_VERSION_STRING "${MSVC_VERSION}")
-    message(STATUS "Detected MSVC version: ${MSVC_VERSION_STRING}")
+	# Extract the version number of the MSVC compiler.
+	string(REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\1.\\2" MSVC_VERSION_STRING "${MSVC_VERSION}")
+	message(STATUS "Detected MSVC version: ${MSVC_VERSION_STRING}")
 
-    # Check if the MSVC version is at least 14.39
-    if(MSVC_VERSION LESS 1939)
-        message(FATAL_ERROR "MSVC version 14.39 or higher is required. Detected version: ${MSVC_VERSION_STRING}")
-    endif()
+	# Check if the MSVC version is at least 14.39.
+	if(MSVC_VERSION LESS 1939)
+		message(FATAL_ERROR "MSVC version 14.39 or higher is required. Detected version: ${MSVC_VERSION_STRING}")
+	endif()
 else()
-    message(FATAL_ERROR "This project currently only supports MSVC as the compiler.")
+	message(FATAL_ERROR "This project currently only supports MSVC as the compiler.")
 endif()
 
 # #######################################################################################################################
@@ -76,28 +77,28 @@ include(FetchContent)
 
 # Git Version Tracking
 FetchContent_Declare(
-	cmake_git_version_tracking                   
-    GIT_REPOSITORY https://github.com/andrew-hardin/cmake-git-version-tracking.git
-    GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6
-    GIT_SHALLOW ON
+	cmake_git_version_tracking
+	GIT_REPOSITORY https://github.com/andrew-hardin/cmake-git-version-tracking.git
+	GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6
+	GIT_SHALLOW ON
 )
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
 # Boost Reflect
 # https://github.com/qlibs/reflect
 FetchContent_Declare(
-    boost_ext_reflect
-    GIT_REPOSITORY https://github.com/Arial6502/reflect/
-    GIT_SHALLOW ON
-    GIT_TAG 653c94092fa8702dbc33ebf3b570190fb1a9dc28
+	boost_ext_reflect
+	GIT_REPOSITORY https://github.com/Arial6502/reflect/
+	GIT_SHALLOW ON
+	GIT_TAG 653c94092fa8702dbc33ebf3b570190fb1a9dc28
 )
 FetchContent_MakeAvailable(boost_ext_reflect)
 
 FetchContent_Declare(
-  glaze
-  GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-  GIT_TAG v7.7.1
-  GIT_SHALLOW ON
+	glaze
+	GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+	GIT_TAG v7.7.1
+	GIT_SHALLOW ON
 )
 FetchContent_MakeAvailable(glaze)
 
@@ -126,20 +127,20 @@ target_include_directories(
 	${GLM_INCLUDE_DIRS}
 	${CLIBUTIL_INCLUDE_DIRS}
 	${boost_ext_reflect_SOURCE_DIR}
-    ${DETOURS_INCLUDE_DIRS}
+	${DETOURS_INCLUDE_DIRS}
 )
 
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-    ${DETOURS_LIBRARY}
+	${DETOURS_LIBRARY}
 	xbyak::xbyak
 	Boost::headers
 	glaze::glaze
 	toml11::toml11
 	lz4::lz4
-    lunasvg::lunasvg
-    TBB::tbb
+	lunasvg::lunasvg
+	TBB::tbb
 	absl::base
 	absl::flat_hash_map
 	re2::re2
@@ -147,7 +148,7 @@ target_link_libraries(
 )
 
 # #######################################################################################################################
-# # Packagging
+# # Packaging
 # #######################################################################################################################
 include(Package)
 

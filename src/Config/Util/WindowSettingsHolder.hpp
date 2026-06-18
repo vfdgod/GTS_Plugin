@@ -27,15 +27,15 @@ namespace GTS {
         std::string m_basePrefix;    // e.g., "UI" for UI windows
         WindowSettingsBase_t m_baseDefaults;
 
-        //Name of the per class definable extra settings struct
+        // Name of the per-class definable extra settings struct.
         static constexpr const char* const m_extraSectionName = ".Extra";
 
         public:
-        explicit WindowSettingsHolder(const std::string& a_instanceName, const std::string& a_basePreffix) :
-    	m_baseSettings(WindowSettingsBase_t{}),
-    	m_instanceName(a_instanceName),
-    	m_basePrefix(a_basePreffix),
-    	m_baseDefaults(WindowSettingsBase_t{}) {
+        explicit WindowSettingsHolder(const std::string& a_instanceName, const std::string& a_basePrefix) :
+            m_baseSettings(WindowSettingsBase_t{}),
+            m_instanceName(a_instanceName),
+            m_basePrefix(a_basePrefix),
+            m_baseDefaults(WindowSettingsBase_t{}) {
 
             m_windowTypeName = typeid(WindowType).name();
             size_t pos = m_windowTypeName.find_last_of(':');
@@ -45,8 +45,8 @@ namespace GTS {
 
         }
 
-        explicit WindowSettingsHolder(const WindowSettingsBase_t& a_baseDefaults, const std::string& a_instanceName, const std::string& a_basePreffix)
-            : m_baseSettings(a_baseDefaults), m_instanceName(a_instanceName), m_basePrefix(a_basePreffix), m_baseDefaults(a_baseDefaults) {
+        explicit WindowSettingsHolder(const WindowSettingsBase_t& a_baseDefaults, const std::string& a_instanceName, const std::string& a_basePrefix)
+            : m_baseSettings(a_baseDefaults), m_instanceName(a_instanceName), m_basePrefix(a_basePrefix), m_baseDefaults(a_baseDefaults) {
             m_windowTypeName = typeid(WindowType).name();
             size_t pos = m_windowTypeName.find_last_of(':');
             if (pos != std::string::npos) {
@@ -94,8 +94,8 @@ namespace GTS {
             return m_basePrefix;
         }
 
-        void SetBasePrefix(const std::string& a_basePreffix) {
-            m_basePrefix = a_basePreffix;
+        void SetBasePrefix(const std::string& a_basePrefix) {
+            m_basePrefix = a_basePrefix;
         }
 
         // Register custom settings struct
@@ -319,8 +319,8 @@ namespace GTS {
     class WindowSettingsHolderImpl final : public IWindowSettingsHolder, public WindowSettingsHolder<WindowType> {
 
     	public:
-        explicit WindowSettingsHolderImpl(const std::string& a_instanceName, const std::string& a_basePreffix) : WindowSettingsHolder<WindowType>(a_instanceName, a_basePreffix) {}
-        explicit WindowSettingsHolderImpl(const WindowSettingsBase_t& a_baseDefaults, const std::string& a_instanceName, const std::string& a_basePreffix) : WindowSettingsHolder<WindowType>(a_baseDefaults, a_instanceName, a_basePreffix) {}
+        explicit WindowSettingsHolderImpl(const std::string& a_instanceName, const std::string& a_basePrefix) : WindowSettingsHolder<WindowType>(a_instanceName, a_basePrefix) {}
+        explicit WindowSettingsHolderImpl(const WindowSettingsBase_t& a_baseDefaults, const std::string& a_instanceName, const std::string& a_basePrefix) : WindowSettingsHolder<WindowType>(a_baseDefaults, a_instanceName, a_basePrefix) {}
 
         bool UpdateTOMLFromStruct(toml::ordered_value& a_toml) override {
             return WindowSettingsHolder<WindowType>::UpdateTOMLFromStruct(a_toml);

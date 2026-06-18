@@ -11,13 +11,13 @@ namespace GTS {
 	}
 
 	void CPrintPluginInfo() {
-		Cprint("[GTSPlugin.dll]: [ Giantess Mod {} was succesfully initialized. Waiting for New Game/Save Load. ]", GTSPlugin::ModVersion.string());
+		Cprint("[GTSPlugin.dll]: [ Giantess Mod {} was successfully initialized. Waiting for New Game/Save Load. ]", GTSPlugin::ModVersion.string());
 		Cprint("[GTSPlugin.dll]: Dll Build Date: {} {}", __DATE__, __TIME__);
 		Cprint("[GTSPlugin.dll]: Git Info:");
 		Cprint("\t -- Commit: {}", git_CommitSubject());
 		Cprint("\t -- SHA1: {}", git_CommitSHA1());
 		Cprint("\t -- Date: {}", git_CommitDate());
-		Cprint("\t -- Uncommited Changes: {}", git_AnyUncommittedChanges() ? "Yes" : "No");
+		Cprint("\t -- Uncommitted Changes: {}", git_AnyUncommittedChanges() ? "Yes" : "No");
 	}
 
 	void LogPrintPluginInfo() {
@@ -28,7 +28,7 @@ namespace GTS {
 		const std::string git_commit = fmt::format("\t -- Commit: {}", git_CommitSubject());
 		const std::string git_sha1 = fmt::format("\t -- SHA1: {}", git_CommitSHA1());
 		const std::string git_date = fmt::format("\t -- Date: {}", git_CommitDate());
-		const std::string git_dirty = fmt::format("\t -- Uncommited Changes: {}", git_AnyUncommittedChanges() ? "Yes" : "No");
+		const std::string git_dirty = fmt::format("\t -- Uncommitted Changes: {}", git_AnyUncommittedChanges() ? "Yes" : "No");
 
 		logger::info("Git Info:\n{}\n{}\n{}\n{}", git_commit, git_sha1, git_date, git_dirty);
 	}

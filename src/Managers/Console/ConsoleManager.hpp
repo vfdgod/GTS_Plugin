@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 namespace GTS {
 
@@ -11,8 +11,8 @@ namespace GTS {
             explicit Command(const std::function<void()>& callback, std::string desc) : callback(callback), desc(std::move(desc)) {}
         };
 
-        //default base command preffix
-        inline static const std::string Default_Preffix = "gts";
+        // Default base command prefix.
+        inline static const std::string DefaultPrefix = "gts";
         static inline std::unordered_map<std::string, Command> RegisteredCommands = {};
 
         static void CMD_Help();
@@ -26,7 +26,7 @@ namespace GTS {
 
 
 
-        // Inherited via EventListener
+        // Inherited via EventListener.
         std::string DebugName() override;
         void DataReady() override;
     };

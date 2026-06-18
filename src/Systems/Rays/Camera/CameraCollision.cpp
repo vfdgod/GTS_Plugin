@@ -1,7 +1,7 @@
 #include "Systems/Rays/Camera/CameraCollision.hpp"
 #include "CameraRayCollector.hpp"
 #include "Managers/Cameras/CamUtil.hpp"
-#include "config/Config.hpp"
+#include "Config/Config.hpp"
 
 namespace {
 

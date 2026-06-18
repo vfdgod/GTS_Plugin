@@ -6,7 +6,7 @@
 #include "Managers/Audio/GoreAudio.hpp"
 #include "Managers/Input/InputManager.hpp"
 #include "Managers/CrushManager.hpp"
-#include "Managers/GtsSizeManager.hpp"
+#include "Managers/GTSSizeManager.hpp"
 #include "Managers/Rumble.hpp"
 #include "Magic/Effects/Common.hpp"
 #include "Utils/Actions/ButtCrushUtils.hpp"

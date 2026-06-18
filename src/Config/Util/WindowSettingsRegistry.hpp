@@ -33,8 +33,8 @@ namespace GTS {
         private:
         std::unordered_map<WindowRegistryKey, std::unique_ptr<IWindowSettingsHolder>, WindowRegistryKeyHash> m_settingsHolders;
 
-        static WindowRegistryKey MakeKey(const std::type_index& a_typeIndex, const std::string& a_instanceName, const std::string& a_basePreffix) {
-            return { a_typeIndex, a_instanceName, a_basePreffix };
+        static WindowRegistryKey MakeKey(const std::type_index& a_typeIndex, const std::string& a_instanceName, const std::string& a_basePrefix) {
+            return { a_typeIndex, a_instanceName, a_basePrefix };
         }
 
         public:

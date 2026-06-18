@@ -1,4 +1,4 @@
-#include "Hooks/Animation/HeadTrackingGraph.hpp"
+#include "Hooks/Animation/HeadtrackingGraph.hpp"
 #include "Hooks/Util/HookUtil.hpp"
 
 namespace {

@@ -1,4 +1,4 @@
-#include "Managers/Cameras/TP/footL.hpp"
+#include "Managers/Cameras/TP/FootL.hpp"
 #include "Managers/Cameras/CamUtil.hpp"
 
 namespace {

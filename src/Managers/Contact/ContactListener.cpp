@@ -345,7 +345,7 @@ namespace GTS {
 
 		//How nice of bethesda to have a layer specifically for traps, so we can bypass other people's broken models....
 		//This exists to fix one hyper specific edge case where a trap object is too
-		//small (or wierd?) to be correctly registered by the camera raycaster's stuck prevention system.
+		//small (or weird?) to be correctly registered by the camera raycaster's stuck prevention system.
 		//Realistically we don't even need this collision type for the camera...
 		uint64_t trap = 1ULL << static_cast<uint64_t>(COL_LAYER::kTrap);
 		cameraBitfield &= ~trap;

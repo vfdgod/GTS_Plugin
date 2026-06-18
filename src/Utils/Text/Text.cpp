@@ -33,14 +33,6 @@ namespace GTS {
 		return arg.starts_with(prefix);
 	}
 
-	bool matches(std::string_view str, std::string_view reg){
-		re2::StringPiece text(str.data(), str.size());
-		re2::StringPiece pattern(reg.data(), reg.size());
-
-		const re2::RE2 re(pattern);
-		return RE2::FullMatch(text, re);
-	}
-
 	std::string str_tolower(std::string s) {
 		std::ranges::transform(s, s.begin(),[](unsigned char c){
 			return std::tolower(c);

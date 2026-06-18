@@ -5,7 +5,7 @@
 
 #include "Managers/Audio/AudioObtainer.hpp"
 #include "Managers/Audio/AudioParams.hpp"
-#include "Managers/Highheel.hpp"
+#include "Managers/HighHeel.hpp"
 
 using namespace GTS;
 

@@ -1,9 +1,9 @@
 #include "Papyrus/Papyrus.hpp"
 #include "Papyrus/Plugin.hpp"
-#include "papyrus/Scale.hpp"
-#include "papyrus/Height.hpp"
-#include "papyrus/ModEvents.hpp"
-#include "papyrus/TotalControl.hpp"
+#include "Papyrus/Scale.hpp"
+#include "Papyrus/Height.hpp"
+#include "Papyrus/ModEvents.hpp"
+#include "Papyrus/TotalControl.hpp"
 
 namespace GTS {
 

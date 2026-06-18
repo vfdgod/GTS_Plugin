@@ -7,51 +7,62 @@
 
 namespace {
 
-	void InitializeMessaging() {
+	constexpr std::string_view PluginLoadedMessage = "[GTSPlugin.dll]: [ Successfully initialized and loaded ]";
 
-		if (!SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message *message) {
-			switch (message->type) {
+	void NotifyGameLoaded(bool resetBeforeNotify) {
+		GTS::State::SetInGame(true);
+		if (resetBeforeNotify) {
+			GTS::EventDispatcher::DoReset();
+		}
+		GTS::Cprint(PluginLoadedMessage);
+	}
 
-				// Called after all kPostLoad message handlers have run.
-				case SKSE::MessagingInterface::kPostPostLoad: {
-					GTS::EventDispatcher::DoPluginPostLoad();
-					break;
-				}
+	void HandleMessagingEvent(SKSE::MessagingInterface::Message* message) {
+		if (!message) {
+			return;
+		}
 
-				// All ESM/ESL/ESP plugins have loaded, main menu is now active.
-				case SKSE::MessagingInterface::kDataLoaded: {
-					GTS::EventDispatcher::DoDataReady();
-					GTS::CPrintPluginInfo();
-					break;
-				}
-
-				// Skyrim game events.
-				// Player's selected save game has finished loading.
-				case SKSE::MessagingInterface::kPostLoadGame: {
-					GTS::State::SetInGame(true);
-					GTS::Cprint("[GTSPlugin.dll]: [ Succesfully initialized and loaded ]");
-					break;
-				}
-
-				// Player starts a new game from main menu.
-				case SKSE::MessagingInterface::kNewGame: {
-					GTS::State::SetInGame(true);
-					GTS::EventDispatcher::DoReset();
-					GTS::Cprint("[GTSPlugin.dll]: [ Succesfully initialized and loaded ]");
-					break;
-				}
-
-				// Player selected a game to load, but it hasn't loaded yet.
-				// Data will be the name of the loaded save.
-				case SKSE::MessagingInterface::kPreLoadGame: {
-					GTS::State::SetInGame(false);
-					GTS::EventDispatcher::DoReset();
-					break;
-				}
-
-				default: {};
+		switch (message->type) {
+			// Called after all kPostLoad message handlers have run.
+			case SKSE::MessagingInterface::kPostPostLoad: {
+				GTS::EventDispatcher::DoPluginPostLoad();
+				break;
 			}
-		})) {
+
+			// All ESM/ESL/ESP plugins have loaded, main menu is now active.
+			case SKSE::MessagingInterface::kDataLoaded: {
+				GTS::EventDispatcher::DoDataReady();
+				GTS::CPrintPluginInfo();
+				break;
+			}
+
+			// Player's selected save game has finished loading.
+			case SKSE::MessagingInterface::kPostLoadGame: {
+				NotifyGameLoaded(false);
+				break;
+			}
+
+			// Player starts a new game from main menu.
+			case SKSE::MessagingInterface::kNewGame: {
+				NotifyGameLoaded(true);
+				break;
+			}
+
+			// Player selected a game to load, but it hasn't loaded yet.
+			// Data will be the name of the loaded save.
+			case SKSE::MessagingInterface::kPreLoadGame: {
+				GTS::State::SetInGame(false);
+				GTS::EventDispatcher::DoReset();
+				break;
+			}
+
+			default:
+				break;
+		}
+	}
+
+	void InitializeMessaging() {
+		if (!SKSE::GetMessagingInterface()->RegisterListener(HandleMessagingEvent)) {
 			GTS::ReportAndExit("Init: Unable to register message listener.");
 		}
 	}
@@ -77,12 +88,12 @@ namespace {
 	}
 }
 
-SKSEPluginLoad(const SKSE::LoadInterface* a_skse){
+SKSEPluginLoad(const SKSE::LoadInterface* a_skse) {
 
 	Init(a_skse);
 	logger::Initialize();
 
-	#ifndef GTS_DISABLE_PLUGIN
+#ifndef GTS_DISABLE_PLUGIN
 
 	GTS::LogPrintPluginInfo();
 	GTS::VersionCheck(a_skse);
@@ -91,7 +102,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse){
 	Hooks::Install();
 	GTS::RegisterEventListeners();
 
-	#endif
+#endif
 
 	InitializeSerialization();
 

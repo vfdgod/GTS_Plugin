@@ -9,9 +9,9 @@
 #include "Managers/Cameras/TP/Normal.hpp"
 #include "Managers/Cameras/TP/Foot.hpp"
 #include "Managers/Cameras/TP/FootL.hpp"
-#include "Managers/Cameras/TP/footR.hpp"
+#include "Managers/Cameras/TP/FootR.hpp"
 
-#include "Managers/Cameras/FP/normal.hpp"
+#include "Managers/Cameras/FP/Normal.hpp"
 
 namespace GTS {
 

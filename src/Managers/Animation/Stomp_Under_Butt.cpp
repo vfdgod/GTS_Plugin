@@ -33,7 +33,7 @@ namespace {
 			SMT = 1.75f; // Larger Dust
 		}
 
-		DoDamageEffect(giant, Damage_Walk_Defaut * damage * perk, Radius_Stomp_Strong, 8, 0.30f, Event, 1.0f, Source, false);
+		DoDamageEffect(giant, Damage_Walk_Default * damage * perk, Radius_Stomp_Strong, 8, 0.30f, Event, 1.0f, Source, false);
 		DoDustExplosion(giant, 1.0f * (SMT), Event, Node);
         DoImpactRumble(giant, Node, rumble, true, 0.8f);
         

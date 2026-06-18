@@ -3,10 +3,8 @@
 namespace GTS {
 
 	NiAVObject* find_node(Actor* actor, std::string_view node_name, bool first_person = false);
-	NiAVObject* find_node_regex(Actor* actor, const std::string& node_regex, bool first_person = false);
 	NiAVObject* find_object_node(TESObjectREFR* object, std::string_view node_name);
 	NiAVObject* find_node_any(Actor* actor, std::string_view node_name);
-	NiAVObject* find_node_regex_any(Actor* actor, const std::string& node_regex);
 
 	BSBound* get_bound(Actor* actor);
 	NiPoint3 get_bound_values(Actor* actor);

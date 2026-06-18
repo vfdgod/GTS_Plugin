@@ -505,7 +505,7 @@ namespace GTS {
 			return;
 		}
 
-		float BaseGrowhtRate = 0.0f;
+		float BaseGrowthRate = 0.0f;
 		float BaseShrinkRate = 0.0f;
 		float BonusShrink = 7.4f;
 		float BonusGrowth = 1.0f;
@@ -572,7 +572,7 @@ namespace GTS {
 					BonusGrowth = CurrentScale * 0.25f + 0.75f;
 				}
 
-				BaseGrowhtRate = Settings.GamemodePlayer.fGrowthRate * BonusGrowth;
+				BaseGrowthRate = Settings.GamemodePlayer.fGrowthRate * BonusGrowth;
 				BaseShrinkRate = Settings.GamemodePlayer.fShrinkRate;
 				GameMode = StringToEnum<LActiveGamemode_t>(Settings.GamemodePlayer.sGameMode);
 			}
@@ -582,7 +582,7 @@ namespace GTS {
 					BonusGrowth = CurrentScale * 0.25f + 0.75f;
 				}
 
-				BaseGrowhtRate = Settings.GamemodeFollower.fGrowthRate * BonusGrowth;
+				BaseGrowthRate = Settings.GamemodeFollower.fGrowthRate * BonusGrowth;
 				BaseShrinkRate = Settings.GamemodeFollower.fShrinkRate;
 				GameMode = StringToEnum<LActiveGamemode_t>(Settings.GamemodeFollower.sGameMode);
 			}
@@ -596,7 +596,7 @@ namespace GTS {
 		}
 
 		if (!TinyCalamityActive(actor)) {
-            ApplyGameMode(actor, GameMode, BaseGrowhtRate / 2, BaseShrinkRate);
+            ApplyGameMode(actor, GameMode, BaseGrowthRate / 2, BaseShrinkRate);
         }
 	}
 }

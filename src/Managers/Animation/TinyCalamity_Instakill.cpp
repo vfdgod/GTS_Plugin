@@ -5,7 +5,7 @@
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/Animation/Utils/TurnTowards.hpp"
 
-#include "Managers/AI/aifunctions.hpp"
+#include "Managers/AI/AIFunctions.hpp"
 #include "Managers/Audio/Footstep.hpp"
 #include "Managers/Perks/PerkHandler.hpp"
 #include "Managers/Rumble.hpp"
@@ -196,7 +196,7 @@ namespace {
 		float shake_power = Rumble_Stomp_Normal * smt * hh;
 
 		Rumbling::Once(rumble, giant, shake_power, 0.0f, Node, 1.10f);
-		DoDamageEffect(giant, Damage_Walk_Defaut * perk, Radius_Stomp, 10, 0.25f, Event, 1.0f, Source);
+		DoDamageEffect(giant, Damage_Walk_Default * perk, Radius_Stomp, 10, 0.25f, Event, 1.0f, Source);
 		DoDustExplosion(giant, dust + (animSpeed * 0.05f), Event, Node);
 		DoFootstepSound(giant, 1.0f, Event, Node);
 		

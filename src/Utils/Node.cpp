@@ -3,31 +3,6 @@
 
 using namespace RE;
 
-namespace {
-
-	void loop_message(NiAVObject* root, std::string_view message) {
-
-		auto owner_data = root->GetUserData();
-		if (owner_data) {
-			auto name = owner_data->GetDisplayFullName();
-			logger::error("{} : Possible Endless Loop on {}", message, name);
-		}
-	}
-
-	void loop_message(TESObjectREFR* object, std::string_view message) {
-		if (object) {
-			logger::error("{} : Possible Endless Loop on {}", message, object->GetDisplayFullName());
-		}
-	}
-
-	void loop_message(Actor* actor, std::string_view message) {
-		if (actor) {
-			logger::error("{} : Possible Endless Loop on {}", message, actor->GetDisplayFullName());
-		}
-	}
-
-}
-
 namespace GTS {
 
 	constexpr int loop_threshold = 256;
@@ -172,69 +147,10 @@ namespace GTS {
 		return nullptr;
 	}
 
-	NiAVObject* find_node_regex(Actor* actor, const std::string& node_regex, bool first_person)
-	{
-		if (!actor || !actor->Is3DLoaded()) {
-			return nullptr;
-		}
-
-		auto model = actor->Get3D(first_person);
-		if (!model) {
-			return nullptr;
-		}
-
-		const re2::RE2 the_regex(node_regex);
-
-		std::deque<NiAVObject*> queue;
-		queue.push_back(model);
-
-		int counter = 0;
-
-		while (!queue.empty()) {
-			auto currentnode = queue.front();
-			queue.pop_front();
-
-			++counter;
-
-			if (!currentnode) {
-				continue;
-			}
-
-			if (const auto ninode = currentnode->AsNode()) {
-				for (auto& child : ninode->GetChildren()) {
-					if (child) {
-						queue.push_back(child.get());
-					}
-				}
-			}
-			
-			if (RE2::FullMatch(std::string(currentnode->name), the_regex)) {
-				return currentnode;
-			}
-
-			if (counter > loop_threshold) {
-				return nullptr;
-			}
-		}
-
-		return nullptr;
-	}
-
 	NiAVObject* find_node_any(Actor* actor, std::string_view node_name) {
 		NiAVObject* result = nullptr;
 		for (auto person: {false, true}) {
 			result = find_node(actor, node_name, person);
-			if (result) {
-				break;
-			}
-		}
-		return result;
-	}
-
-	NiAVObject* find_node_regex_any(Actor* actor, const std::string& node_regex) {
-		NiAVObject* result = nullptr;
-		for (auto person: {false, true}) {
-			result = find_node_regex(actor, node_regex, person);
 			if (result) {
 				break;
 			}

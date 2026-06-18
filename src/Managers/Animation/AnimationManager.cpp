@@ -194,20 +194,11 @@ namespace GTS {
 		float Speed = 1.0f;
 		auto& AnimMgr = AnimationManager::GetSingleton();
 
-		try {
-
-			if (!AnimMgr.data.empty()) {
-
-				if (AnimMgr.data.contains(actor)) {
-
-					for (auto& data : AnimMgr.data.at(actor) | std::views::values) {
-						Speed *= data.HHspeed;
-					}
-				}
+		if (auto it = AnimMgr.data.find(actor); it != AnimMgr.data.end()) {
+			for (auto& data : it->second | std::views::values) {
+				Speed *= data.HHspeed;
 			}
-
 		}
-		catch (const std::out_of_range&) {}
 
 		return Speed;
 	}
@@ -216,48 +207,39 @@ namespace GTS {
 		float totalSpeed = 1.0f;
 		auto& AnimMgr = AnimationManager::GetSingleton();
 
-		try {
-
-			if (!AnimMgr.data.empty()) {
-
-				if (AnimMgr.data.contains(actor)) {
-
-					for (auto& data : AnimMgr.data.at(actor) | std::views::values) {
-						totalSpeed *= data.animSpeed;
-					}
-				}
+		if (auto it = AnimMgr.data.find(actor); it != AnimMgr.data.end()) {
+			for (auto& data : it->second | std::views::values) {
+				totalSpeed *= data.animSpeed;
 			}
 		}
-		catch (const std::out_of_range&) {}
+
 		return totalSpeed;
 	}
 
 	void AnimationManager::AdjustAnimSpeed(float bonus) {
 
 		const auto player = PlayerCharacter::GetSingleton();
-		auto& AnimMgr = AnimationManager::GetSingleton();
-
-		try {
-
-			if (!AnimMgr.data.empty()) {
-
-				if (AnimMgr.data.contains(player)) {
-
-					for (auto& data : AnimMgr.data.at(player) | std::views::values) {
-
-						if (data.canEditAnimSpeed) {
-							data.animSpeed += (bonus * GetAnimationSlowdown(player));
-						}
-						const bool isBreastStrangling = AnimationVars::Cleavage::IsBoobsDoting(player);
-						float min = isBreastStrangling ? 0.50f : 0.33f;
-						float max = isBreastStrangling ? 1.75f : 3.0f;
-						data.animSpeed = std::clamp(data.animSpeed, min, max);
-					}
-				}
-			}
+		if (!player) {
+			return;
 		}
 
-		catch (std::out_of_range&) {}
+		auto& AnimMgr = AnimationManager::GetSingleton();
+		auto it = AnimMgr.data.find(player);
+		if (it == AnimMgr.data.end()) {
+			return;
+		}
+
+		const float animation_slowdown = GetAnimationSlowdown(player);
+		const bool isBreastStrangling = AnimationVars::Cleavage::IsBoobsDoting(player);
+		const float min = isBreastStrangling ? 0.50f : 0.33f;
+		const float max = isBreastStrangling ? 1.75f : 3.0f;
+
+		for (auto& data : it->second | std::views::values) {
+			if (data.canEditAnimSpeed) {
+				data.animSpeed += bonus * animation_slowdown;
+			}
+			data.animSpeed = std::clamp(data.animSpeed, min, max);
+		}
 	}
 
 	float AnimationManager::GetAnimSpeed(Actor* actor) {
@@ -278,20 +260,15 @@ namespace GTS {
 			}
 
 			const auto& AnimMgr = AnimationManager::GetSingleton();
-			auto& AnimData = AnimMgr.data;
-			try {
+			const auto& AnimData = AnimMgr.data;
+			float totalSpeed = 1.0f;
 
-				float totalSpeed = 1.0f;
-
-				if (auto it = AnimData.find(actor); it != AnimData.end()) {
-					for (const auto& data : it->second | std::views::values) {
-						totalSpeed *= data.animSpeed;
-					}
-					speed *= totalSpeed;
+			if (auto it = AnimData.find(actor); it != AnimData.end()) {
+				for (const auto& data : it->second | std::views::values) {
+					totalSpeed *= data.animSpeed;
 				}
-
+				speed *= totalSpeed;
 			}
-			catch (const std::out_of_range&) {}
 		}
 		return speed;
 	}
@@ -349,48 +326,34 @@ namespace GTS {
 			}
 		}
 
-		try {
-			auto& me = AnimationManager::GetSingleton();
-			// Find the behavior for this trigger exit on catch if not
-
-			auto& behavorToPlay = me.triggers.at(std::string(trigger));
-			auto& group = behavorToPlay.group;
-			// Try to create anim data for actor
-			me.data.try_emplace(&giant);
-			auto& actorData = me.data.at(&giant); // Must exists now
-			// Create the anim data for this group if not present
-			actorData.try_emplace(group, giant, tiny);
-			// Run the anim
-			//log::info("Playing Trigger {} for {}", trigger, giant.GetDisplayFullName());
-			//log::info("Playing {}", behavorToPlay.behavors[0]);
-			giant.NotifyAnimationGraph(behavorToPlay.behavors[0]);
-
-			PerkHandler::UpdatePerkValues(&giant, PerkUpdate::Perk_Acceleration); // Currently used for Anim Speed buff only
-		}
-		catch (const std::out_of_range&) {
+		auto& me = AnimationManager::GetSingleton();
+		auto triggerIt = me.triggers.find(std::string(trigger));
+		if (triggerIt == me.triggers.end()) {
 			logger::error("Requested play of unknown animation named: {}", trigger);
 			return;
 		}
+
+		auto& behavorToPlay = triggerIt->second;
+		auto& group = behavorToPlay.group;
+		auto& actorData = me.data.try_emplace(&giant).first->second;
+		actorData.try_emplace(group, giant, tiny);
+
+		//log::info("Playing Trigger {} for {}", trigger, giant.GetDisplayFullName());
+		//log::info("Playing {}", behavorToPlay.behavors[0]);
+		giant.NotifyAnimationGraph(behavorToPlay.behavors[0]);
+
+		PerkHandler::UpdatePerkValues(&giant, PerkUpdate::Perk_Acceleration); // Currently used for Anim Speed buff only
 	}
 
 	void AnimationManager::ResetAnimationSpeedData(Actor* actor) {
-		try {
-
-			auto& me = AnimationManager::GetSingleton();
-
-			if (!me.data.empty()) {
-
-				if (me.data.contains(actor)) {
-
-					for (auto& data : me.data.at(actor) | std::views::values) {
-						data.animSpeed = 1.0f;
-						data.canEditAnimSpeed = false;
-						data.stage = 0;
-					}
-				}
+		auto& me = AnimationManager::GetSingleton();
+		if (auto it = me.data.find(actor); it != me.data.end()) {
+			for (auto& data : it->second | std::views::values) {
+				data.animSpeed = 1.0f;
+				data.canEditAnimSpeed = false;
+				data.stage = 0;
 			}
 		}
-		catch (std::out_of_range&) {}
 	}
 
 
@@ -402,22 +365,27 @@ namespace GTS {
 	}
 
 	void AnimationManager::NextAnim(std::string_view trigger, Actor& giant) {
-		try {
-			auto& me = AnimationManager::GetSingleton();
-			// Find the behavior for this trigger exit on catch if not
-			auto& behavorToPlay = me.triggers.at(std::string(trigger));
-			auto& group = behavorToPlay.group;
-			// Get the actor data OR exit on catch
-			auto& actorData = me.data.at(&giant);
-			// Get the event data of exit on catch
-			auto& eventData = actorData.at(group);
-			std::size_t currentTrigger = eventData.currentTrigger;
-			// Run the anim
-			if (currentTrigger < behavorToPlay.behavors.size()) {
-				giant.NotifyAnimationGraph(behavorToPlay.behavors[currentTrigger]);
-			}
+		auto& me = AnimationManager::GetSingleton();
+		auto triggerIt = me.triggers.find(std::string(trigger));
+		if (triggerIt == me.triggers.end()) {
+			return;
 		}
-		catch (const std::out_of_range&) {}
+
+		auto& behavorToPlay = triggerIt->second;
+		auto actorDataIt = me.data.find(&giant);
+		if (actorDataIt == me.data.end()) {
+			return;
+		}
+
+		auto eventDataIt = actorDataIt->second.find(behavorToPlay.group);
+		if (eventDataIt == actorDataIt->second.end()) {
+			return;
+		}
+
+		const std::size_t currentTrigger = eventDataIt->second.currentTrigger;
+		if (currentTrigger < behavorToPlay.behavors.size()) {
+			giant.NotifyAnimationGraph(behavorToPlay.behavors[currentTrigger]);
+		}
 	}
 	void AnimationManager::NextAnim(std::string_view trigger, Actor* giant) {
 		if (giant) {
@@ -436,11 +404,10 @@ namespace GTS {
 				}
 
 				// If data doesn't exist then insert with default
-				this->data.try_emplace(actor);
-				auto& actorData = this->data.at(actor);
+				auto& actorData = this->data.try_emplace(actor).first->second;
 
 				for (auto& animToPlay : callbacks->second) {
-					auto group = animToPlay.group;
+					const auto& group = animToPlay.group;
 					auto actorDataIt = actorData.find(group);
 
 					if (actorDataIt == actorData.end()) {
@@ -468,23 +435,18 @@ namespace GTS {
 
 	// Get the current stage of an animation group
 	std::size_t AnimationManager::GetStage(Actor& actor,  std::string_view group) {
-		try {
-			auto& me = AnimationManager::GetSingleton();
-
-			if (me.data.empty()) {
-				return 0;
-			}
-
-			if (!me.data.contains(&actor)) {
-				return 0;
-			}
-
-			return me.data.at(&actor).at(std::string(group)).stage;
-
-		}
-		catch (const std::out_of_range&) {
+		auto& me = AnimationManager::GetSingleton();
+		auto actorDataIt = me.data.find(&actor);
+		if (actorDataIt == me.data.end()) {
 			return 0;
 		}
+
+		auto eventDataIt = actorDataIt->second.find(std::string(group));
+		if (eventDataIt == actorDataIt->second.end()) {
+			return 0;
+		}
+
+		return eventDataIt->second.stage;
 	}
 
 	std::size_t AnimationManager::GetStage(Actor* actor,  std::string_view group) {
