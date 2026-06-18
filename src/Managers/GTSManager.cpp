@@ -26,6 +26,10 @@ namespace {
 	constexpr float vanilla_interaction_range = 180.0f;
 	constexpr float vanilla_radius_range = 16.0f;
 
+	bool IsInstantShrinkMode() {
+		return Config::Advanced.sShrinkMode == "kInstant";
+	}
+
 	void FixEmotionsRange() {
 
 		// Makes facial emotions always enabled at any size
@@ -237,7 +241,15 @@ namespace {
 		if (target_scale > max_scale && target_scale > ScaleMult) {
 			constexpr float minimum_scale_delta = 0.000005f;
 
-			if (fabs(target_scale - max_scale) < minimum_scale_delta) {
+			if (IsInstantShrinkMode()) {
+				persi_actor_data->fTargetScale = max_scale;
+				persi_actor_data->fTargetScaleV = 0.0f;
+				if (persi_actor_data->fVisualScale > max_scale + minimum_scale_delta) {
+					persi_actor_data->fVisualScale = max_scale;
+					persi_actor_data->fVisualScaleV = 0.0f;
+				}
+			}
+			else if (fabs(target_scale - max_scale) < minimum_scale_delta) {
 				float target = max_scale;
 				persi_actor_data->fTargetScale = target;
 				persi_actor_data->fTargetScaleV = 0.0f;

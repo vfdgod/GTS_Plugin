@@ -27,9 +27,11 @@ namespace GTS {
 		const char* GetShrinkModeTooltip(SettingsAdvanced_t::LShrinkApplicationMode_t a_mode) {
 			switch (a_mode) {
 				case SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual:
-					return "尺寸降低时，继续沿用当前 half-life 平滑过渡到目标体型。";
+					return "尺寸降低时，继续沿用当前 half-life 平滑过渡到目标体型。\n"
+					       "适用于法术、药水、伤害、游戏模式，以及超过体型上限后的系统回拉。";
 				case SettingsAdvanced_t::LShrinkApplicationMode_t::kInstant:
 					return "尺寸降低时，直接把当前显示体型同步到新的目标体型，不再等待平滑收缩。\n"
+					       "适用于法术、药水、伤害、游戏模式，以及超过体型上限后的系统回拉。\n"
 					       "只影响“变小”方向；变大仍按原逻辑处理。";
 				default:
 					return "";
@@ -177,7 +179,8 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-			PSString T0 = "决定尺寸变小时，是继续平滑过渡，还是立刻同步到更小的目标体型。";
+			PSString T0 = "决定尺寸变小时，是继续平滑过渡，还是立刻同步到更小的目标体型。\n"
+			              "适用于法术、药水、伤害、游戏模式，以及超过体型上限后的系统回拉。";
 			SettingsAdvanced_t::LShrinkApplicationMode_t shrinkMode = SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual;
 			if (!TryParseShrinkMode(Config::Advanced.sShrinkMode, shrinkMode)) {
 				Config::Advanced.sShrinkMode = "kGradual";
