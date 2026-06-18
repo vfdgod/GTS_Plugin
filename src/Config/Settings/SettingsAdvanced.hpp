@@ -29,8 +29,15 @@ Reflection based serializer limitations:
 
 struct SettingsAdvanced_t {
 
+    enum class LShrinkApplicationMode_t : uint8_t {
+        kGradual = 0,
+        kInstant,
+        kTotal
+    };
+
     // Logging levels
     std::string sLogLevel = "err";
+    std::string sShrinkMode = "kGradual";
 
     // Toggles for advanced features
     bool bShowOverlay = false;

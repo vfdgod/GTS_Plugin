@@ -25,37 +25,25 @@ namespace GTS {
 	}
 
 	TransientActorData* Transient::GetActorData(Actor* actor) {
-		 std::unique_lock lock(_Lock);
+		std::unique_lock lock(_Lock);
 
 		if (!actor) {
 			return nullptr;
 		}
-		auto ActorKey = actor->formID;
+		auto actorKey = actor->formID;
 
-		auto tryAdd = [&]() -> TransientActorData* {
-			// (Re)check any conditions before adding.
-			if (get_scale(actor) < 0.0f || !actor->Is3DLoaded()) {
-				return nullptr;
-			}
-			// Create and emplace the new data.
-			auto [iter, inserted] = TempActorDataMap.try_emplace(ActorKey, TransientActorData(actor));
-			return &(iter->second);
-		};
+		// This is hit from many frame-sensitive systems; keep the fast hit path
+		// to a single lookup and only construct transient data on a validated miss.
+		if (auto it = TempActorDataMap.find(actorKey); it != TempActorDataMap.end()) {
+			return &(it->second);
+		}
 
-		try {
-			if (!TempActorDataMap.contains(ActorKey)) {
-				return tryAdd();
-			}
-			return &TempActorDataMap.at(ActorKey);
-		}
-		catch (const std::out_of_range&) {
-			// If out_of_range is thrown, try to add the data.
-			return tryAdd();
-		}
-		catch (const std::exception& e) {
-			logger::warn("Transient Exception GetActorData {}", e.what());
+		if (get_scale(actor) < 0.0f || !actor->Is3DLoaded()) {
 			return nullptr;
 		}
+
+		auto [iter, inserted] = TempActorDataMap.try_emplace(actorKey, actor);
+		return &(iter->second);
 	}
 
 	void Transient::EraseUnloadedData() {

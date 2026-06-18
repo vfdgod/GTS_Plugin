@@ -234,7 +234,7 @@ namespace {
 		VisualScale_CheckForSizeAdjustment(actor, ScaleMult); // Updates ScaleMult value based on Actor Type (Player/Follower/Others)
 	
 		// Smooth target_scale towards max_scale if target_scale > max_scale
-		if (target_scale > max_scale && get_target_scale(actor) > get_natural_scale(actor, true) * ScaleMult) {
+		if (target_scale > max_scale && target_scale > ScaleMult) {
 			constexpr float minimum_scale_delta = 0.000005f;
 
 			if (fabs(target_scale - max_scale) < minimum_scale_delta) {
@@ -254,6 +254,9 @@ namespace {
 		else {
 			persi_actor_data->fTargetScaleV = 0.0f;
 		}
+
+		// Continue from the canonical target value after any max-scale smoothing.
+		target_scale = persi_actor_data->fTargetScale;
 
 		// Room Size adjustments
 		// We only do this if they are bigger than 1.05x their natural scale (currentOtherScale)

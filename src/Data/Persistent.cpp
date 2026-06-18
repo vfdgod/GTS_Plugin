@@ -36,13 +36,6 @@ namespace GTS {
 		// This event should be when the game attempts to reset their
 		// actor values etc when the cell resets
 
-		//Actor can somehow be null here.
-		//This will mean that said actor wont be reset
-		if (!actor) {
-			logger::error("Persistent::ResetActor: Tried to reset null actor");
-			return;
-		}
-
 		auto key = actor->formID;
 		bool shouldResetScale = false;
 
@@ -207,27 +200,18 @@ namespace GTS {
 		std::unique_lock lock(_Lock);
 		auto key = actor.formID;
 
-		// Lambda to add new ActorData if conditions are met
-		auto addActorData = [&]() -> PersistentActorData* {
-			if (!actor.Is3DLoaded()) {
-				return nullptr;
-			}
-			if (get_scale(&actor) < 0.0f) {
-				return nullptr;
-			}
-			auto [iter, inserted] = ActorMap.value.try_emplace(key);
-			return &(iter->second);
-		};
-
-		// Attempt to find the actor's data in the map
-		auto it = ActorMap.value.find(key);
-		if (it != ActorMap.value.end()) {
+		// This accessor sits on the per-frame actor update path, so keep the hit
+		// path to a single lookup and only allocate on a validated miss.
+		if (auto it = ActorMap.value.find(key); it != ActorMap.value.end()) {
 			return &(it->second);
 		}
 
-		// ActorData not found; attempt to add it
-		return addActorData();
-		
+		if (!actor.Is3DLoaded() || get_scale(&actor) < 0.0f) {
+			return nullptr;
+		}
+
+		auto [it, inserted] = ActorMap.value.try_emplace(key);
+		return &(it->second);
 	}
 
 	PersistentKillCountData* Persistent::GetKillCountData(Actor* actor) {
@@ -240,18 +224,16 @@ namespace GTS {
 	PersistentKillCountData* Persistent::GetKillCountData(Actor& actor) {
 		std::unique_lock lock(_Lock);
 		auto key = actor.formID;
-		auto it = KillCountMap.value.find(key);
-
-		if (it != KillCountMap.value.end()) {
+		if (auto it = KillCountMap.value.find(key); it != KillCountMap.value.end()) {
 			return &it->second;
 		}
 
-		// Key not found, add new entry
 		if (!actor.Is3DLoaded()) {
 			return nullptr;
 		}
-		auto [newIt, inserted] = KillCountMap.value.try_emplace(key);
-		return &newIt->second;
+
+		auto [it, inserted] = KillCountMap.value.try_emplace(key);
+		return &it->second;
 	}
 
 	//---------------------------

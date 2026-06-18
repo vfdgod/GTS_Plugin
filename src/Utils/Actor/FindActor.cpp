@@ -37,6 +37,8 @@ namespace GTS {
 				return cache;
 			}
 
+			Actor* const player = PlayerCharacter::GetSingleton();
+			bool playerAdded = false;
 			const auto& handles = process_list->highActorHandles;
 			cache.actorRefs.reserve(handles.size() + 1);
 			cache.actors.reserve(handles.size() + 1);
@@ -51,6 +53,9 @@ namespace GTS {
 				if (!actor || !actor->Get3D1(false)) {
 					continue;
 				}
+				if (actor == player) {
+					playerAdded = true;
+				}
 
 				cache.actorRefs.emplace_back(actorPtr);
 				cache.actors.emplace_back(actor);
@@ -62,7 +67,7 @@ namespace GTS {
 				}
 			}
 
-			if (Actor* player = PlayerCharacter::GetSingleton(); player && player->Get3D1(false)) {
+			if (player && player->Get3D1(false) && !playerAdded) {
 				cache.actors.emplace_back(player);
 			}
 

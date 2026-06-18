@@ -50,6 +50,7 @@ namespace GTS {
 			if (giant->IsPlayerRef() && type == SizeEffectType::kShrink) {
 				OnTheEdge = GetPerkBonus_OnTheEdge(giant, amt); // Player Exclusive
 			}
+			amt *= OnTheEdge;
 
 			float target = get_target_scale(giant);
 			float max_scale = get_max_scale(giant);
@@ -80,7 +81,8 @@ namespace GTS {
 			OnTheEdge = GetPerkBonus_OnTheEdge(giant, amt); // Player Exclusive
 		}
 
-		mod_target_scale(giant, amt * OnTheEdge); // set target scale value
+		const float finalAmount = amt * OnTheEdge;
+		mod_target_scale(giant, finalAmount); // set target scale value
 	}
 
 	float get_update_target_scale(Actor* giant, float amt, SizeEffectType type) { // Used for growth spurt
@@ -102,9 +104,10 @@ namespace GTS {
 			OnTheEdge = GetPerkBonus_OnTheEdge(giant, amt); // Player Exclusive
 		}
 
-		mod_target_scale(giant, amt * OnTheEdge); // set target scale value
+		const float finalAmount = amt * OnTheEdge;
+		mod_target_scale(giant, finalAmount); // set target scale value
 
-		return amt * OnTheEdge;
+		return finalAmount;
 	}
 
 	float get_scale_difference(Actor* giant, Actor* tiny, SizeType Type, bool Check_SMT, bool HH) {

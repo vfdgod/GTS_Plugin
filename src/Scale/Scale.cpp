@@ -1,8 +1,24 @@
 #include "Scale/Scale.hpp"
+#include "Config/Config.hpp"
 
 namespace {
 	//constexpr float EPS = std::numeric_limits<float>::epsilon();
 	constexpr float EPS = 1e-5;
+
+	bool IsInstantShrinkMode() {
+		return GTS::Config::Advanced.sShrinkMode == "kInstant";
+	}
+
+	void SnapVisualScaleToTargetIfShrinking(GTS::PersistentActorData* a_actorData, bool a_isShrinking) {
+		if (!a_actorData || !a_isShrinking || !IsInstantShrinkMode()) {
+			return;
+		}
+		if (a_actorData->fVisualScale > a_actorData->fTargetScale + EPS) {
+			a_actorData->fVisualScale = a_actorData->fTargetScale;
+			a_actorData->fTargetScaleV = 0.0f;
+			a_actorData->fVisualScaleV = 0.0f;
+		}
+	}
 }
 
 namespace GTS {
@@ -13,15 +29,18 @@ namespace GTS {
 			float natural_scale = get_natural_scale(&actor, true);
 			float target_scale = actor_data->fTargetScale * natural_scale;
 			float max_scale = actor_data->fMaxScale;
-
-			scale /= natural_scale;
+			const bool isShrinking = scale < target_scale - EPS;
+			const float normalizedScale = scale / natural_scale;
 
 			if (scale < (max_scale + EPS)) { // If new value is below max: allow it
-				actor_data->fTargetScale = scale;
+				actor_data->fTargetScale = normalizedScale;
 			} 
 			else if (target_scale < (max_scale - EPS) || target_scale > (max_scale + EPS)) { // If we are below max currently and we are trying to scale over max: make it max
 				actor_data->fTargetScale = max_scale / natural_scale;
 			} 
+
+			// Instant shrink mode only snaps when the incoming request is a real shrink.
+			SnapVisualScaleToTargetIfShrinking(actor_data, isShrinking);
 		}
 	}
 
@@ -55,18 +74,20 @@ namespace GTS {
             float natural_scale = get_natural_scale(&actor, true);
             float target_scale = actor_data->fTargetScale * natural_scale;
 			float max_scale = actor_data->fMaxScale;
-
-            amt /= natural_scale;
+			const bool isShrinking = amt < -EPS;
+			const float normalizedAmount = amt / natural_scale;
 
             if (amt < -EPS) { // If negative change always: allow
-                actor_data->fTargetScale += amt;
+                actor_data->fTargetScale += normalizedAmount;
             } 
         	else if (target_scale + amt < (max_scale + EPS)) { // If change results is below max: allow it
-                actor_data->fTargetScale += amt;
+                actor_data->fTargetScale += normalizedAmount;
             } 
         	else if (target_scale < (max_scale - EPS) || target_scale > (max_scale + EPS)) { // If we are currently below max and we are scaling above max: make it max
-                set_target_scale(actor, max_scale);
+                actor_data->fTargetScale = max_scale / natural_scale;
             } 
+
+			SnapVisualScaleToTargetIfShrinking(actor_data, isShrinking);
         }
     }
 

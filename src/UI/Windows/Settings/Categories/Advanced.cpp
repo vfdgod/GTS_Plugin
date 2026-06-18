@@ -12,6 +12,39 @@
 
 namespace GTS {
 
+	namespace {
+		const char* GetShrinkModeLabel(SettingsAdvanced_t::LShrinkApplicationMode_t a_mode) {
+			switch (a_mode) {
+				case SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual:
+					return "逐渐缩小";
+				case SettingsAdvanced_t::LShrinkApplicationMode_t::kInstant:
+					return "瞬间缩小";
+				default:
+					return "未知模式";
+			}
+		}
+
+		const char* GetShrinkModeTooltip(SettingsAdvanced_t::LShrinkApplicationMode_t a_mode) {
+			switch (a_mode) {
+				case SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual:
+					return "尺寸降低时，继续沿用当前 half-life 平滑过渡到目标体型。";
+				case SettingsAdvanced_t::LShrinkApplicationMode_t::kInstant:
+					return "尺寸降低时，直接把当前显示体型同步到新的目标体型，不再等待平滑收缩。\n"
+					       "只影响“变小”方向；变大仍按原逻辑处理。";
+				default:
+					return "";
+			}
+		}
+
+		bool TryParseShrinkMode(const std::string& a_value, SettingsAdvanced_t::LShrinkApplicationMode_t& a_out) {
+			if (auto parsed = magic_enum::enum_cast<SettingsAdvanced_t::LShrinkApplicationMode_t>(a_value); parsed.has_value()) {
+				a_out = *parsed;
+				return true;
+			}
+			return false;
+		}
+	}
+
 	CategoryAdvanced::CategoryAdvanced() {
 		m_name = "高级";
 	}
@@ -140,6 +173,37 @@ namespace GTS {
                 ImGui::Spacing();
             }
         }
+
+        ImUtil_Unique
+		{
+
+			PSString T0 = "决定尺寸变小时，是继续平滑过渡，还是立刻同步到更小的目标体型。";
+			SettingsAdvanced_t::LShrinkApplicationMode_t shrinkMode = SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual;
+			if (!TryParseShrinkMode(Config::Advanced.sShrinkMode, shrinkMode)) {
+				Config::Advanced.sShrinkMode = "kGradual";
+			}
+
+			if (ImGui::CollapsingHeader("缩小行为", ImUtil::HeaderFlagsDefaultOpen)) {
+				if (ImGui::BeginCombo("缩小方式", GetShrinkModeLabel(shrinkMode))) {
+					for (int rawMode = 0; rawMode < static_cast<int>(SettingsAdvanced_t::LShrinkApplicationMode_t::kTotal); ++rawMode) {
+						const auto candidate = static_cast<SettingsAdvanced_t::LShrinkApplicationMode_t>(rawMode);
+						const bool selected = candidate == shrinkMode;
+						if (ImGui::Selectable(GetShrinkModeLabel(candidate), selected)) {
+							Config::Advanced.sShrinkMode = std::string(magic_enum::enum_name(candidate));
+							shrinkMode = candidate;
+						}
+						if (selected) {
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGuiEx::Tooltip(T0);
+				ImGuiEx::Tooltip(GetShrinkModeTooltip(shrinkMode));
+
+				ImGui::Spacing();
+			}
+		}
 
         ImUtil_Unique
 		{

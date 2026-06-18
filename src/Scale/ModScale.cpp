@@ -6,6 +6,7 @@ namespace {
 
 	std::mutex scalesMutex;
 	constexpr float MIN_GAME_SCALE = 1e-4f;
+	constexpr std::string_view NPC_ROOT_NODE = "NPC Root [Root]";
 
 	struct InitialScales {
         float model = 1.0f;
@@ -115,8 +116,7 @@ namespace GTS {
 
 		// Work with world scale to grab accumuated scales rather
 		// than multiplying it ourselves
-		std::string node_name = "NPC Root [Root]";
-		auto node = find_node(actor, node_name, false);
+		auto node = find_node(actor, NPC_ROOT_NODE, false);
 		float allScale = 1.0f;
 		if (node) {
 			// Grab the world scale which includes all effects from root
@@ -225,19 +225,18 @@ namespace GTS {
 
 	bool set_npcnode_scale(Actor* actor, float target_scale) {
 		// This will set the scale of the root npc node
-		std::string node_name = "NPC Root [Root]";
 		bool result = false;
 
     	UpdateInitScale(actor); // This will update the inital scales BEFORE we alter them
 
-		auto node = find_node(actor, node_name, false);
+		auto node = find_node(actor, NPC_ROOT_NODE, false);
 		if (node) {
 			result = true;
 			node->local.scale = target_scale;
 			update_node(node);
 		}
 
-		auto first_node = find_node(actor, node_name, true);
+		auto first_node = find_node(actor, NPC_ROOT_NODE, true);
 		if (first_node) {
 			result = true;
 			first_node->local.scale = target_scale;
@@ -248,12 +247,11 @@ namespace GTS {
 
 	float get_npcnode_scale(Actor* actor) {
 		// This will get the scale of the root npc node
-		std::string node_name = "NPC Root [Root]";
-		auto node = find_node(actor, node_name, false);
+		auto node = find_node(actor, NPC_ROOT_NODE, false);
 		if (node) {
 			return node->local.scale;
 		}
-		auto first_node = find_node(actor, node_name, true);
+		auto first_node = find_node(actor, NPC_ROOT_NODE, true);
 		if (first_node) {
 			return first_node->local.scale;
 		}
@@ -268,10 +266,9 @@ namespace GTS {
 		//
 		// The name of it is variable. For actors it is NPC
 		// but for others it is the creature name
-		std::string node_name = "NPC Root [Root]";
-		auto childNode = find_node(actor, node_name, false);
+		auto childNode = find_node(actor, NPC_ROOT_NODE, false);
 		if (!childNode) {
-			childNode = find_node(actor, node_name, true);
+			childNode = find_node(actor, NPC_ROOT_NODE, true);
 			if (!childNode) {
 				return 1.0f;
 			}
