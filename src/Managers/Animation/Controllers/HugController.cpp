@@ -160,7 +160,7 @@ namespace GTS {
 			}
 		}
 	
-		if (TinyCalamityBonusActive(pred)) {
+		if (TinyCalamityActionBoostActive(pred)) {
 			MINIMUM_HUG_SCALE *= 0.80f;
 		}
 

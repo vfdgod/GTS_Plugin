@@ -37,7 +37,16 @@ struct SettingsAdvanced_t {
     bool bDamageAV = true;
     bool bCooldowns = true;
     bool bEnforceUIClamps = true;
-    bool bPlayerTinyCalamityBonus = false;
+    bool bPlayerTinyCalamityActive = false;
+    bool bPlayerTinyCalamitySprintBoost = false;
+    bool bPlayerTinyCalamityActionBoost = false;
+    bool bPlayerTinyCalamityShrinkBoost = false;
+    bool bPlayerTinyCalamityAttributeBoost = false;
+    bool bPlayerTinyCalamityRefresh = false;
+    bool bPlayerTinyCalamityAug = false;
+    bool bPlayerTinyCalamitySizeSteal = false;
+    bool bPlayerTinyCalamityRage = false;
+    bool bPlayerTinyCalamityShrinkingGaze = false;
     bool bPlayerTinyCalamityMercy = false;
     bool bStompAssist = false;
     bool bStompAssistNormal = true;

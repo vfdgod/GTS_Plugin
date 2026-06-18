@@ -37,10 +37,10 @@ namespace RuntimeData {
 		Entry(GTSPerkDarkArtsLegendary,     GTSP, 0x8F3A83); //Shrink Surge (100, Legendary Rank 1);
 
 		Entry(GTSPerkTinyCalamity,          GTSP, 0x18E161); //Tiny Calamity (65);
-		Entry(GTSPerkTinyCalamityRefresh,   GTSP, 0x5ED064); //Eternal Calamity (80);
-		Entry(GTSPerkTinyCalamityAug,       GTSP, 0x2E663B); //Approaching Disaster (90);
-		Entry(GTSPerkTinyCalamitySizeSteal, GTSP, 0x2496E8); //Life Steal (85);
-		Entry(GTSPerkTinyCalamityRage,      GTSP, 0x856B3C); //Wrathful Calamity (70);
+		Entry(GTSPerkTinyCalamityRefresh,   GTSP, 0x5ED064); //永恒灾厄 (80);
+		Entry(GTSPerkTinyCalamityAug,       GTSP, 0x2E663B); //迫近灾难 (90);
+		Entry(GTSPerkTinyCalamitySizeSteal, GTSP, 0x2496E8); //生命窃取 (85);
+		Entry(GTSPerkTinyCalamityRage,      GTSP, 0x856B3C); //狂怒灾厄 (70);
 
 		Entry(GTSPerkRandomGrowth,          GTSP, 0x35AD69); //Pleasurable Growth (65);
 		Entry(GTSPerkRandomGrowthAug,       GTSP, 0x865E3E); //Breaching Growth (75);
@@ -98,7 +98,7 @@ namespace RuntimeData {
 		Entry(GTSPerkColossalGrowth,        GTSP, 0x128CF7); //Colossal Growth (100);
 		Entry(GTSPerkOverindulgence,        GTSP, 0x8F3A80); //Overindulgence (100, Legendary Rank 2);
 		Entry(GTSPerkRumblingFeet,          GTSP, 0x1CAD91); //Overwhelming Steps (65);
-		Entry(GTSPerkShrinkingGaze,         GTSP, 0x889543); //Shrinking Gaze (90);
+		Entry(GTSPerkShrinkingGaze,         GTSP, 0x889543); //缩小凝视 (90);
 		Entry(GTSPerkCataclysmicStomp,      GTSP, 0x610774); //Cataclysmic Stomp (60);
 		Entry(GTSPerkFullAssimilation,      GTSP, 0x33C765); //Full Assimilation (60);
 		Entry(GTSPerkExperiencedGiantess,   GTSP, 0x61A996); //Experienced Giantess (60);

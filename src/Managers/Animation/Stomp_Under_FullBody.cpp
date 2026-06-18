@@ -30,7 +30,7 @@ namespace {
 
     void DoImpactRumble(Actor* giant, std::string_view node, std::string_view name, bool hh, float magnitude) {
 		float shake_power = Rumble_Stomp_Under_Strong;
-		float smt = TinyCalamityBonusActive(giant) ? 1.5f : 1.0f;
+		float smt = TinyCalamityActionBoostActive(giant) ? 1.5f : 1.0f;
         if (hh) {
 		    smt *= GetHighHeelsBonusDamage(giant, true);
         }
@@ -62,7 +62,7 @@ namespace {
 		float dust = 1.0f;
 		float smt = 1.0f;
 
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}

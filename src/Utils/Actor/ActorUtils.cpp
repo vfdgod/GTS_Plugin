@@ -1,6 +1,7 @@
 #include "Utils/Actor/ActorUtils.hpp"
 
 #include "Config/Config.hpp"
+#include "Utils/Actor/ActorBools.hpp"
 
 #include "Managers/AI/AIFunctions.hpp"
 #include "Managers/Animation/Utils/CooldownManager.hpp"
@@ -176,7 +177,7 @@ namespace GTS {
 
 	void DecreaseShoutCooldown(Actor* a_target) {
 		AIProcess* process = a_target->GetActorRuntimeData().currentProcess;
-		if (a_target->IsPlayerRef() && process && Runtime::HasPerk(a_target, Runtime::PERK.GTSPerkTinyCalamityRefresh)) {
+		if (a_target->IsPlayerRef() && process && TinyCalamityHasRefresh(a_target)) {
 			HighProcessData* high = process->high;
 			float by = 0.90f;
 			if (high) {
@@ -588,7 +589,7 @@ namespace GTS {
 							}
 							else {
 								float launch_power = 0.33f;
-								if (TinyCalamityBonusActive(a_source)) {
+								if (TinyCalamityActionBoostActive(a_source)) {
 									launch_power *= 6.0f;
 								}
 								LaunchActor::ApplyLaunchTo(a_source, otherActor, 1.0f, launch_power);
@@ -695,7 +696,7 @@ namespace GTS {
 						tinyscale *= 0.4f;
 					}
 
-					if (TinyCalamityBonusActive(giant)) {
+					if (TinyCalamityActionBoostActive(giant)) {
 						giantscale *= 6.0f;
 					}
 					float sizedifference = giantscale / tinyscale;
@@ -783,9 +784,10 @@ namespace GTS {
 		float giantSize = get_visual_scale(a_source);
 		float tinySize = get_visual_scale(a_target);
 
-		if (TinyCalamityBonusActive(a_source)) {
+		if (TinyCalamityActionBoostActive(a_source)) {
 			giantSize += 1.0f;
-		} if (a_target->IsPlayerRef() && TinyCalamityBonusActive(a_target)) {
+		}
+		if (a_target->IsPlayerRef() && TinyCalamityActionBoostActive(a_target)) {
 			tinySize += 1.25f;
 		}
 

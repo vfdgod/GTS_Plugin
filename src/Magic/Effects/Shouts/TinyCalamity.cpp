@@ -1,6 +1,7 @@
 #include "Magic/Effects/Shouts/TinyCalamity.hpp"
 #include "Managers/Rumble.hpp"
 #include "Managers/Perks/ShrinkingGaze.hpp"
+#include "Utils/Actor/ActorBools.hpp"
 
 using namespace GTS;
 
@@ -31,7 +32,7 @@ namespace {
 	}
 
 	void AdjustCalamityDuration(Actor* caster, ActiveEffect* Effect) {
-		if (Runtime::HasPerkTeam(caster, Runtime::PERK.GTSPerkTinyCalamitySizeSteal)) {
+		if (TinyCalamityHasSizeSteal(caster)) {
 			if (Effect) {
 				float level = GetGtsSkillLevel(caster) - 85.0f;
 				float extra = std::clamp(level, 0.0f, 15.0f) * 2.0f;

@@ -12,6 +12,7 @@
 #include "Managers/AttributeManager.hpp"
 #include "Utils/MovementForce.hpp"
 #include "Utils/Looting.hpp"
+#include "Utils/Actor/ActorBools.hpp"
 #include "Managers/Damage/CollisionDamage.hpp"
 #include "Managers/AI/AIFunctions.hpp"
 #include "Managers/GTSSizeManager.hpp"
@@ -54,13 +55,13 @@ namespace {
         }
     }
 
-    void RefreshDuration(Actor* giant) {
-        if (Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamityAug)) {
-            AttributeManager::OverrideSMTBonus(0.75f); // Reduce speed after crush
-        } else {
-            AttributeManager::OverrideSMTBonus(0.35f); // Reduce more speed after crush
-        }
-    }
+	void RefreshDuration(Actor* giant) {
+		if (TinyCalamityHasAug(giant)) {
+			AttributeManager::OverrideSMTBonus(0.75f); // Reduce speed after crush
+		} else {
+			AttributeManager::OverrideSMTBonus(0.35f); // Reduce more speed after crush
+		}
+	}
 
     bool Collision_AllowTinyCalamityCrush(Actor* giant, Actor* tiny) {
         if (IsEssential(giant, tiny)) {
@@ -71,12 +72,7 @@ namespace {
 
         float Multiplier = (get_visual_scale(giant) + 0.5f) / get_visual_scale(tiny);
 
-        if (giantHp >= ((tinyHp / Multiplier) * 1.25f)) {
-            return true;
-        }
-    	else {
-            return false;
-        }
+		return giantHp >= ((tinyHp / Multiplier) * 1.25f);
     }
 
     void FullSpeed_ApplyEffect(Actor* giant, float speed) {
@@ -96,13 +92,9 @@ namespace {
 namespace GTS {
     bool TinyCalamity_WrathfulCalamity(Actor* giant) {
         bool perform = false;
-        if (Runtime::HasPerkTeam(giant, Runtime::PERK.GTSPerkTinyCalamityRage) && TinyCalamityActive(giant) && !giant->IsSneaking()) {
+        if (TinyCalamityHasRage(giant) && TinyCalamityActive(giant) && !giant->IsSneaking()) {
 
-            float threshold = 0.25f;
-            float level_bonus = std::clamp(GetGtsSkillLevel(giant) - 70.0f, 0.0f, 0.30f);
-            threshold += level_bonus;
-
-            float duration = 0.35f;
+            const float base_threshold = 0.25f + std::clamp(GetGtsSkillLevel(giant) - 70.0f, 0.0f, 0.30f);
 
             std::vector<Actor*> preys = VoreController::GetSingleton().GetVoreTargetsInFront(giant, 1);
             bool OnCooldown = IsActionOnCooldown(giant, CooldownSource::Misc_TinyCalamityRage);
@@ -118,7 +110,7 @@ namespace GTS {
 
                         float difference = std::clamp(gts_hp / tiny_hp, min_cap, 2.0f);
 
-                        threshold *= difference;
+                        float threshold = base_threshold * difference;
 
                         if (health <= threshold && !OnCooldown) {
                             if (IsBeingHeld(giant, tiny) || IsRagdolled(tiny)) {
@@ -138,12 +130,12 @@ namespace GTS {
                         } else {
                             if (giant->IsPlayerRef()) {
                                 if (!OnCooldown) {
-                                    std::string message = std::format("{} 当前生命值过高，无法触发 Wrathful Calamity", tiny->GetDisplayFullName());
+                                    std::string message = std::format("{} 当前生命值过高，无法触发狂怒灾厄", tiny->GetDisplayFullName());
                                     Notify("生命值：{:.0f}%；要求：{:.0f}%", health * 100.0f, threshold * 100.0f);
                                     shake_camera(giant, 0.45f, 0.30f);
                                     NotifyWithSound(giant, message);
                                 } else {
-                                    std::string message = std::format("Wrathful Calamity 冷却中：{:.1f} 秒", GetRemainingCooldown(giant, CooldownSource::Misc_TinyCalamityRage));
+                                    std::string message = std::format("狂怒灾厄冷却中：{:.1f} 秒", GetRemainingCooldown(giant, CooldownSource::Misc_TinyCalamityRage));
                                     shake_camera(giant, 0.45f, 0.30f);
                                     NotifyWithSound(giant, message);
                                 }
@@ -158,8 +150,8 @@ namespace GTS {
 
     void TinyCalamity_ShrinkActor(Actor* giant, Actor* tiny, float shrink) {
        GTS_PROFILE_SCOPE("TinyCalamity: ShrinkActor");
-        if (TinyCalamityBonusActive(giant)) {
-            bool HasPerk = Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamitySizeSteal);
+        if (TinyCalamityShrinkBoostActive(giant)) {
+            bool HasPerk = TinyCalamityHasSizeSteal(giant);
             float limit = Minimum_Actor_Scale;
             if (HasPerk) {
 				DamageAV(giant, ActorValue::kHealth, -shrink * 1.25f);
@@ -228,7 +220,7 @@ namespace GTS {
         ActorHandle tinyHandle = tiny->CreateRefHandle();
 
         CrushBonuses(giant, tiny);                             // common.hpp
-        PlayGoreEffects(tiny, giant);    
+        PlayGoreEffects(giant, tiny);
         MoveItems(giantHandle, tinyHandle, tiny->formID, DamageSource::Collision);
 
         tiny->Attacked(giant);
@@ -298,7 +290,7 @@ namespace GTS {
     void TinyCalamity_SeekActors(Actor* giant, const std::vector<Actor*>& actors) {
        GTS_PROFILE_SCOPE("TinyCalamity: SeekActors");
         if (giant->IsPlayerRef()) {
-            if (giant->AsActorState()->IsSprinting() && TinyCalamityBonusActive(giant)) {
+            if (giant->AsActorState()->IsSprinting() && TinyCalamitySprintBoostActive(giant)) {
                 auto node = find_node(giant, "NPC Pelvis [Pelv]");
                 if (!node) {
                     return;
@@ -386,9 +378,9 @@ namespace GTS {
 
 		float& currentspeed = Attributes->fSMTRunSpeed;
         // SMT Active and sprinting
-		if (giant->AsActorState()->IsSprinting() && TinyCalamityBonusActive(giant)) {
+		if (giant->AsActorState()->IsSprinting() && TinyCalamitySprintBoostActive(giant)) {
 
-			if (Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamityAug)) {
+			if (TinyCalamityHasAug(giant)) {
 				speed = 1.25f;
                 decay = 1.5f;
 				cap = 1.10f;

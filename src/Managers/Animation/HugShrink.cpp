@@ -388,7 +388,7 @@ namespace {
 					AnimationManager::StartAnim("Huggies_HugCrush", player);
 					AnimationManager::StartAnim("Huggies_HugCrush_Victim", huggedActor);
 					return;
-				} else if (TinyCalamityBonusActive(player)) {
+				} else if (TinyCalamityActionBoostActive(player)) {
 					AnimationManager::StartAnim("Huggies_HugCrush", player);
 					AnimationManager::StartAnim("Huggies_HugCrush_Victim", huggedActor);
 					AddSMTPenalty(player, 10.0f); // Mostly called inside ShrinkUntil

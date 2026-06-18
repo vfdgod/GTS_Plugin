@@ -14,6 +14,7 @@
 #include "Managers/Rumble.hpp"
 
 #include "Config/Config.hpp"
+#include "Utils/Actor/ActorBools.hpp"
 
 /* GTS Utils
  * Contains general helper functions
@@ -528,7 +529,8 @@ namespace GTS {
 			if (Runtime::HasPerkTeam(actor, Runtime::PERK.GTSPerkHighHeels)) {
 				hh = HighHeelManager::GetInitialHeelHeight(actor);
 			}
-		} if (multiply) {
+		}
+		if (multiply) {
 			value = 1.0f + (hh * 5.0f * adjust);
 		} else {
 			value = hh;
@@ -811,7 +813,7 @@ namespace GTS {
 
 	void AddSMTDuration(Actor* actor, float duration, bool perk_check) {
 		if (TinyCalamityActive(actor)) {
-			if (!perk_check || Runtime::HasPerk(actor, Runtime::PERK.GTSPerkTinyCalamityRefresh)) {
+			if (!perk_check || TinyCalamityHasRefresh(actor)) {
 				auto transient = Transient::GetActorData(actor);
 				if (transient) {
 					transient->SMTBonusDuration += duration;

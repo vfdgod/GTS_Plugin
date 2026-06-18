@@ -4,6 +4,32 @@
 
 namespace GTS {
 
+namespace {
+
+	bool HasTinyCalamityEffect(Actor* giant) {
+		return giant && Runtime::HasMagicEffect(giant, Runtime::MGEF.GTSEffectTinyCalamity);
+	}
+
+	bool IsPlayerTinyCalamityToggleEnabled(Actor* giant, bool enabled) {
+		return enabled && giant && giant->IsPlayerRef();
+	}
+
+	bool IsTinyCalamityFeatureEnabled(Actor* giant, bool playerToggle) {
+		return HasTinyCalamityEffect(giant) || IsPlayerTinyCalamityToggleEnabled(giant, playerToggle);
+	}
+
+	template <class PerkEntry>
+	bool HasPerkOrPlayerToggle(Actor* giant, const PerkEntry& perk, bool playerToggle) {
+		return giant && (Runtime::HasPerk(giant, perk) || IsPlayerTinyCalamityToggleEnabled(giant, playerToggle));
+	}
+
+	template <class PerkEntry>
+	bool HasTeamPerkOrPlayerToggle(Actor* giant, const PerkEntry& perk, bool playerToggle) {
+		return giant && (Runtime::HasPerkTeam(giant, perk) || IsPlayerTinyCalamityToggleEnabled(giant, playerToggle));
+	}
+
+}
+
 	bool IsInSexlabAnim(Actor* actor_1, Actor* actor_2) {
 		if (actor_1 && actor_2){
 			if (Runtime::IsSexlabInstalled()) {
@@ -376,17 +402,43 @@ namespace GTS {
 	}
 
 	bool TinyCalamityActive(Actor* giant) {
-		return giant ? Runtime::HasMagicEffect(giant, Runtime::MGEF.GTSEffectTinyCalamity) : false;
+		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityActive);
 	}
 
-	bool TinyCalamityBonusActive(Actor* giant) {
-		if (TinyCalamityActive(giant)) {
-			return true;
-		}
-		if (giant && giant->IsPlayerRef() && Config::Advanced.bPlayerTinyCalamityBonus) {
-			return true;
-		}
-		return false;
+	bool TinyCalamitySprintBoostActive(Actor* giant) {
+		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamitySprintBoost);
+	}
+
+	bool TinyCalamityActionBoostActive(Actor* giant) {
+		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityActionBoost);
+	}
+
+	bool TinyCalamityShrinkBoostActive(Actor* giant) {
+		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityShrinkBoost);
+	}
+
+	bool TinyCalamityAttributeBoostActive(Actor* giant) {
+		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityAttributeBoost);
+	}
+
+	bool TinyCalamityHasRefresh(Actor* giant) {
+		return HasPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamityRefresh, Config::Advanced.bPlayerTinyCalamityRefresh);
+	}
+
+	bool TinyCalamityHasAug(Actor* giant) {
+		return HasPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamityAug, Config::Advanced.bPlayerTinyCalamityAug);
+	}
+
+	bool TinyCalamityHasSizeSteal(Actor* giant) {
+		return HasTeamPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamitySizeSteal, Config::Advanced.bPlayerTinyCalamitySizeSteal);
+	}
+
+	bool TinyCalamityHasRage(Actor* giant) {
+		return HasTeamPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamityRage, Config::Advanced.bPlayerTinyCalamityRage);
+	}
+
+	bool TinyCalamityHasShrinkingGaze(Actor* giant) {
+		return HasPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkShrinkingGaze, Config::Advanced.bPlayerTinyCalamityShrinkingGaze);
 	}
 
 }

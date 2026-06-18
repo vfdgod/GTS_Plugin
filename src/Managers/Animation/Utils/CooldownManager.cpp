@@ -87,7 +87,8 @@ namespace {
 		float reduction = 1.0f;
 		if (lvl100) { // 15% reduction
 			reduction -= 0.15f;
-		} if (lvl70) { // 10% reduction
+		}
+		if (lvl70) { // 10% reduction
 			reduction -= 0.10f;
 		} 
 		return BUTTCRUSH_COOLDOWN * reduction;

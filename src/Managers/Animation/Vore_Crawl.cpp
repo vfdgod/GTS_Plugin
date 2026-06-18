@@ -93,7 +93,7 @@ namespace {
 		float dust = 1.0f;
 		float smt = 1.0f;
 
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			dust = 1.25f;
 			smt = 2.0f;
 		}

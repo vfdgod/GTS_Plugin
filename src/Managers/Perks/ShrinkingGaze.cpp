@@ -6,6 +6,7 @@
 
 
 #include "Managers/Audio/MoansLaughs.hpp"
+#include "Utils/Actor/ActorBools.hpp"
 
 using namespace GTS;
 
@@ -183,7 +184,7 @@ namespace {
 namespace GTS {
 
 	void StartShrinkingGaze(Actor* giant) {
-		if (Runtime::HasPerk(giant, Runtime::PERK.GTSPerkShrinkingGaze) && giant->IsPlayerRef()) {
+		if (TinyCalamityHasShrinkingGaze(giant) && giant->IsPlayerRef()) {
 			Task_ShrinkingGazeTask(giant);
 		}
 	}

@@ -22,7 +22,8 @@ namespace {
 		if (!toggle) {
 			p_1 = 0.0f;
 			p_2 = 0.0f;
-		} if (rng <= 1) {
+		}
+		if (rng <= 1) {
 			Sound_PlayMoans(actor, 1.0f, 0.14f, EmotionTriggerSource::Vore);
 		}
 		AdjustFacialExpression(actor, 0, p_1, CharEmotionType::Modifier); // blink L

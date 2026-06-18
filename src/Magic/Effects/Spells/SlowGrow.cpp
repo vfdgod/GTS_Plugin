@@ -104,8 +104,11 @@ namespace GTS {
 				power *= DUAL_CAST_BONUS;
 			}
 
-			PerformMoanAndParticle(CasterActor) ? power *= 320.0f : power *= 0.625f;
-			// Mini growth spurts, else weaker growth over time
+			if (PerformMoanAndParticle(CasterActor)) {
+				power *= 320.0f; // Mini growth spurt.
+			} else {
+				power *= 0.625f; // Weaker growth over time.
+			}
 
 			Rumbling::Once("SlowGrow", CasterActor, Rumble_Growth_SlowGrowth_Loop, 0.05f);
 			Grow(CasterActor, 0.0f, power * bonus);

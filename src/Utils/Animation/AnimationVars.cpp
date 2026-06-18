@@ -484,7 +484,7 @@ namespace GTS::AnimationVars {
 		bool IsInBoobs(RE::Actor* a_actor)                      { return !IsHuman(a_actor) ? true : GetBool(a_actor, GraphVars::_IsinBoobs); }  // Bypass incase someone uses creatures...
 		bool IsBeingSneakHugged(RE::Actor* a_actor)             { return GetBool(a_actor, GraphVars::_IsBeingSneakHugged); }
 		bool IsBeingCrawlHugged(RE::Actor* a_actor)             { return GetBool(a_actor, GraphVars::_IsBeingCrawlHugged); }
-		bool IsBeingShrunk(RE::Actor* a_actor)                  { return GetBool(a_actor, GraphVars::_IsBeingShrunk); } // Returns true when performing Wrathful Calamity animation on someone
+		bool IsBeingShrunk(RE::Actor* a_actor)                  { return GetBool(a_actor, GraphVars::_IsBeingShrunk); } // 对目标执行狂怒灾厄动画时返回 true
 		bool IsUnderButt(RE::Actor* a_actor)                    { return GetBool(a_actor, GraphVars::_IsUnderButt); }
 		bool IsInThighs(RE::Actor* a_actor)                     { return GetBool(a_actor, GraphVars::_IsInThighs); }
 

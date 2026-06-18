@@ -2,7 +2,7 @@
 
 namespace GTS {
 	/**
-	 * Applies Shrinking Gaze effect
+	 * 应用缩小凝视效果
 	 */
     void StartShrinkingGaze(Actor* giant);
 	

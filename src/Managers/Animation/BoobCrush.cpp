@@ -213,7 +213,7 @@ namespace {
 
 		InflictBodyDamage(giant);
 
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}

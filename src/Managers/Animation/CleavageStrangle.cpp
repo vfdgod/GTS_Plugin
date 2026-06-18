@@ -114,7 +114,9 @@ namespace {
             float speed = AnimationManager::GetBonusAnimationSpeed(giantref);
 
             float damage = Damage_Breast_Strangle * power * additionaldamage * sizeDiff * TimeScale() * speed;
-            TinyCalamityBonusActive(giantref) ? damage *= 1.5f : damage *= 1.0f;
+            if (TinyCalamityActionBoostActive(giantref)) {
+                damage *= 1.5f;
+            }
 
             if (!AnimationVars::Cleavage::IsBoobsDoting(giantref) && !AnimationVars::General::IsGTSBusy(giantref)) {
                 AnimationManager::ResetAnimationSpeedData(giantref);

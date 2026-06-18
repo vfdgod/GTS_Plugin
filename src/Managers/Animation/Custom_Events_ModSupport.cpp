@@ -67,7 +67,7 @@ namespace {
 		}
 		float BASE_CHECK_DISTANCE = 90.0f;
 		float SCALE_RATIO = 3.0f;
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			SCALE_RATIO = 0.8f;
 		}
 		float giantScale = get_visual_scale(giant);

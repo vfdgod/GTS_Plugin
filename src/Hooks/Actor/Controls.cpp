@@ -40,7 +40,8 @@ namespace {
 		if (!Controlled->IsPlayerRef()) {
 			if (AnimationVars::Action::IsThighSandwiching(Controlled)) { // Disallow player movement if we have control over other actor and actor does thigh sandwich
 				return false;
-			} if (IsBetweenBreasts(Controlled)) {
+			}
+			if (IsBetweenBreasts(Controlled)) {
 				return false;
 			}
 		}

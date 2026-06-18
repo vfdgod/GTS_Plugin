@@ -56,7 +56,7 @@ namespace {
 		float smt = 1.0f;
 		float dust = 1.0f;
 		
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			dust = 1.25f;
 			smt = 1.5f;
 		}
@@ -103,7 +103,7 @@ namespace {
 		float dust = 1.15f;
 		float smt = 1.0f;
 		
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			smt = 1.5f;
 			dust *= 1.25f;
 		}
@@ -125,7 +125,7 @@ namespace {
 		float dust = 1.65f;
 		float smt = 1.0f;
 		
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			smt = 1.5f;
 			dust *= 1.25f;
 		}

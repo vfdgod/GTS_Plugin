@@ -93,13 +93,12 @@ namespace {
 		return (
 			requested &&
 			Config::Advanced.bPlayerTinyCalamityMercy &&
-			Config::Advanced.bPlayerTinyCalamityBonus &&
 			giant &&
 			tiny &&
 			giant->IsPlayerRef() &&
 			!tiny->IsPlayerRef() &&
 			!tiny->IsDead() &&
-			TinyCalamityBonusActive(giant)
+			TinyCalamityActionBoostActive(giant)
 		);
 	}
 
@@ -168,7 +167,8 @@ namespace {
 		if (matches) {
 			if (rumbling_feet) {
 				value += 0.25f; // 25% bonus damage if we have lvl 65 perk
-			} if (perk) {
+			}
+			if (perk) {
 				value += 0.15f; // 15% bonus damage if we have High Heels perk
 			}
 		}
@@ -193,7 +193,7 @@ namespace GTS {
 		float SCALE_RATIO = 1.15f;
 		float Calamity = 1.0f;
 
-		bool SMT = TinyCalamityBonusActive(actor);
+		bool SMT = TinyCalamityActionBoostActive(actor);
 		if (SMT) {
 			if (SupportCalamity) {
 				Calamity = 4.0f;
@@ -300,7 +300,7 @@ namespace GTS {
 			return;
 		}
 		
-		bool SMT = TinyCalamityBonusActive(giant);
+		bool SMT = TinyCalamityActionBoostActive(giant);
 		auto& sizemanager = SizeManager::GetSingleton();
 		float size_difference = get_scale_difference(giant, tiny, SizeType::VisualScale, false, true);
 

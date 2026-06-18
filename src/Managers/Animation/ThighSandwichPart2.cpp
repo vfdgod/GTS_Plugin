@@ -118,7 +118,7 @@ namespace DamageLogic {
 		bool DealDamage = true;
 		float threshold = 0.15f;
 
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			mult *= 1.5f;
 		}
 

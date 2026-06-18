@@ -6,6 +6,8 @@
 
 #include "Managers/Damage/TinyCalamity.hpp"
 #include "Managers/GTSSizeManager.hpp"
+#include "Managers/Perks/ShrinkingGaze.hpp"
+#include "Utils/Actor/ActorBools.hpp"
 
 using namespace REL;
 using namespace GTS;
@@ -174,7 +176,10 @@ namespace {
 			ManageShrinkResourceSteal(actor);
 			if (actor->IsPlayerRef()) {
 				TinyCalamity_BonusSpeed(actor); // Manages SMT bonuses
-				if (!TinyCalamityBonusActive(actor)) {
+				if (TinyCalamityActive(actor) && TinyCalamityHasShrinkingGaze(actor)) {
+					StartShrinkingGaze(actor);
+				}
+				if (!TinyCalamitySprintBoostActive(actor)) {
 					AttributeManager::OverrideSMTBonus(0.0f);
 				}
 			}
@@ -238,7 +243,7 @@ namespace GTS {
 				float might = 1.0f + Potion_GetMightBonus(actor);
 
 				if (actor->IsPlayerRef()) {
-					if (TinyCalamityBonusActive(actor)) {
+					if (TinyCalamityAttributeBoostActive(actor)) {
 						scale += 1.0f;
 					}
 					if (actor->AsActorState()->IsSprinting() && Runtime::HasPerk(actor, Runtime::PERK.GTSPerkSprintDamageMult1)) {
@@ -258,7 +263,7 @@ namespace GTS {
 
 				float might = 1.0f + Potion_GetMightBonus(actor);
 
-				if (actor->IsPlayerRef() && TinyCalamityBonusActive(actor)) {
+				if (actor->IsPlayerRef() && TinyCalamityAttributeBoostActive(actor)) {
 					scale += 3.0f;
 				}
 				if (scale > 1.0f) {
@@ -282,7 +287,7 @@ namespace GTS {
 			}
 
 			case ActorValue::kAttackDamageMult: {
-				if (actor->IsPlayerRef() && TinyCalamityBonusActive(actor)) {
+				if (actor->IsPlayerRef() && TinyCalamityAttributeBoostActive(actor)) {
 					scale += 1.0f;
 				}
 				const float BonusDamageMult = Config::Balance.fStatBonusDamageMult;

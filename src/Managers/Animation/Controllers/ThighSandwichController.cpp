@@ -279,7 +279,7 @@ namespace GTS {
 
 		float MINIMUM_DISTANCE = MINIMUM_SANDWICH_DISTANCE;
 
-		if (TinyCalamityBonusActive(pred)) {
+		if (TinyCalamityActionBoostActive(pred)) {
 			MINIMUM_DISTANCE *= 1.75f;
 		}
 

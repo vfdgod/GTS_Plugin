@@ -187,7 +187,7 @@ namespace {
 		float perk = GetPerkBonus_Basics(giant);
 		float smt = 1.0f;
 		float dust = 1.25f;
-		if (TinyCalamityBonusActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant)) {
 			smt = 1.5f;
 			dust = 1.45f;
 		}

@@ -34,6 +34,14 @@ namespace GTS {
 	bool IsBlacklisted(Actor* actor);
 	bool IsGTSTeammate(Actor* actor);
 	bool TinyCalamityActive(Actor* giant);
-	bool TinyCalamityBonusActive(Actor* giant);
+	bool TinyCalamitySprintBoostActive(Actor* giant);
+	bool TinyCalamityActionBoostActive(Actor* giant);
+	bool TinyCalamityShrinkBoostActive(Actor* giant);
+	bool TinyCalamityAttributeBoostActive(Actor* giant);
+	bool TinyCalamityHasRefresh(Actor* giant);
+	bool TinyCalamityHasAug(Actor* giant);
+	bool TinyCalamityHasSizeSteal(Actor* giant);
+	bool TinyCalamityHasRage(Actor* giant);
+	bool TinyCalamityHasShrinkingGaze(Actor* giant);
 
 }

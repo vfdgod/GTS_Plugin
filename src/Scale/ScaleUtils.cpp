@@ -135,12 +135,12 @@ namespace GTS {
 		}
 
 		if (Check_SMT) {
-			if (TinyCalamityBonusActive(giant)) {
+			if (TinyCalamityActionBoostActive(giant)) {
 				GiantScale += 10.2f;
 			}
 		}
 
-		if (tiny->IsPlayerRef() && TinyCalamityBonusActive(tiny)) {
+		if (tiny->IsPlayerRef() && TinyCalamityAttributeBoostActive(tiny)) {
 			TinyScale += 1.50f;
 		}
 
