@@ -325,17 +325,36 @@ namespace Hooks {
 						logger::info("Damage Pre: {}", a_dmg);
 						logger::info("Should be killed: {}", ShouldBeKilled);
 					}*/
+					TransientActorData* data = Transient::GetActorData(a_this);
+					const bool IsBeingSizeDamaged = data && data->IsBeingSizeDamaged;
+
 					if (!ShouldBeKilled) {
-						a_dmg *= GetTotalDamageResistance(a_this, a_source);
+						const float damageBeforeResistance = a_dmg;
+						const float totalDamageResistance = GetTotalDamageResistance(a_this, a_source);
+						a_dmg *= totalDamageResistance;
 						// ^ This function applies damage resistance from being large
 						// Also makes receiver immune to all (?) damage for ~2.5 sec if health gate was triggered
+
+						if (IsBeingSizeDamaged && a_source->IsPlayerRef()) {
+							logger::info(
+								"[TinyCalamityDamageTest][TakeDamage] target='{}' targetForm={:08X} source='{}' sourceForm={:08X} raw={} totalDamageResistance={} adjusted={} shouldBeKilled={} dontAdjustDifficulty={}",
+								a_this->GetDisplayFullName(),
+								a_this->formID,
+								a_source->GetDisplayFullName(),
+								a_source->formID,
+								damageBeforeResistance,
+								totalDamageResistance,
+								a_dmg,
+								ShouldBeKilled,
+								a_dontAdjustDifficulty
+							);
+						}
 					}
 
-					if (HealthGateProtection(a_this, a_source, a_dmg)) { // When Health Gate is true, initial hit full damage immunity is applied here 
+					if (HealthGateProtection(a_this, a_source, a_dmg)) { // When Health Gate is true, initial hit full damage immunity is applied here
 						a_dmg *= 0.0f;
 					}
 
-					TransientActorData* data = Transient::GetActorData(a_this);
 					if (data && data->IsBeingSizeDamaged) goto skipOverKill;
 
 					DoOverkill(a_source, a_this, a_dmg);

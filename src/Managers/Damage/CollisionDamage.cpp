@@ -312,6 +312,10 @@ namespace GTS {
 
 		if (size_difference > size_threshold) {
 			if (Allow_Damage(giant, tiny, Cause, size_difference)) {
+				const float damageBeforeSprint = damage;
+				const float giantVisualScale = get_visual_scale(giant);
+				const float tinyVisualScale = get_visual_scale(tiny);
+				const float tinyTargetScaleBefore = get_target_scale(tiny);
 				float damagebonus = HighHeels_PerkDamage(giant, Cause); // 15% bonus HH damage if we have perk
 
 				float vulnerability = 1.0f + sizemanager.GetSizeVulnerability(tiny); // Get size damage debuff from enemy
@@ -334,11 +338,47 @@ namespace GTS {
 				float damage_result = (damage * size_difference * damagebonus) * (normaldamage * sprintdamage) * (highheelsdamage * weightdamage) * vulnerability;
 
 				damage_result *= Might;
+				const float damageBeforeSneak = damage_result;
 
 				TinyCalamity_ShrinkActor(giant, tiny, damage_result * 0.35f * Config::Balance.fSizeDamageMult);
+				const float tinyTargetScaleAfterShrink = get_target_scale(tiny);
 
 				if (giant->IsSneaking()) {
 					damage_result *= 0.85f;
+				}
+
+				if (apply_damage && giant->IsPlayerRef()) {
+					logger::info(
+						"[TinyCalamityDamageTest][DoSizeDamage] target='{}' targetForm={:08X} cause={} baseDamage={} damageAfterSprint={} sizeDifference={} sizeThreshold={} damageBonus={} vulnerability={} normalDamage={} sprintDamage={} highHeelsDamage={} weightDamage={} might={} resultBeforeSneak={} resultFinal={} sizeDamageMult={} bbMult={} crushThreshold={} preserveOneHealth={} smt={} sprinting={} gtsBusy={} giantVisualScale={} tinyVisualScale={} tinyTargetScaleBefore={} tinyTargetScaleAfterShrink={} tinyHealthBefore={}",
+						tiny->GetDisplayFullName(),
+						tiny->formID,
+						static_cast<int>(Cause),
+						damageBeforeSprint,
+						damage,
+						size_difference,
+						size_threshold,
+						damagebonus,
+						vulnerability,
+						normaldamage,
+						sprintdamage,
+						highheelsdamage,
+						weightdamage,
+						Might,
+						damageBeforeSneak,
+						damage_result,
+						Config::Balance.fSizeDamageMult,
+						bbmult,
+						crush_threshold,
+						preserve_one_health,
+						SMT,
+						giant->AsActorState()->IsSprinting(),
+						AnimationVars::General::IsGTSBusy(giant),
+						giantVisualScale,
+						tinyVisualScale,
+						tinyTargetScaleBefore,
+						tinyTargetScaleAfterShrink,
+						GetAV(tiny, ActorValue::kHealth)
+					);
 				}
 
 				// ^ Chance to break bonues and inflict additional damage, as well as making target more vulerable to size damage
