@@ -208,6 +208,20 @@ namespace GTS {
     }
 
     void TinyCalamity_ExplodeActor(Actor* giant, Actor* tiny) {
+        if (giant->IsPlayerRef()) {
+            logger::info(
+                "[TinyCalamityDamageTest][ExplodeActor] target='{}' targetForm={:08X} targetHealth={} giantHealth={} giantVisualScale={} tinyVisualScale={} giantSprinting={} gtsBusy={}",
+                tiny->GetDisplayFullName(),
+                tiny->formID,
+                GetAV(tiny, ActorValue::kHealth),
+                GetAV(giant, ActorValue::kHealth),
+                get_visual_scale(giant),
+                get_visual_scale(tiny),
+                giant->AsActorState()->IsSprinting(),
+                AnimationVars::General::IsGTSBusy(giant)
+            );
+        }
+
         ModSizeExperience_Crush(giant, tiny, true);
 
         if (!tiny->IsDead()) {
@@ -257,6 +271,20 @@ namespace GTS {
     }
 
     void TinyCalamity_StaggerActor(Actor* giant, Actor* tiny, float giantHp) { // when we can't crush the target
+        if (giant->IsPlayerRef()) {
+            logger::info(
+                "[TinyCalamityDamageTest][StaggerActor] target='{}' targetForm={:08X} targetHealth={} giantHealth={} giantVisualScale={} tinyVisualScale={} giantSprinting={} gtsBusy={}",
+                tiny->GetDisplayFullName(),
+                tiny->formID,
+                GetAV(tiny, ActorValue::kHealth),
+                giantHp,
+                get_visual_scale(giant),
+                get_visual_scale(tiny),
+                giant->AsActorState()->IsSprinting(),
+                AnimationVars::General::IsGTSBusy(giant)
+            );
+        }
+
         float OldScale = AnimationVars::General::GiantessScale(giant);
         AnimationVars::General::SetGiantessScale(giant, 1.0f);
 
@@ -327,6 +355,21 @@ namespace GTS {
                                 });
                             }
                             if (nodeCollisions > 0) {
+                                const auto data = Persistent::GetActorData(giant);
+                                logger::info(
+                                    "[TinyCalamityDamageTest][SprintSeekHit] target='{}' targetForm={:08X} nodeCollisions={} actorDistance={} checkDistance={} searchDistance={} giantVisualScale={} tinyVisualScale={} smtRunSpeed={} giantSprinting={} gtsBusy={}",
+                                    otherActor->GetDisplayFullName(),
+                                    otherActor->formID,
+                                    nodeCollisions,
+                                    (actorLocation - giantLocation).Length(),
+                                    CheckDistance,
+                                    searchDistance,
+                                    giantScale,
+                                    get_visual_scale(otherActor),
+                                    data ? data->fSMTRunSpeed : -1.0f,
+                                    giant->AsActorState()->IsSprinting(),
+                                    AnimationVars::General::IsGTSBusy(giant)
+                                );
                                 TinyCalamity_CrushCheck(giant, otherActor);
                             }
                         }
@@ -346,14 +389,61 @@ namespace GTS {
         }
 
 		if (const auto& Data = Persistent::GetActorData(giant)) {
+            if (Data->fSMTRunSpeed < 1.0f) {
+                if (giant->IsPlayerRef()) {
+                    logger::info(
+                        "[TinyCalamityDamageTest][CrushCheckSkipped] reason='speed' target='{}' targetForm={:08X} smtRunSpeed={} giantSprinting={} gtsBusy={}",
+                        tiny->GetDisplayFullName(),
+                        tiny->formID,
+                        Data->fSMTRunSpeed,
+                        giant->AsActorState()->IsSprinting(),
+                        AnimationVars::General::IsGTSBusy(giant)
+                    );
+                }
+            }
 			if (Data->fSMTRunSpeed >= 1.0f) {
                 float giantHp = GetAV(giant, ActorValue::kHealth);
 
 				if (giantHp <= 0) {
+                    if (giant->IsPlayerRef()) {
+                        logger::info(
+                            "[TinyCalamityDamageTest][CrushCheckSkipped] reason='giantHealth' target='{}' targetForm={:08X} giantHealth={}",
+                            tiny->GetDisplayFullName(),
+                            tiny->formID,
+                            giantHp
+                        );
+                    }
 					return; // just in case, to avoid CTD
 				}
 
-				if (Collision_AllowTinyCalamityCrush(giant, tiny)) {
+                const float tinyHp = GetAV(tiny, ActorValue::kHealth);
+                const float giantVisualScale = get_visual_scale(giant);
+                const float tinyVisualScale = get_visual_scale(tiny);
+                const float crushMultiplier = (giantVisualScale + 0.5f) / std::max(tinyVisualScale, 0.0001f);
+                const float requiredGiantHealth = (tinyHp / crushMultiplier) * 1.25f;
+                const bool essential = IsEssential(giant, tiny);
+                const bool allowCrush = Collision_AllowTinyCalamityCrush(giant, tiny);
+
+                if (giant->IsPlayerRef()) {
+                    logger::info(
+                        "[TinyCalamityDamageTest][CrushCheck] target='{}' targetForm={:08X} allowCrush={} essential={} giantHealth={} tinyHealth={} crushMultiplier={} requiredGiantHealth={} giantVisualScale={} tinyVisualScale={} smtRunSpeed={} giantSprinting={} gtsBusy={}",
+                        tiny->GetDisplayFullName(),
+                        tiny->formID,
+                        allowCrush,
+                        essential,
+                        giantHp,
+                        tinyHp,
+                        crushMultiplier,
+                        requiredGiantHealth,
+                        giantVisualScale,
+                        tinyVisualScale,
+                        Data->fSMTRunSpeed,
+                        giant->AsActorState()->IsSprinting(),
+                        AnimationVars::General::IsGTSBusy(giant)
+                    );
+                }
+
+				if (allowCrush) {
                     tiny->StartCombat(giant);
                     TinyCalamity_ExplodeActor(giant, tiny);
 				} else {
@@ -361,7 +451,13 @@ namespace GTS {
                     TinyCalamity_StaggerActor(giant, tiny, giantHp);
 				}
 			}
-		}
+		} else if (giant->IsPlayerRef()) {
+            logger::info(
+                "[TinyCalamityDamageTest][CrushCheckSkipped] reason='missingPersistentData' target='{}' targetForm={:08X}",
+                tiny->GetDisplayFullName(),
+                tiny->formID
+            );
+        }
 	}
 
     // Manages SMT bonus speed

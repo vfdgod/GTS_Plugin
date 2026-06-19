@@ -380,6 +380,7 @@ namespace Hooks {
 
 	void Hook_Damage::Install() {
 		logger::info("Installing Character::DoDamage Detour Hook...");
+		logger::info("[TinyCalamityDamageTest][Loaded] damage diagnostics are active");
 		stl::write_detour<DoDamage>(REL::RelocationID(36345, 37335, NULL));
 	}
 }
