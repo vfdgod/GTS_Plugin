@@ -7,45 +7,9 @@
 #include "UI/Controls/ComboBox.hpp"
 #include "UI/Controls/Slider.hpp"
 
-#include "Managers/Animation/Utils/CooldownManager.hpp"
 #include "Utils/Plugin/Logger.hpp"
 
 namespace GTS {
-
-	namespace {
-		const char* GetShrinkModeLabel(SettingsAdvanced_t::LShrinkApplicationMode_t a_mode) {
-			switch (a_mode) {
-				case SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual:
-					return "逐渐缩小";
-				case SettingsAdvanced_t::LShrinkApplicationMode_t::kInstant:
-					return "瞬间缩小";
-				default:
-					return "未知模式";
-			}
-		}
-
-		const char* GetShrinkModeTooltip(SettingsAdvanced_t::LShrinkApplicationMode_t a_mode) {
-			switch (a_mode) {
-				case SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual:
-					return "尺寸降低时，继续沿用当前 half-life 平滑过渡到目标体型。\n"
-					       "适用于法术、药水、伤害、游戏模式，以及超过体型上限后的系统回拉。";
-				case SettingsAdvanced_t::LShrinkApplicationMode_t::kInstant:
-					return "尺寸降低时，直接把当前显示体型同步到新的目标体型，不再等待平滑收缩。\n"
-					       "适用于法术、药水、伤害、游戏模式，以及超过体型上限后的系统回拉。\n"
-					       "只影响“变小”方向；变大仍按原逻辑处理。";
-				default:
-					return "";
-			}
-		}
-
-		bool TryParseShrinkMode(const std::string& a_value, SettingsAdvanced_t::LShrinkApplicationMode_t& a_out) {
-			if (auto parsed = magic_enum::enum_cast<SettingsAdvanced_t::LShrinkApplicationMode_t>(a_value); parsed.has_value()) {
-				a_out = *parsed;
-				return true;
-			}
-			return false;
-		}
-	}
 
 	CategoryAdvanced::CategoryAdvanced() {
 		m_name = "高级";
@@ -77,17 +41,12 @@ namespace GTS {
 		{
 
             PSString T0 = "设置日志级别。级别越高，写入 GTSPlugin.log 的信息越多。";
-            PSString T1 = "开启后，当前存档会优先读取并写入 Data/SKSE/Plugins/GTSPlugin/SharedSettings.toml，\n"
-                          "用于共享除角色/世界进度外的模组配置。\n"
-                          "关闭后不会恢复旧的存档配置，只是从下一次保存开始改回按存档保存。";
 
             if (ImGui::CollapsingHeader("日志", ImUtil::HeaderFlagsDefaultOpen)) {
 
                 if (ImGuiEx::ComboEx<spdlog::level::level_enum>("日志级别", Config::Advanced.sLogLevel, T0, false, true)) {
 	                logger::SetLevel(Config::Advanced.sLogLevel.c_str());
 				}
-
-                ImGuiEx::CheckBox("全局共享配置", &Config::Advanced.bShareSettingsGlobally, T1);
 
 				ImGui::Spacing();
 
@@ -102,44 +61,11 @@ namespace GTS {
             PSString T2 = "限制滑条的手动输入范围。\n"
                           "开启后，Ctrl+单击滑条输入数值时会被限制在 UI 范围内。\n"
                           "关闭后，可以手动输入超出范围的值；普通拖动滑条本身始终受范围限制。";
-            PSString T3 = "开启后，玩家会被视为微型灾厄正在生效。\n"
-                          "这会影响所有检查 TinyCalamityActive() 的逻辑，例如禁用随机成长、启用持续缩小逻辑、狂怒灾厄前置等。\n"
-                          "不会播放龙吼启动音效、爆发特效，也不会自动压制玩家体型。";
-            PSString T4 = "开启后，玩家冲刺时启用微型灾厄的蓄力速度、冲撞检测和直接碾碎逻辑。";
-            PSString T5 = "开启后，尺寸动作、脚步、踩踏、投掷、抓握、吞噬距离等动作判定按微型灾厄强化规则结算。";
-            PSString T6 = "开启后，微型灾厄相关缩小逻辑生效，包括尺寸伤害后的额外缩小和吸收术额外缩小强度。";
-            PSString T7 = "开启后，玩家生命抗性、攻击和负重按微型灾厄属性加成规则结算。";
-            PSString T8 = "模拟永恒灾厄：微型灾厄击杀/碾碎会延长持续时间，并减少龙吼冷却。";
-            PSString T9 = "模拟迫近灾难：冲刺速度蓄力上限更高，微型灾厄碾碎后的速度衰减更轻。";
-            PSString T10 = "模拟生命窃取：微型灾厄缩小时获得治疗，并提升额外缩小强度；真实龙吼开始时也会获得更长持续时间。";
-            PSString T11 = "模拟狂怒灾厄：微型灾厄激活时，可对低生命值目标触发处决动画。";
-            PSString T12 = "模拟缩小凝视：微型灾厄激活时，玩家准星凝视敌人会持续缩小目标。";
 
             if (ImGui::CollapsingHeader("调试/作弊", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("启用属性消耗", &Config::Advanced.bDamageAV, T0);
                 ImGuiEx::CheckBox("启用尺寸技能冷却", &Config::Advanced.bCooldowns, T1);
                 ImGuiEx::CheckBox("限制手动输入范围", &Config::Advanced.bEnforceUIClamps, T2);
-
-                ImGui::Spacing();
-                ImGui::Text("微型灾厄状态/特性");
-                ImGuiEx::CheckBox("模拟微型灾厄激活", &Config::Advanced.bPlayerTinyCalamityActive, T3);
-                ImGuiEx::CheckBox("冲刺碰撞", &Config::Advanced.bPlayerTinyCalamitySprintBoost, T4);
-                ImGui::SameLine();
-                ImGuiEx::CheckBox("动作强化", &Config::Advanced.bPlayerTinyCalamityActionBoost, T5);
-                ImGuiEx::CheckBox("缩小强化", &Config::Advanced.bPlayerTinyCalamityShrinkBoost, T6);
-                ImGui::SameLine();
-                ImGuiEx::CheckBox("属性加成", &Config::Advanced.bPlayerTinyCalamityAttributeBoost, T7);
-                ImGuiEx::CheckBox("永恒灾厄", &Config::Advanced.bPlayerTinyCalamityRefresh, T8);
-                ImGui::SameLine();
-                ImGuiEx::CheckBox("迫近灾难", &Config::Advanced.bPlayerTinyCalamityAug, T9);
-                ImGuiEx::CheckBox("生命窃取", &Config::Advanced.bPlayerTinyCalamitySizeSteal, T10);
-                ImGui::SameLine();
-                ImGuiEx::CheckBox("狂怒灾厄", &Config::Advanced.bPlayerTinyCalamityRage, T11, !Config::Advanced.bPlayerTinyCalamityActive);
-                ImGuiEx::CheckBox("缩小凝视", &Config::Advanced.bPlayerTinyCalamityShrinkingGaze, T12, !Config::Advanced.bPlayerTinyCalamityActive);
-
-                if (ImGuiEx::Button("清空技能冷却")) {
-                    CooldownManager::GetSingleton().Reset();
-                }
 
 				{   // GTS Skill Level Setter
                     std::string Name = "None";
@@ -169,69 +95,6 @@ namespace GTS {
                         }
                     }
                 }
-                ImGui::Spacing();
-            }
-        }
-
-        ImUtil_Unique
-		{
-
-			PSString T0 = "决定尺寸变小时，是继续平滑过渡，还是立刻同步到更小的目标体型。\n"
-			              "适用于法术、药水、伤害、游戏模式，以及超过体型上限后的系统回拉。";
-			SettingsAdvanced_t::LShrinkApplicationMode_t shrinkMode = SettingsAdvanced_t::LShrinkApplicationMode_t::kGradual;
-			if (!TryParseShrinkMode(Config::Advanced.sShrinkMode, shrinkMode)) {
-				Config::Advanced.sShrinkMode = "kGradual";
-			}
-
-			if (ImGui::CollapsingHeader("缩小行为", ImUtil::HeaderFlagsDefaultOpen)) {
-				if (ImGui::BeginCombo("缩小方式", GetShrinkModeLabel(shrinkMode))) {
-					for (int rawMode = 0; rawMode < static_cast<int>(SettingsAdvanced_t::LShrinkApplicationMode_t::kTotal); ++rawMode) {
-						const auto candidate = static_cast<SettingsAdvanced_t::LShrinkApplicationMode_t>(rawMode);
-						const bool selected = candidate == shrinkMode;
-						if (ImGui::Selectable(GetShrinkModeLabel(candidate), selected)) {
-							Config::Advanced.sShrinkMode = std::string(magic_enum::enum_name(candidate));
-							shrinkMode = candidate;
-						}
-						if (selected) {
-							ImGui::SetItemDefaultFocus();
-						}
-					}
-					ImGui::EndCombo();
-				}
-				ImGuiEx::Tooltip(T0);
-				ImGuiEx::Tooltip(GetShrinkModeTooltip(shrinkMode));
-
-				ImGui::Spacing();
-			}
-		}
-
-        ImUtil_Unique
-		{
-
-            PSString T0 = "按下启用的玩家踩踏动作时，把附近足够小的目标预吸附到对应脚下。";
-            PSString T1 = "普通轻踩按键是否使用踩踏辅助。";
-            PSString T2 = "重踩按键是否使用踩踏辅助。";
-            PSString T3 = "践踏 Trample 按键是否使用踩踏辅助。";
-            PSString T4 = "开启后，一次踩踏可预吸附多个目标；关闭时只吸附最近目标。";
-            PSString T5 = "允许多目标时，一次踩踏最多预吸附多少目标。";
-            PSString T6 = "预吸附后阻止目标移动的持续时间。";
-            PSString T7 = "搜索目标的基础半径。实际距离会再乘以 1.6 倍和玩家当前体型。";
-            PSString T8 = "只有玩家与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。\n"
-                          "这个值只影响辅助吸附，不等于踩爆阈值；普通踩爆通常还需要约 10x 体型差。";
-
-            if (ImGui::CollapsingHeader("踩踏辅助", ImUtil::HeaderFlagsDefaultOpen)) {
-                ImGuiEx::CheckBox("启用踩踏辅助", &Config::Advanced.bStompAssist, T0);
-                ImGuiEx::CheckBox("普通踩踏", &Config::Advanced.bStompAssistNormal, T1, !Config::Advanced.bStompAssist);
-                ImGui::SameLine();
-                ImGuiEx::CheckBox("重踩", &Config::Advanced.bStompAssistStrong, T2, !Config::Advanced.bStompAssist);
-                ImGui::SameLine();
-                ImGuiEx::CheckBox("践踏", &Config::Advanced.bStompAssistTrample, T3, !Config::Advanced.bStompAssist);
-                ImGuiEx::CheckBox("允许多目标", &Config::Advanced.bStompAssistMultiTarget, T4, !Config::Advanced.bStompAssist);
-                ImGuiEx::SliderU8("最大目标数量", &Config::Advanced.iStompAssistMaxTargets, 1, 8, T5, "%d", !Config::Advanced.bStompAssist || !Config::Advanced.bStompAssistMultiTarget);
-                ImGuiEx::SliderF("预吸附持续时间", &Config::Advanced.fStompAssistDuration, 0.2f, 2.0f, T6, "%.1f 秒", !Config::Advanced.bStompAssist);
-                ImGuiEx::SliderF("目标搜索半径", &Config::Advanced.fStompAssistSearchRadius, 8.0f, 120.0f, T7, "%.1f", !Config::Advanced.bStompAssist);
-                ImGuiEx::SliderF("目标体型阈值", &Config::Advanced.fStompAssistSizeThreshold, 1.5f, 20.0f, T8, "%.1fx", !Config::Advanced.bStompAssist);
-
                 ImGui::Spacing();
             }
         }
