@@ -50,7 +50,7 @@ namespace {
 				float Augment = PerkHandler::Perks_Cataclysmic_EmpowerStomp(giantref);
 				bool GotStacks = PerkHandler::Perks_Cataclysmic_HasStacks(giantref);
 
-				DoDamageEffect(giantref, Damage_Stomp_Under_Strong * damage * perk * Augment, Radius_Stomp_Strong, 8, 0.30f, Event, 1.0f, Source, false, true);
+				DoDamageEffect(giantref, Damage_Stomp_Under_Strong * damage * perk * Augment, Radius_Stomp_Strong, 8, 0.30f, Event, 1.0f, Source, false);
 				DoImpactRumble(giantref, Node, rumble);
 
 				if (!GotStacks) { 

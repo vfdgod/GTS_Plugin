@@ -703,13 +703,10 @@ namespace GTS {
 		}
 
 		if (!receiver->IsDead()) {
-			const bool logDamageTest = attacker->IsPlayerRef();
-			const float inputValue = value;
 			float HpPercentage = GetHealthPercentage(receiver);
 			float difficulty = 2.0f; // taking Legendary Difficulty as a base
 			float levelbonus = 1.0f + ((GetGtsSkillLevel(attacker) * 0.01f) * 0.50f);
 			value *= levelbonus;
-			const float afterLevelBonus = value;
 
 			if (!receiver->IsPlayerRef()) { // Mostly a warning to indicate that actor dislikes it (They don't always aggro right away, with mods at least)
 				if (value >= GetAV(receiver, ActorValue::kHealth) * 0.50f || HpPercentage < 0.70f) { // in that case make hostile
@@ -725,32 +722,13 @@ namespace GTS {
 			//The correct thing to do here is to pass the attacker.
 			//This however results in size damage causing overkills due to how the hook for TakeDamage is setup.
 			float damageDealt = value * difficulty * Config::Balance.fSizeDamageMult;
-			const float damageBeforePreserve = damageDealt;
-			const float healthBefore = GetAV(receiver, ActorValue::kHealth);
 			if (preserve_one_health) {
-				const float health = healthBefore;
+				const float health = GetAV(receiver, ActorValue::kHealth);
 				if (health > 1.0f) {
 					damageDealt = std::min(damageDealt, health - 1.0f);
 				} else {
 					damageDealt = 0.0f;
 				}
-			}
-
-			if (logDamageTest) {
-				logger::info(
-					"[TinyCalamityDamageTest][InflictSizeDamage] target='{}' targetForm={:08X} inputValue={} levelBonus={} afterLevelBonus={} difficulty={} sizeDamageMult={} damageBeforePreserve={} preserveOneHealth={} healthBefore={} finalDamageToTakeDamage={}",
-					receiver->GetDisplayFullName(),
-					receiver->formID,
-					inputValue,
-					levelbonus,
-					afterLevelBonus,
-					difficulty,
-					Config::Balance.fSizeDamageMult,
-					damageBeforePreserve,
-					preserve_one_health,
-					healthBefore,
-					damageDealt
-				);
 			}
 
 			if (damageDealt <= 0.0f) {
