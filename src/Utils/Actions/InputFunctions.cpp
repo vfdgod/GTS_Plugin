@@ -33,13 +33,15 @@ namespace {
 	constexpr float RECALL_SEARCH_RADIUS_MAX = 20000.0f;
 	constexpr float RECALL_PAUSE_MIN = 0.0f;
 	constexpr float RECALL_PAUSE_MAX = 10.0f;
-	constexpr float RECALL_FRONT_START = 180.0f;
-	constexpr float RECALL_FRONT_SPACING_X = 110.0f;
-	constexpr float RECALL_FRONT_SPACING_Y = 120.0f;
+	constexpr float RECALL_PLAYER_DISTANCE_MIN = 60.0f;
+	constexpr float RECALL_PLAYER_DISTANCE_MAX = 2000.0f;
+	constexpr float RECALL_ACTOR_SPACING_MIN = 40.0f;
+	constexpr float RECALL_ACTOR_SPACING_MAX = 1000.0f;
+	constexpr float RECALL_AUTO_INTERVAL_MIN = 1.0f;
+	constexpr float RECALL_AUTO_INTERVAL_MAX = 600.0f;
+	constexpr float RECALL_NOTIFY_INTERVAL_MIN = 1.0f;
+	constexpr float RECALL_NOTIFY_INTERVAL_MAX = 600.0f;
 	constexpr int RECALL_FRONT_PER_ROW = 5;
-	constexpr float RECALL_RING_BASE_RADIUS = 170.0f;
-	constexpr float RECALL_RING_LAYER_SPACING = 120.0f;
-	constexpr float RECALL_RING_TARGET_SPACING = 110.0f;
 
 	template <class Enum>
 	bool TryParseEnumString(const std::string& a_value, Enum& a_out) {
@@ -78,6 +80,22 @@ namespace {
 
 	float GetRecallPauseDuration() {
 		return std::clamp(Config::Balance.fShrinkRecallPauseDuration, RECALL_PAUSE_MIN, RECALL_PAUSE_MAX);
+	}
+
+	float GetRecallPlayerDistance() {
+		return std::clamp(Config::Balance.fShrinkRecallPlayerDistance, RECALL_PLAYER_DISTANCE_MIN, RECALL_PLAYER_DISTANCE_MAX);
+	}
+
+	float GetRecallActorSpacing() {
+		return std::clamp(Config::Balance.fShrinkRecallActorSpacing, RECALL_ACTOR_SPACING_MIN, RECALL_ACTOR_SPACING_MAX);
+	}
+
+	float GetRecallAutoInterval() {
+		return std::clamp(Config::Balance.fShrinkRecallAutoInterval, RECALL_AUTO_INTERVAL_MIN, RECALL_AUTO_INTERVAL_MAX);
+	}
+
+	float GetRecallNotifyInterval() {
+		return std::clamp(Config::Balance.fShrinkRecallNotifyInterval, RECALL_NOTIFY_INTERVAL_MIN, RECALL_NOTIFY_INTERVAL_MAX);
 	}
 
 	bool IsShrunkenActor(Actor* actor) {
@@ -160,21 +178,38 @@ namespace {
 		return right / length;
 	}
 
+	std::vector<Actor*> CollectRecallActors(Actor* player, float searchRadius) {
+		std::vector<Actor*> recalledActors;
+		recalledActors.reserve(16);
+
+		for (auto actor : find_actors()) {
+			if (!ShouldRecallActor(player, actor, searchRadius)) {
+				continue;
+			}
+			recalledActors.push_back(actor);
+		}
+
+		return recalledActors;
+	}
+
 	RE::NiPoint3 GetRecallPlacementOffset(std::size_t index, LShrinkRecallPlacement_t placement, const RE::NiPoint3& forward, const RE::NiPoint3& right) {
+		const float playerDistance = GetRecallPlayerDistance();
+		const float actorSpacing = GetRecallActorSpacing();
+
 		if (placement == LShrinkRecallPlacement_t::kFront) {
 			const int row = static_cast<int>(index) / RECALL_FRONT_PER_ROW;
 			const int column = static_cast<int>(index) % RECALL_FRONT_PER_ROW;
 			const float centeredColumn = static_cast<float>(column) - (static_cast<float>(RECALL_FRONT_PER_ROW - 1) * 0.5f);
 
-			return forward * (RECALL_FRONT_START + row * RECALL_FRONT_SPACING_Y) +
-				right * (centeredColumn * RECALL_FRONT_SPACING_X);
+			return forward * (playerDistance + row * actorSpacing) +
+				right * (centeredColumn * actorSpacing);
 		}
 
 		std::size_t remaining = index;
 		int layer = 0;
 		while (true) {
-			const float radius = RECALL_RING_BASE_RADIUS + layer * RECALL_RING_LAYER_SPACING;
-			const int capacity = std::max(6, static_cast<int>(std::floor((2.0f * std::numbers::pi_v<float> * radius) / RECALL_RING_TARGET_SPACING)));
+			const float radius = playerDistance + layer * actorSpacing;
+			const int capacity = std::max(6, static_cast<int>(std::floor((2.0f * std::numbers::pi_v<float> * radius) / actorSpacing)));
 			if (remaining < static_cast<std::size_t>(capacity)) {
 				const float angle = (2.0f * std::numbers::pi_v<float> * static_cast<float>(remaining)) / static_cast<float>(capacity);
 				return forward * (std::cos(angle) * radius) + right * (std::sin(angle) * radius);
@@ -193,6 +228,68 @@ namespace {
 		if (auto transient = Transient::GetActorData(actor)) {
 			transient->RecallPauseTimer.UpdateDelta(duration);
 			transient->RecallPauseTimer.ResetGate();
+		}
+	}
+
+	void MoveRecallActors(Actor* player, std::vector<Actor*>& recalledActors, float pauseDuration) {
+		const auto placement = GetRecallPlacementMode();
+		const RE::NiPoint3 playerPos = player->GetPosition();
+		const RE::NiPoint3 forward = GetPlayerForwardVector(player);
+		const RE::NiPoint3 right = GetPlayerRightVector(player);
+
+		std::ranges::sort(recalledActors, [&](Actor* lhs, Actor* rhs) {
+			return lhs->GetPosition().GetDistance(playerPos) < rhs->GetPosition().GetDistance(playerPos);
+		});
+
+		for (std::size_t index = 0; index < recalledActors.size(); ++index) {
+			Actor* actor = recalledActors[index];
+			RE::NiPoint3 destination = playerPos + GetRecallPlacementOffset(index, placement, forward, right);
+			destination.z = playerPos.z;
+			actor->SetPosition(destination, true);
+			StartRecallPause(actor, pauseDuration);
+		}
+	}
+
+	std::size_t RecallShrunkenActors(bool notifyEmpty, bool notifySuccess) {
+		Actor* player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return 0;
+		}
+
+		const float searchRadius = GetRecallSearchRadius();
+		const float pauseDuration = GetRecallPauseDuration();
+		std::vector<Actor*> recalledActors = CollectRecallActors(player, searchRadius);
+
+		if (recalledActors.empty()) {
+			if (notifyEmpty) {
+				Notify("附近没有符合条件的缩小目标");
+			}
+			return 0;
+		}
+
+		MoveRecallActors(player, recalledActors, pauseDuration);
+
+		if (notifySuccess) {
+			if (pauseDuration > RECALL_PAUSE_MIN) {
+				Notify("已移动 {} 个缩小目标，并停步 {:.1f} 秒", recalledActors.size(), pauseDuration);
+			}
+			else {
+				Notify("已移动 {} 个缩小目标", recalledActors.size());
+			}
+		}
+
+		return recalledActors.size();
+	}
+
+	void NotifyNearbyShrunkenActors() {
+		Actor* player = PlayerCharacter::GetSingleton();
+		if (!player) {
+			return;
+		}
+
+		const std::size_t count = CollectRecallActors(player, GetRecallSearchRadius()).size();
+		if (count > 0) {
+			Notify("附近有 {} 个符合条件的缩小目标", count);
 		}
 	}
 
@@ -725,51 +822,7 @@ namespace {
 	}
 
 	void RecallShrunkenActorsEvent(const ManagedInputEvent& data) {
-		Actor* player = PlayerCharacter::GetSingleton();
-		if (!player) {
-			return;
-		}
-
-		const float searchRadius = GetRecallSearchRadius();
-		const float pauseDuration = GetRecallPauseDuration();
-		const auto placement = GetRecallPlacementMode();
-		const RE::NiPoint3 playerPos = player->GetPosition();
-		const RE::NiPoint3 forward = GetPlayerForwardVector(player);
-		const RE::NiPoint3 right = GetPlayerRightVector(player);
-
-		std::vector<Actor*> recalledActors;
-		recalledActors.reserve(16);
-
-		for (auto actor : find_actors()) {
-			if (!ShouldRecallActor(player, actor, searchRadius)) {
-				continue;
-			}
-			recalledActors.push_back(actor);
-		}
-
-		std::ranges::sort(recalledActors, [&](Actor* lhs, Actor* rhs) {
-			return lhs->GetPosition().GetDistance(playerPos) < rhs->GetPosition().GetDistance(playerPos);
-		});
-
-		for (std::size_t index = 0; index < recalledActors.size(); ++index) {
-			Actor* actor = recalledActors[index];
-			RE::NiPoint3 destination = playerPos + GetRecallPlacementOffset(index, placement, forward, right);
-			destination.z = playerPos.z;
-			actor->SetPosition(destination, true);
-			StartRecallPause(actor, pauseDuration);
-		}
-
-		if (recalledActors.empty()) {
-			Notify("附近没有符合条件的缩小目标");
-			return;
-		}
-
-		if (pauseDuration > RECALL_PAUSE_MIN) {
-			Notify("已召回 {} 个缩小目标，并停步 {:.1f} 秒", recalledActors.size(), pauseDuration);
-		}
-		else {
-			Notify("已召回 {} 个缩小目标", recalledActors.size());
-		}
+		RecallShrunkenActors(true, true);
 	}
 
 	void AnimSpeedUpEvent(const ManagedInputEvent& data) {
@@ -909,6 +962,33 @@ namespace {
 }
 
 namespace GTS {
+
+	void InputFunctions::Update() {
+		if (!Config::Balance.bShrinkRecallAuto && !Config::Balance.bShrinkRecallNotifyNearby) {
+			return;
+		}
+
+		if (!RecallShrunkenActorsCondition()) {
+			return;
+		}
+
+		static Timer autoRecallTimer = Timer(0.0);
+		static Timer nearbyNotifyTimer = Timer(0.0);
+
+		if (Config::Balance.bShrinkRecallAuto) {
+			autoRecallTimer.UpdateDelta(GetRecallAutoInterval());
+			if (autoRecallTimer.ShouldRunFrame()) {
+				RecallShrunkenActors(false, false);
+			}
+		}
+
+		if (Config::Balance.bShrinkRecallNotifyNearby) {
+			nearbyNotifyTimer.UpdateDelta(GetRecallNotifyInterval());
+			if (nearbyNotifyTimer.ShouldRunFrame()) {
+				NotifyNearbyShrunkenActors();
+			}
+		}
+	}
 
 	void InputFunctions::RegisterEvents() {
 

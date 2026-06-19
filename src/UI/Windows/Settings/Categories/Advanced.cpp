@@ -114,8 +114,6 @@ namespace GTS {
             PSString T10 = "模拟生命窃取：微型灾厄缩小时获得治疗，并提升额外缩小强度；真实龙吼开始时也会获得更长持续时间。";
             PSString T11 = "模拟狂怒灾厄：微型灾厄激活时，可对低生命值目标触发处决动画。";
             PSString T12 = "模拟缩小凝视：微型灾厄激活时，玩家准星凝视敌人会持续缩小目标。";
-            PSString T13 = "开启后，玩家启用微型灾厄动作强化时，普通踩踏、践踏、重踩和下踩会尽量保留目标 1 点生命，方便接续碾磨或持续动作。\n"
-                          "碾磨本身仍可正常杀死目标。";
 
             if (ImGui::CollapsingHeader("调试/作弊", ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("启用属性消耗", &Config::Advanced.bDamageAV, T0);
@@ -138,7 +136,6 @@ namespace GTS {
                 ImGui::SameLine();
                 ImGuiEx::CheckBox("狂怒灾厄", &Config::Advanced.bPlayerTinyCalamityRage, T11, !Config::Advanced.bPlayerTinyCalamityActive);
                 ImGuiEx::CheckBox("缩小凝视", &Config::Advanced.bPlayerTinyCalamityShrinkingGaze, T12, !Config::Advanced.bPlayerTinyCalamityActive);
-                ImGuiEx::CheckBox("微型灾厄仁慈模式", &Config::Advanced.bPlayerTinyCalamityMercy, T13, !Config::Advanced.bPlayerTinyCalamityActionBoost);
 
                 if (ImGuiEx::Button("清空技能冷却")) {
                     CooldownManager::GetSingleton().Reset();

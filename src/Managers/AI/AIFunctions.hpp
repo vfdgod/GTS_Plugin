@@ -9,5 +9,4 @@ namespace GTS {
 	void KillActor(Actor* giant, Actor* tiny, bool silent = false);
 	void ForceFlee(Actor* giant, Actor* tiny, float duration, bool apply_size_difference);
 	void ScareActors(Actor* giant);
-	void WorshipActors(Actor* giant);
 }

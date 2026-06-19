@@ -128,13 +128,6 @@ struct AIGrabAction_t {
 };
 TOML_SERIALIZABLE(AIGrabAction_t);
 
-struct AIWorshipAction_t {
-    float fPrayProbability  = 100.0f;
-    float fProneProbability = 0.0f;
-    float fCrawlProbability = 0.0f;
-};
-TOML_SERIALIZABLE(AIWorshipAction_t);
-
 // Complex action: Thigh Sandwich
 struct AIThighSandwichAction_t {
     bool bEnableAction = true;
@@ -183,11 +176,9 @@ struct SettingsAI_t {
     AIButtAction_t ButtCrush = {};
     AIGrabAction_t Grab      = {};
     AIThighSandwichAction_t ThighSandwich = {};
-    AIWorshipAction_t WorshipActions = {};
 
     // Additional AI toggles
     bool bPanic                = true;
-    bool bWorship              = false;
     bool bCombatOnly           = true;
     bool bAllowPlayer          = false;
     bool bAllowFollowers       = false;

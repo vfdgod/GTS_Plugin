@@ -365,35 +365,12 @@ namespace GTS {
                              "- 启用后，追随者只是站着不动时不会推开他人。\n"
                              "- 由于会每帧为每个追随者记录数据，可能对 FPS 有负面影响。";
             PSString T4 = "切换其他 NPC 接近 GT 角色时是否会进入逃离状态。";
-            PSString T5 = "切换符合条件的类人角色接近玩家时是否会进入短暂崇拜动作。\n"
-                          "- 仅在体型差明显且距离较近时触发。\n"
-                          "- 允许追随者、敌对目标和战斗中的目标触发。\n"
-                          "- 不影响玩家、死亡、被抓取或失去行动状态的目标。";
-            PSString T6 = "设置普通祈祷动作的出现权重。\n"
-                          "- 这是相对权重，不需要把所有值凑到 100。\n"
-                          "- 设为 0 可禁用该动作。\n"
-                          "- 如果三个权重都为 0，会回退为普通祈祷。";
-            PSString T7 = "设置 prone 崇拜动作的出现权重。\n"
-                          "- 使用低姿态俯卧动作，但会屏蔽原本的伤害效果。\n"
-                          "- 这是相对权重，设为 0 可禁用。";
-            PSString T8 = "设置 crawl 崇拜动作的出现权重。\n"
-                          "- 使用爬行动作作为崇拜姿态。\n"
-                          "- 这是相对权重，设为 0 可禁用。";
 
             if (ImGui::CollapsingHeader("杂项设置",ImUtil::HeaderFlagsDefaultOpen)) {
                 ImGuiEx::CheckBox("降低移动速度 AV", &Config::AI.bSlowMovementDown, T0);
                 ImGuiEx::CheckBox("降低战斗转身速度", &Config::AI.bSlowRotationDown, T2);
                 ImGuiEx::CheckBox("记录节点移动速度数据", &Config::AI.bRecordBoneSpeedData, T3);
                 ImGuiEx::CheckBox("角色恐慌", &Config::AI.bPanic, T4);
-                ImGuiEx::CheckBox("角色崇拜", &Config::AI.bWorship, T5);
-
-                ImGui::BeginDisabled(!Config::AI.bWorship);
-                {
-                    ImGuiEx::SliderF("崇拜-祈祷权重", &Config::AI.WorshipActions.fPrayProbability, 0.0f, 100.0f, T6, "%.0f");
-                    ImGuiEx::SliderF("崇拜-Prone 权重", &Config::AI.WorshipActions.fProneProbability, 0.0f, 100.0f, T7, "%.0f");
-                    ImGuiEx::SliderF("崇拜-Crawl 权重", &Config::AI.WorshipActions.fCrawlProbability, 0.0f, 100.0f, T8, "%.0f");
-                }
-                ImGui::EndDisabled();
                 ImGui::Spacing();
             }
 		}

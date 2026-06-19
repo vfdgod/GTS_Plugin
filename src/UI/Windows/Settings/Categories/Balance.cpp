@@ -161,9 +161,9 @@ namespace GTS {
 		const char* GetRecallFilterModeTooltip(LShrinkRecallFilterMode_t a_mode) {
 			switch (a_mode) {
 				case LShrinkRecallFilterMode_t::kAllShrunken:
-					return "只要是非玩家、当前已缩小、活着且已加载的角色，都允许被召回。";
+					return "只要是非玩家、当前已缩小、活着且已加载的角色，都允许被移动。";
 				case LShrinkRecallFilterMode_t::kCustomTargets:
-					return "只有命中你在下方勾选分类、并且当前已缩小的角色，才会被召回。";
+					return "只有命中你在下方勾选分类、并且当前已缩小的角色，才会被移动。";
 				default:
 					return "";
 			}
@@ -365,13 +365,20 @@ namespace GTS {
 
 		ImUtil_Unique
 		{
-			PSString T0 = "设置“召回缩小目标”快捷键按下后，会扫描玩家周围多大的范围。\n"
-			              "只处理当前已加载的角色；范围过大时，一次可能会召回很多目标。";
-			PSString T1 = "决定召回过来的目标摆在玩家周围一圈，还是摆在玩家正前方几排。";
-			PSString T2 = "召回成功后，让目标短暂无法自行走开。\n"
+			PSString T0 = "设置“移动缩小目标到附近”快捷键按下后，会扫描玩家周围多大的范围。\n"
+			              "只处理当前已加载的角色；范围过大时，一次可能会移动很多目标。";
+			PSString T1 = "决定移动过来的目标摆在玩家周围一圈，还是摆在玩家正前方几排。";
+			PSString T2 = "移动成功后，让目标短暂无法自行走开。\n"
 			              "这是基于短时拦移动实现的软停步，不会改动它们的长期 AI 状态。";
-			PSString T3 = "如果切到“自定义分类”，只有下方勾选到的分类才会参与召回。\n"
-			              "无论哪种模式，都只会召回当前已经缩小到自然体型以下的非玩家目标。";
+			PSString T3 = "如果切到“自定义分类”，只有下方勾选到的分类才会参与移动。\n"
+			              "无论哪种模式，都只会移动当前已经缩小到自然体型以下的非玩家目标。";
+			PSString T4 = "设置移动后，最近一圈/第一排目标与玩家之间的距离。";
+			PSString T5 = "设置移动后，缩小目标之间的间距。\n"
+			              "环形模式会影响同圈相邻目标和圈层距离；面前模式会影响左右间距和前后排距离。";
+			PSString T6 = "启用后，会按下方间隔自动执行一次“移动缩小目标到附近”。";
+			PSString T7 = "设置自动移动的执行间隔。";
+			PSString T8 = "启用后，会按下方间隔提醒附近是否存在符合筛选条件的缩小目标。";
+			PSString T9 = "设置自动提醒的检查间隔。";
 			LShrinkRecallFilterMode_t filterMode = LShrinkRecallFilterMode_t::kAllShrunken;
 			if (!TryParseRecallFilterMode(Config::Balance.sShrinkRecallFilterMode, filterMode)) {
 				Config::Balance.sShrinkRecallFilterMode = EnumName(filterMode);
@@ -383,12 +390,16 @@ namespace GTS {
 			}
 
 			Config::Balance.fShrinkRecallSearchRadius = std::clamp(Config::Balance.fShrinkRecallSearchRadius, 250.0f, 20000.0f);
+			Config::Balance.fShrinkRecallPlayerDistance = std::clamp(Config::Balance.fShrinkRecallPlayerDistance, 60.0f, 2000.0f);
+			Config::Balance.fShrinkRecallActorSpacing = std::clamp(Config::Balance.fShrinkRecallActorSpacing, 40.0f, 1000.0f);
 			Config::Balance.fShrinkRecallPauseDuration = std::clamp(Config::Balance.fShrinkRecallPauseDuration, 0.0f, 10.0f);
+			Config::Balance.fShrinkRecallAutoInterval = std::clamp(Config::Balance.fShrinkRecallAutoInterval, 1.0f, 600.0f);
+			Config::Balance.fShrinkRecallNotifyInterval = std::clamp(Config::Balance.fShrinkRecallNotifyInterval, 1.0f, 600.0f);
 
-			if (ImGui::CollapsingHeader("缩小目标召回", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("移动缩小目标到附近", ImUtil::HeaderFlagsDefaultOpen)) {
 				ImGuiEx::HelpText("快捷键说明", "快捷键本身在“按键绑定 -> 能力 / Perk”里设置，默认是 NUMPAD0。");
 
-				if (ImGui::BeginCombo("召回筛选", GetRecallFilterModeLabel(filterMode))) {
+				if (ImGui::BeginCombo("移动筛选", GetRecallFilterModeLabel(filterMode))) {
 					for (int rawMode = 0; rawMode < static_cast<int>(LShrinkRecallFilterMode_t::kTotal); ++rawMode) {
 						const auto candidate = static_cast<LShrinkRecallFilterMode_t>(rawMode);
 						const bool selected = candidate == filterMode;
@@ -405,6 +416,8 @@ namespace GTS {
 				ImGuiEx::Tooltip(GetRecallFilterModeTooltip(filterMode));
 
 				ImGuiEx::SliderF("搜索范围", &Config::Balance.fShrinkRecallSearchRadius, 250.0f, 20000.0f, T0, "%.0f");
+				ImGuiEx::SliderF("距玩家距离", &Config::Balance.fShrinkRecallPlayerDistance, 60.0f, 2000.0f, T4, "%.0f");
+				ImGuiEx::SliderF("目标间距", &Config::Balance.fShrinkRecallActorSpacing, 40.0f, 1000.0f, T5, "%.0f");
 
 				if (ImGui::BeginCombo("落点模式", GetRecallPlacementLabel(placementMode))) {
 					for (int rawMode = 0; rawMode < static_cast<int>(LShrinkRecallPlacement_t::kTotal); ++rawMode) {
@@ -423,7 +436,11 @@ namespace GTS {
 				ImGuiEx::Tooltip(T1);
 				ImGuiEx::Tooltip(GetRecallPlacementTooltip(placementMode));
 
-				ImGuiEx::SliderF("召回后停步时长", &Config::Balance.fShrinkRecallPauseDuration, 0.0f, 10.0f, T2, "%.1f 秒");
+				ImGuiEx::SliderF("移动后停步时长", &Config::Balance.fShrinkRecallPauseDuration, 0.0f, 10.0f, T2, "%.1f 秒");
+				ImGuiEx::CheckBox("自动移动缩小目标", &Config::Balance.bShrinkRecallAuto, T6);
+				ImGuiEx::SliderF("自动移动间隔", &Config::Balance.fShrinkRecallAutoInterval, 1.0f, 600.0f, T7, "每 %.0f 秒", !Config::Balance.bShrinkRecallAuto);
+				ImGuiEx::CheckBox("自动提醒附近缩小目标", &Config::Balance.bShrinkRecallNotifyNearby, T8);
+				ImGuiEx::SliderF("自动提醒间隔", &Config::Balance.fShrinkRecallNotifyInterval, 1.0f, 600.0f, T9, "每 %.0f 秒", !Config::Balance.bShrinkRecallNotifyNearby);
 
 				if (filterMode == LShrinkRecallFilterMode_t::kCustomTargets) {
 					ImGui::SeparatorText("自定义分类");

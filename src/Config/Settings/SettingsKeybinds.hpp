@@ -1510,8 +1510,8 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kAbility,
 			.AdvFeature    = false,
-			.UIName        = "召回缩小目标",
-			.UIDescription = "把搜索范围内、已经缩小过的角色召回到你附近，并让他们短暂停步。",
+			.UIName        = "移动缩小目标到附近",
+			.UIDescription = "把搜索范围内、已经缩小过的角色移动到你附近，并让他们短暂停步。",
 			.Event = {
 		        .Event      = "RecallShrunkenActors",
 		        .Keys       = {"NUMPAD0"},

@@ -89,19 +89,6 @@ namespace {
 		return true;
 	}
 
-	bool CanApplyTinyCalamityMercy(Actor* giant, Actor* tiny, bool requested) {
-		return (
-			requested &&
-			Config::Advanced.bPlayerTinyCalamityMercy &&
-			giant &&
-			tiny &&
-			giant->IsPlayerRef() &&
-			!tiny->IsPlayerRef() &&
-			!tiny->IsDead() &&
-			TinyCalamityActionBoostActive(giant)
-		);
-	}
-
 	float GetPostTinyCalamityShrinkDifference(Actor* tiny, float original_difference) {
 		const float visual_tiny_scale = get_visual_scale(tiny) * GetSizeFromBoundingBox(tiny);
 		const float target_tiny_scale = get_target_scale(tiny) * GetSizeFromBoundingBox(tiny);
@@ -181,7 +168,7 @@ namespace {
 namespace GTS {
 
 	// Safer optimization that preserves original behavior
-	void CollisionDamage::DoFootCollision(Actor* actor, float damage, float radius, int random, float bbmult, float crush_threshold, DamageSource Cause, bool Right, bool ApplyCooldown, bool ignore_rotation, bool SupportCalamity, bool preserve_one_health) {
+	void CollisionDamage::DoFootCollision(Actor* actor, float damage, float radius, int random, float bbmult, float crush_threshold, DamageSource Cause, bool Right, bool ApplyCooldown, bool ignore_rotation, bool SupportCalamity) {
 
 		//GTS_PROFILE_SCOPE("CollisionDamage: DoFootCollision");
 
@@ -270,19 +257,19 @@ namespace GTS {
 					bool OnCooldown = IsActionOnCooldown(otherActor, CooldownSource::Damage_Thigh);
 					if (!OnCooldown) {
 						Utils_PushCheck(actor, otherActor, Get_Bone_Movement_Speed(actor, Cause));
-						DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage, preserve_one_health);
+						DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage);
 						ApplyActionCooldown(otherActor, CooldownSource::Damage_Thigh);
 					}
 				}
 				else {
 					Utils_PushCheck(actor, otherActor, Get_Bone_Movement_Speed(actor, Cause));
-					DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage, preserve_one_health);
+					DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage);
 				}
 			}
 		}
 	}
 
-	void CollisionDamage::DoSizeDamage(Actor* giant, Actor* tiny, float damage, float bbmult, float crush_threshold, int random, DamageSource Cause, bool apply_damage, bool preserve_one_health) { // Applies damage and crushing
+	void CollisionDamage::DoSizeDamage(Actor* giant, Actor* tiny, float damage, float bbmult, float crush_threshold, int random, DamageSource Cause, bool apply_damage) { // Applies damage and crushing
 		GTS_PROFILE_SCOPE("CollisionDamage: DoSizeDamage");
 		if (!giant) {
 			return;
@@ -359,19 +346,14 @@ namespace GTS {
 					}
 				}
 				if (apply_damage) {
-					const bool applyMercy = CanApplyTinyCalamityMercy(giant, tiny, preserve_one_health);
-					if (!applyMercy) {
-						SizeHitEffects::PerformInjuryDebuff(giant, tiny, damage_result * bbmult, random);
-					}
+					SizeHitEffects::PerformInjuryDebuff(giant, tiny, damage_result * bbmult, random);
 
 					ModVulnerability(giant, tiny, damage_result);
-					InflictSizeDamage(giant, tiny, damage_result, applyMercy);
-					if (!applyMercy) {
-						const float crush_difference = SMT
-							? GetPostTinyCalamityShrinkDifference(tiny, size_difference)
-							: size_difference;
-						CrushCheck(giant, tiny, crush_difference, crush_threshold, Cause);
-					}
+					InflictSizeDamage(giant, tiny, damage_result);
+					const float crush_difference = SMT
+						? GetPostTinyCalamityShrinkDifference(tiny, size_difference)
+						: size_difference;
+					CrushCheck(giant, tiny, crush_difference, crush_threshold, Cause);
 				}
 			}
 		}

@@ -54,7 +54,6 @@ struct SettingsAdvanced_t {
     bool bPlayerTinyCalamitySizeSteal = false;
     bool bPlayerTinyCalamityRage = false;
     bool bPlayerTinyCalamityShrinkingGaze = false;
-    bool bPlayerTinyCalamityMercy = false;
     bool bStompAssist = false;
     bool bStompAssistNormal = true;
     bool bStompAssistStrong = true;

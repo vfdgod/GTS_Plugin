@@ -41,7 +41,6 @@ namespace {
 	constexpr float SHRINK_PARTICLE_COOLDOWN_GAZE = 0.25f;
 	constexpr float SHRINK_PARTICLE_COOLDOWN_ANIM = 1.5f;
 	constexpr float SHRINK_TINYCALAMITY_RAGE = 60.0f;
-	constexpr float WORSHIP_COOLDOWN = 10.0f;
 
     constexpr float EMOTION_COOLDOWN = 1.5f;
     constexpr float EMOTION_COOLDOWN_LONG = 3.5f;
@@ -252,9 +251,6 @@ namespace GTS {
             case CooldownSource::Misc_TinyCalamityRage:
                 data.lastTinyCalamityTime = Time::WorldTimeElapsed();
                 break;
-            case CooldownSource::Misc_Worship:
-                data.lastWorshipTime = Time::WorldTimeElapsed();
-                break;
             case CooldownSource::Footstep_Right:
                 data.lastFootstepTime_R = Time::WorldTimeElapsed();
                 break;
@@ -332,8 +328,6 @@ namespace GTS {
                 return (data.lastGazeShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_GAZE) - time;
             case CooldownSource::Misc_TinyCalamityRage:
                 return (data.lastTinyCalamityTime + SHRINK_TINYCALAMITY_RAGE) - time;
-            case CooldownSource::Misc_Worship:
-                return (data.lastWorshipTime + WORSHIP_COOLDOWN) - time;
             case CooldownSource::Footstep_Right:
                 return (data.lastFootstepTime_R + Calculate_FootstepTimer(giant)) - time;   
             case CooldownSource::Footstep_Left:
@@ -409,8 +403,6 @@ namespace GTS {
                 return time <= (data.lastGazeShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_GAZE);
             case CooldownSource::Misc_TinyCalamityRage:
                 return time <= (data.lastTinyCalamityTime + SHRINK_TINYCALAMITY_RAGE); 
-            case CooldownSource::Misc_Worship:
-                return time <= (data.lastWorshipTime + WORSHIP_COOLDOWN);
             case CooldownSource::Footstep_Right:
                 return time <= (data.lastFootstepTime_R + Calculate_FootstepTimer(giant));    
             case CooldownSource::Footstep_Left:

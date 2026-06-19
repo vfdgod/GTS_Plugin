@@ -125,7 +125,13 @@ struct SettingsBalance_t {
     std::vector<std::string> ShrinkRecallTargets = {};
     std::string sShrinkRecallPlacement = "kRing";
     float fShrinkRecallSearchRadius = 3000.0f;
+    float fShrinkRecallPlayerDistance = 170.0f;
+    float fShrinkRecallActorSpacing = 110.0f;
     float fShrinkRecallPauseDuration = 1.5f;
+    bool bShrinkRecallAuto = false;
+    float fShrinkRecallAutoInterval = 30.0f;
+    bool bShrinkRecallNotifyNearby = false;
+    float fShrinkRecallNotifyInterval = 30.0f;
 
 };
 TOML_SERIALIZABLE(SettingsBalance_t);

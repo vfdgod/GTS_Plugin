@@ -12,6 +12,7 @@
 #include "Magic/Effects/Common.hpp"
 #include "Scale/DynamicScale.hpp"
 #include "AI/AIFunctions.hpp"
+#include "Utils/Actions/InputFunctions.hpp"
 #include "Utils/MovementForce.hpp"
 #include "Config/Config.hpp"
 
@@ -53,12 +54,12 @@ namespace {
 			if (GetBusyFoot(actor) != BusyFoot::RightFoot) { // These are needed to get rid of annoying pushing away during stomps, Does Right Leg Idle Damage Over Time
 				float FootDamage = std::clamp(Get_Bone_Movement_Speed(actor, NodeMovementType::Movement_RightLeg), 0.0f, 1.0f);
 				CollisionDamage::DoFootCollision(actor, Damage_Default_Underfoot * FootDamage * TimeScale(), 
-					Radius_Default_Idle, 0, 0.0f, Minimum_Actor_Crush_Scale_Idle, DamageSource::FootIdleR, true, false, false, false, true);
+					Radius_Default_Idle, 0, 0.0f, Minimum_Actor_Crush_Scale_Idle, DamageSource::FootIdleR, true, false, false, false);
 			} 
 			if (GetBusyFoot(actor) != BusyFoot::LeftFoot) { // Does Left Leg Idle Damage Over Time
 				float FootDamage = std::clamp(Get_Bone_Movement_Speed(actor, NodeMovementType::Movement_LeftLeg), 0.0f, 1.0f);
 				CollisionDamage::DoFootCollision(actor, Damage_Default_Underfoot * FootDamage * TimeScale(), 
-					Radius_Default_Idle, 0, 0.0f, Minimum_Actor_Crush_Scale_Idle, DamageSource::FootIdleL, false, false, false, false, true);
+					Radius_Default_Idle, 0, 0.0f, Minimum_Actor_Crush_Scale_Idle, DamageSource::FootIdleL, false, false, false, false);
 			}
 		}
 	}
@@ -416,6 +417,7 @@ void GTSManager::Update() {
 	ApplyTalkToActor();
 	UpdateFalling();              // Update player size damage when falling down
 	CheckTalkPerk();
+	InputFunctions::Update();
 
 	const auto& actorList = find_actors();
 	FixActorFade(actorList);      // Self explanatory
@@ -446,7 +448,6 @@ void GTSManager::Update() {
 				SpawnActionIcon(actor, actorList);         // Icons for interactions with others, Player only
 			}
 			ScareActors(actor);
-			WorshipActors(actor);
 
 			//Ported from papyrus
 			UpdateCrawlState(actor);

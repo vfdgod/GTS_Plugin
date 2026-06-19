@@ -137,7 +137,7 @@ namespace {
 			if (Finish - Start > 0.02) { 
 
 				Rumbling::Once(rumble, giantref, shake_power, 0.0f, Node, 1.10f);
-				DoDamageEffect(giantref, Damage_Stomp * perk, Radius_Stomp, 10, 0.25f, Event, 1.0f, Source, false, true);
+				DoDamageEffect(giantref, Damage_Stomp * perk, Radius_Stomp, 10, 0.25f, Event, 1.0f, Source, false);
 				DoDustExplosion(giantref, dust + (animSpeed * 0.05f), Event, Node);
 				StompManager::PlayNewOrOldStomps(giantref, 1.0f, Event, Node, false);
 				
@@ -188,7 +188,7 @@ namespace {
 				}
 
 				Rumbling::Once(rumble, giant, shake_power, 0.0f, Node, 0.0f);
-				DoDamageEffect(giant, Damage_Stomp * perk, Radius_Stomp, 25, 0.25f, Event, 1.0f, Source, false, true);
+				DoDamageEffect(giant, Damage_Stomp * perk, Radius_Stomp, 25, 0.25f, Event, 1.0f, Source, false);
 				DoDustExplosion(giant, dust + (animSpeed * 0.05f), Event, Node);
 				StompManager::PlayNewOrOldStomps(giant, 1.0f + animSpeed/14, Event, RNode, false);
 

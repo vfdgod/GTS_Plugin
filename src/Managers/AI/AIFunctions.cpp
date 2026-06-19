@@ -1,8 +1,5 @@
-#include <array>
-
 #include "Managers/AI/AIFunctions.hpp"
 #include "Config/Config.hpp"
-#include "Data/Transient.hpp"
 #include "Managers/Animation/Utils/CooldownManager.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
@@ -12,16 +9,6 @@
 using namespace GTS;
 
 namespace {
-
-	constexpr float WORSHIP_SIZE_THRESHOLD = 1.75f;
-	constexpr float WORSHIP_DISTANCE = 96.0f;
-	constexpr float WORSHIP_DURATION = 6.0f;
-
-	enum class WorshipAction {
-		Pray = 0,
-		Prone = 1,
-		Crawl = 2,
-	};
 
 	void DisableEssentialFlag(Actor* actor) {
 		if (actor->IsEssential()) {
@@ -71,131 +58,6 @@ namespace {
 		return Alter;
 	}
 
-	int ToWorshipWeight(float value) {
-		return static_cast<int>(std::clamp(value, 0.0f, 1000.0f));
-	}
-
-	bool CanUseSpecialWorshipPose(Actor* tiny) {
-		return tiny &&
-			!tiny->IsDead() &&
-			tiny->Is3DLoaded() &&
-			tiny->GetCurrent3D() &&
-			!tiny->AsActorState()->IsSwimming() &&
-			!AnimationVars::General::IsGTSBusy(tiny) &&
-			!AnimationVars::General::IsTransitioning(tiny) &&
-			!AnimationVars::Prone::IsProne(tiny) &&
-			!AnimationVars::Crawl::IsCrawlEnabled(tiny);
-	}
-
-	bool IsAlreadyWorshipping(Actor* tiny) {
-		auto transient = Transient::GetActorData(tiny);
-		return transient && transient->IsWorshipping;
-	}
-
-	void ResetWorshipProneDamageBlock(Actor* tiny) {
-		if (auto transient = Transient::GetActorData(tiny)) {
-			transient->WorshipSuppressProneDamage = false;
-		}
-	}
-
-	void EndWorshipAction(Actor* tiny, WorshipAction action, bool playExitAnimation) {
-		if (!tiny) {
-			return;
-		}
-
-		if (auto transient = Transient::GetActorData(tiny)) {
-			transient->IsWorshipping = false;
-		}
-
-		switch (action) {
-			case WorshipAction::Pray: {
-				if (playExitAnimation && tiny->Is3DLoaded()) {
-					tiny->NotifyAnimationGraph("IdleStop_Loose");
-				}
-				break;
-			}
-			case WorshipAction::Prone: {
-				ResetWorshipProneDamageBlock(tiny);
-				if (playExitAnimation && tiny->Is3DLoaded() && tiny->GetCurrent3D() && AnimationVars::Prone::IsProne(tiny)) {
-					AnimationManager::StartAnim("SBO_ProneOff", tiny);
-				}
-				SetSneaking(tiny, false, 0);
-				AnimationVars::Other::SetVanillaSneaking(tiny, tiny->IsSneaking());
-				break;
-			}
-			case WorshipAction::Crawl: {
-				if (tiny->Is3DLoaded() && tiny->GetCurrent3D()) {
-					if (SetCrawlAnimation(tiny, false) && playExitAnimation) {
-						UpdateCrawlAnimations(tiny, false);
-					} else {
-						AnimationVars::Crawl::SetIsCrawlEnabled(tiny, false);
-					}
-				} else {
-					AnimationVars::Crawl::SetIsCrawlEnabled(tiny, false);
-				}
-				SetSneaking(tiny, false, 0);
-				AnimationVars::Other::SetVanillaSneaking(tiny, tiny->IsSneaking());
-				break;
-			}
-		}
-	}
-
-	WorshipAction SelectWorshipAction(Actor* tiny) {
-		const bool canUseSpecialPose = CanUseSpecialWorshipPose(tiny);
-		const auto& settings = Config::AI.WorshipActions;
-
-		std::array<int, 3> weights = {
-			ToWorshipWeight(settings.fPrayProbability),
-			canUseSpecialPose ? ToWorshipWeight(settings.fProneProbability) : 0,
-			canUseSpecialPose ? ToWorshipWeight(settings.fCrawlProbability) : 0,
-		};
-
-		const int totalWeight = weights[0] + weights[1] + weights[2];
-		if (totalWeight <= 0) {
-			return WorshipAction::Pray;
-		}
-
-		return static_cast<WorshipAction>(RandomIntWeighted(weights));
-	}
-
-	WorshipAction BeginWorshipAction(Actor* tiny) {
-		WorshipAction action = SelectWorshipAction(tiny);
-
-		switch (action) {
-			case WorshipAction::Pray: {
-				tiny->NotifyAnimationGraph("IdlePray");
-				return action;
-			}
-			case WorshipAction::Prone: {
-				if (auto transient = Transient::GetActorData(tiny)) {
-					transient->WorshipSuppressProneDamage = true;
-				}
-				RecordSneaking(tiny);
-				AnimationManager::StartAnim("SBO_ProneOn", tiny);
-				return action;
-			}
-			case WorshipAction::Crawl: {
-				RecordSneaking(tiny);
-				SetSneaking(tiny, true, 1);
-				AnimationVars::Other::SetVanillaSneaking(tiny, true);
-
-				if (SetCrawlAnimation(tiny, true)) {
-					UpdateCrawlAnimations(tiny, true);
-					return action;
-				}
-
-				SetSneaking(tiny, false, 0);
-				AnimationVars::Other::SetVanillaSneaking(tiny, tiny->IsSneaking());
-				AnimationVars::Crawl::SetIsCrawlEnabled(tiny, false);
-				tiny->NotifyAnimationGraph("IdlePray");
-				return WorshipAction::Pray;
-			}
-		}
-
-		tiny->NotifyAnimationGraph("IdlePray");
-		return WorshipAction::Pray;
-	}
-
 	void AlterMovementSpeed(Actor* giant, float& speed) {
 
 		float speedMult = std::clamp(AnimationManager::GetAnimSpeed(giant), 0.01f, 1.0f);
@@ -239,51 +101,6 @@ namespace {
 		}
 	}
 
-	void StartWorship(Actor* tiny) {
-		if (IsActionOnCooldown(tiny, CooldownSource::Misc_Worship)) {
-			return;
-		}
-		if (!tiny || tiny->IsDead() || !tiny->Is3DLoaded() || !tiny->GetCurrent3D()) {
-			return;
-		}
-		if (AnimationVars::General::IsGTSBusy(tiny) || AnimationVars::General::IsTransitioning(tiny) ||
-			AnimationVars::Prone::IsProne(tiny) || AnimationVars::Crawl::IsCrawlEnabled(tiny) || IsAlreadyWorshipping(tiny)) {
-			return;
-		}
-
-		ApplyActionCooldown(tiny, CooldownSource::Misc_Worship);
-		tiny->StopMoving(WORSHIP_DURATION);
-
-		ActorHandle tinyHandle = tiny->CreateRefHandle();
-		std::string taskName = std::format("Worship_{}", tiny->formID);
-		WorshipAction action = BeginWorshipAction(tiny);
-		if (auto transient = Transient::GetActorData(tiny)) {
-			transient->IsWorshipping = true;
-		}
-
-		TaskManager::Run(taskName, [=](auto& update) {
-			if (!tinyHandle) {
-				return false;
-			}
-
-			auto tinyRef = tinyHandle.get().get();
-			if (!tinyRef) {
-				return false;
-			}
-
-			if (tinyRef->IsDead() || !tinyRef->Is3DLoaded()) {
-				EndWorshipAction(tinyRef, action, false);
-				return false;
-			}
-
-			if (update.runtime >= WORSHIP_DURATION) {
-				EndWorshipAction(tinyRef, action, true);
-				return false;
-			}
-
-			return true;
-		});
-	}
 }
 
 namespace GTS {
@@ -519,49 +336,4 @@ namespace GTS {
 		}
 	}
 
-	void WorshipActors(Actor* giant) {
-		GTS_PROFILE_SCOPE("ActorUtils: WorshipActors");
-		if (!Config::AI.bWorship) {
-			return;
-		}
-		if (!giant || !giant->IsPlayerRef() || giant->IsSneaking() || AnimationVars::Crawl::IsCrawling(giant) || AnimationVars::Prone::IsProne(giant)) {
-			return;
-		}
-
-		for (auto tiny: FindSomeActors("AiActors", 2)) {
-			if (tiny == giant || !tiny || tiny->IsPlayerRef()) {
-				continue;
-			}
-			if (!IsHuman(tiny) || tiny->IsDead() || IsInSexlabAnim(tiny, giant)) {
-				continue;
-			}
-			if (IsBeingHeld(giant, tiny) || IsRagdolled(tiny) || InBleedout(tiny) ||
-				AnimationVars::General::IsGTSBusy(tiny) || AnimationVars::General::IsTransitioning(tiny) ||
-				AnimationVars::Prone::IsProne(tiny) || AnimationVars::Crawl::IsCrawlEnabled(tiny) || IsAlreadyWorshipping(tiny)) {
-				continue;
-			}
-
-			float sizedifference = std::clamp(get_scale_difference(giant, tiny, SizeType::VisualScale, false, true), 0.10f, 12.0f);
-			if (sizedifference < WORSHIP_SIZE_THRESHOLD) {
-				continue;
-			}
-
-			NiPoint3 giantPosition = giant->GetPosition();
-			NiPoint3 tinyPosition = tiny->GetPosition();
-			float distance = (giantPosition - tinyPosition).Length();
-
-			if (distance > WORSHIP_DISTANCE * GetMovementModifier(giant) * sizedifference) {
-				continue;
-			}
-
-			auto tinyRef = skyrim_cast<TESObjectREFR*>(tiny);
-			auto giantRef = skyrim_cast<TESObjectREFR*>(giant);
-			if (tinyRef && giantRef) {
-				bool seeingGiant = false;
-				if (tiny->HasLineOfSight(giantRef, seeingGiant)) {
-					StartWorship(tiny);
-				}
-			}
-		}
-	}
 }

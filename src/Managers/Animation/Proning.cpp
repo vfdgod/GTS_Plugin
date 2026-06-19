@@ -1,6 +1,5 @@
 #include "Managers/Animation/Proning.hpp"
 
-#include "Data/Transient.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/Animation/Utils/CrawlUtils.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
@@ -14,11 +13,6 @@
 using namespace GTS;
 
 namespace {
-
-	bool SuppressProneDamageForWorship(Actor* giant) {
-		auto transient = Transient::GetActorData(giant);
-		return transient && transient->WorshipSuppressProneDamage;
-	}
 
     const std::vector<std::string_view> BODY_NODES = {
 		"NPC R Thigh [RThg]",
@@ -155,9 +149,7 @@ namespace {
 
     void GTS_DiveSlide_ON(AnimationEventData& data) {
 		auto giant = &data.giant;
-		if (!SuppressProneDamageForWorship(giant)) {
-			StartBodyDamage_Slide(giant);
-		}
+		StartBodyDamage_Slide(giant);
 	}
 	void GTS_DiveSlide_OFF(AnimationEventData& data) {
 		auto giant = &data.giant;
@@ -166,9 +158,7 @@ namespace {
 	void GTS_BodyDamage_ON(AnimationEventData& data) {
 		auto giant = &data.giant;
 		SetProneState(giant, true);
-		if (!SuppressProneDamageForWorship(giant)) {
-			StartBodyDamage_DOT(giant);
-		}
+		StartBodyDamage_DOT(giant);
 	}
 	void GTS_BodyDamage_Off(AnimationEventData& data) {
 		auto giant = &data.giant;
