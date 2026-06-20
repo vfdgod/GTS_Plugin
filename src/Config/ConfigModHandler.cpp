@@ -2,6 +2,7 @@
 #include "Config/Config.hpp"
 
 #include "Managers/Morphs/MorphManager.hpp"
+#include "Utils/Actor/ActorBools.hpp"
 
 #include "UI/Core/ImStyleManager.hpp"
 #include "spdlog/spdlog.h"
@@ -66,6 +67,9 @@ namespace GTS {
 
 		DoCameraStateReset();
 		DoHighHeelStateReset();
+
+		auto player = PlayerCharacter::GetSingleton();
+		LogTinyCalamityDiagnostics(player, "OnGameLoaded");
 
 		logger::trace("ConfigModHandler OnGameLoaded");
 	}

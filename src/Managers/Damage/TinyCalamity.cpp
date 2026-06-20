@@ -92,12 +92,35 @@ namespace {
 namespace GTS {
     bool TinyCalamity_WrathfulCalamity(Actor* giant) {
         bool perform = false;
-        if (TinyCalamityHasRage(giant) && TinyCalamityActive(giant) && !giant->IsSneaking()) {
+        const bool has_rage = TinyCalamityHasRage(giant);
+        const bool is_active = TinyCalamityActive(giant);
+        const bool sneaking = giant && giant->IsSneaking();
+
+        if (giant && giant->IsPlayerRef()) {
+            LogTinyCalamityDiagnostics(giant, "WrathfulCalamity-Activate");
+            logger::warn(
+                "[TinyCalamityDiag:WrathfulGate] hasRage={} active={} sneaking={}",
+                has_rage,
+                is_active,
+                sneaking
+            );
+        }
+
+        if (has_rage && is_active && !sneaking) {
 
             const float base_threshold = 0.25f + std::clamp(GetGtsSkillLevel(giant) - 70.0f, 0.0f, 0.30f);
 
             std::vector<Actor*> preys = VoreController::GetSingleton().GetVoreTargetsInFront(giant, 1);
             bool OnCooldown = IsActionOnCooldown(giant, CooldownSource::Misc_TinyCalamityRage);
+            if (giant->IsPlayerRef()) {
+                logger::warn(
+                    "[TinyCalamityDiag:WrathfulSearch] preyCount={} onCooldown={} actionBoost={} simActionBoost={}",
+                    preys.size(),
+                    OnCooldown,
+                    TinyCalamityActionBoostActive(giant),
+                    Config::Advanced.bPlayerTinyCalamityActionBoost
+                );
+            }
             for (auto tiny: preys) {
                 if (tiny) {
                     if (IsHuman(tiny)) {
@@ -111,13 +134,42 @@ namespace GTS {
                         float difference = std::clamp(gts_hp / tiny_hp, min_cap, 2.0f);
 
                         float threshold = base_threshold * difference;
+                        if (giant->IsPlayerRef()) {
+                            logger::warn(
+                                "[TinyCalamityDiag:WrathfulTarget] target='{}' hostile={} teammate={} healthPct={:.3f} threshold={:.3f} giantMaxHp={:.1f} tinyMaxHp={:.1f}",
+                                tiny->GetDisplayFullName(),
+                                IsHostile(giant, tiny),
+                                IsTeammate(tiny),
+                                health,
+                                threshold,
+                                gts_hp,
+                                tiny_hp
+                            );
+                        }
 
                         if (health <= threshold && !OnCooldown) {
                             if (IsBeingHeld(giant, tiny) || IsRagdolled(tiny)) {
+                                if (giant->IsPlayerRef()) {
+                                    logger::warn(
+                                        "[TinyCalamityDiag:WrathfulBlocked] target='{}' beingHeld={} ragdolled={}",
+                                        tiny->GetDisplayFullName(),
+                                        IsBeingHeld(giant, tiny),
+                                        IsRagdolled(tiny)
+                                    );
+                                }
                                 return false;
                             }
                             ApplyActionCooldown(giant, CooldownSource::Misc_TinyCalamityRage);
                             Animation_TinyCalamity::AddToData(giant, tiny, 1.0f);
+
+                            if (giant->IsPlayerRef()) {
+                                logger::warn(
+                                    "[TinyCalamityDiag:WrathfulAccepted] target='{}' hostile={} teammate={}",
+                                    tiny->GetDisplayFullName(),
+                                    IsHostile(giant, tiny),
+                                    IsTeammate(tiny)
+                                );
+                            }
 
                             AnimationManager::StartAnim("InstaKill_Start_Tiny", tiny);
                             AnimationManager::StartAnim("InstaKill_Start_GTS", giant);
@@ -128,6 +180,15 @@ namespace GTS {
                             
                             perform = true;
                         } else {
+                            if (giant->IsPlayerRef()) {
+                                logger::warn(
+                                    "[TinyCalamityDiag:WrathfulRejected] target='{}' healthPct={:.3f} threshold={:.3f} onCooldown={}",
+                                    tiny->GetDisplayFullName(),
+                                    health,
+                                    threshold,
+                                    OnCooldown
+                                );
+                            }
                             if (giant->IsPlayerRef()) {
                                 if (!OnCooldown) {
                                     std::string message = std::format("{} 当前生命值过高，无法触发狂怒灾厄", tiny->GetDisplayFullName());

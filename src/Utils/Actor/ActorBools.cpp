@@ -441,4 +441,41 @@ namespace {
 		return HasPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkShrinkingGaze, Config::Advanced.bPlayerTinyCalamityShrinkingGaze);
 	}
 
+	void LogTinyCalamityDiagnostics(Actor* giant, const char* context) {
+		const char* tag = context ? context : "Unknown";
+		if (!giant) {
+			logger::warn("[TinyCalamityDiag:{}] actor=null", tag);
+			return;
+		}
+
+		const bool is_player = giant->IsPlayerRef();
+		const bool has_effect = HasTinyCalamityEffect(giant);
+		const bool has_calamity_perk = Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamity);
+		const bool has_rage_perk = Runtime::HasPerkTeam(giant, Runtime::PERK.GTSPerkTinyCalamityRage);
+		const bool sim_active = is_player && Config::Advanced.bPlayerTinyCalamityActive;
+		const bool sim_action_boost = is_player && Config::Advanced.bPlayerTinyCalamityActionBoost;
+		const bool sim_rage = is_player && Config::Advanced.bPlayerTinyCalamityRage;
+		const bool active = TinyCalamityActive(giant);
+		const bool action_boost = TinyCalamityActionBoostActive(giant);
+		const bool rage = TinyCalamityHasRage(giant);
+
+		logger::warn(
+			"[TinyCalamityDiag:{}] actor='{}' player={} effect={} calamityPerk={} ragePerk={} simActive={} simActionBoost={} simRage={} active={} actionBoost={} rage={} sneaking={} targetScale={:.3f}",
+			tag,
+			giant->GetDisplayFullName(),
+			is_player,
+			has_effect,
+			has_calamity_perk,
+			has_rage_perk,
+			sim_active,
+			sim_action_boost,
+			sim_rage,
+			active,
+			action_boost,
+			rage,
+			giant->IsSneaking(),
+			get_target_scale(giant)
+		);
+	}
+
 }

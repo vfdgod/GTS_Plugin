@@ -43,5 +43,6 @@ namespace GTS {
 	bool TinyCalamityHasSizeSteal(Actor* giant);
 	bool TinyCalamityHasRage(Actor* giant);
 	bool TinyCalamityHasShrinkingGaze(Actor* giant);
+	void LogTinyCalamityDiagnostics(Actor* giant, const char* context);
 
 }
