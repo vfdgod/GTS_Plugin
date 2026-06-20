@@ -73,6 +73,7 @@ struct SizeLimitRule_t {
     std::string sTarget = "kHumanoidNPC";
     std::string sMode = "kFixedLimit";
     float fValue = 1.0f;
+    bool bCombatOnly = false;
 };
 TOML_SERIALIZABLE(SizeLimitRule_t);
 

@@ -230,6 +230,19 @@ namespace GTS {
 			return a_target != LSizeLimitRuleTarget_t::kPlayer;
 		}
 
+		bool RuleTargetSupportsCombatOnly(LSizeLimitRuleTarget_t a_target) {
+			return a_target == LSizeLimitRuleTarget_t::kHostile;
+		}
+
+		const char* GetRuleCombatOnlyTooltip(LSizeLimitRuleTarget_t a_target) {
+			switch (a_target) {
+				case LSizeLimitRuleTarget_t::kHostile:
+					return "开启后，只有当前处于战斗中的敌对目标才会命中这条规则。未开战目标会继续按后续分类匹配。";
+				default:
+					return "";
+			}
+		}
+
 		SizeLimitRule_t MakeDefaultRule(LSizeLimitRuleTarget_t a_target) {
 			SizeLimitRule_t rule;
 			rule.bEnabled = true;
@@ -493,6 +506,10 @@ namespace GTS {
                     }
 
                     ImGui::TextWrapped("%s", GetRuleTargetTooltip(target));
+
+                    if (RuleTargetSupportsCombatOnly(target)) {
+                        ImGuiEx::CheckBox("仅限战斗中", &rule.bCombatOnly, GetRuleCombatOnlyTooltip(target));
+                    }
 
                     if (ImGui::BeginCombo("模式", GetRuleModeLabel(mode))) {
                         for (int rawMode = 0; rawMode < static_cast<int>(LSizeLimitRuleMode_t::kTotal); ++rawMode) {

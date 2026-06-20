@@ -63,6 +63,10 @@ namespace SizeOverride {
 		return !(a_target == LSizeLimitRuleTarget_t::kPlayer && a_mode == LSizeLimitRuleMode_t::kActionFit);
 	}
 
+	bool RuleTargetSupportsCombatOnly(LSizeLimitRuleTarget_t a_target) {
+		return a_target == LSizeLimitRuleTarget_t::kHostile;
+	}
+
 	void NormalizeSizeLimitRule(SizeLimitRule_t& a_rule) {
 		LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
 		if (!TryParseTarget(a_rule.sTarget, target)) {
@@ -76,6 +80,10 @@ namespace SizeOverride {
 				LSizeLimitRuleMode_t::kSystemAuto :
 				LSizeLimitRuleMode_t::kFixedLimit;
 			a_rule.sMode = EnumName(mode);
+		}
+
+		if (!RuleTargetSupportsCombatOnly(target)) {
+			a_rule.bCombatOnly = false;
 		}
 
 		if (mode == LSizeLimitRuleMode_t::kFixedLimit) {
@@ -276,6 +284,14 @@ namespace SizeOverride {
 		}
 	}
 
+	bool RuleMatchesExtraFilters(Actor* a_actor, const SizeLimitRule_t& a_rule, LSizeLimitRuleTarget_t a_target) {
+		if (!RuleTargetSupportsCombatOnly(a_target) || !a_rule.bCombatOnly) {
+			return true;
+		}
+
+		return a_actor && a_actor->IsInCombat();
+	}
+
 	ResolvedSizeLimitRule ResolveRuleForActor(Actor* a_actor) {
 		EnsureInitialized();
 
@@ -290,7 +306,9 @@ namespace SizeOverride {
 			}
 
 			LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
-			if (!TryParseTarget(rule.sTarget, target) || !ActorMatchesRuleTarget(a_actor, target)) {
+			if (!TryParseTarget(rule.sTarget, target) ||
+				!ActorMatchesRuleTarget(a_actor, target) ||
+				!RuleMatchesExtraFilters(a_actor, rule, target)) {
 				continue;
 			}
 
