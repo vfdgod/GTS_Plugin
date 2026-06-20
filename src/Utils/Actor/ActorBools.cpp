@@ -14,18 +14,40 @@ namespace {
 		return enabled && giant && giant->IsPlayerRef();
 	}
 
+	bool IsPlayerSimulatingTinyCalamity(Actor* giant) {
+		return giant && giant->IsPlayerRef() && Config::Advanced.bPlayerTinyCalamityActive && !HasTinyCalamityEffect(giant);
+	}
+
 	bool IsTinyCalamityFeatureEnabled(Actor* giant, bool playerToggle) {
-		return HasTinyCalamityEffect(giant) || IsPlayerTinyCalamityToggleEnabled(giant, playerToggle);
+		if (!giant) {
+			return false;
+		}
+		if (HasTinyCalamityEffect(giant)) {
+			return true;
+		}
+		return IsPlayerSimulatingTinyCalamity(giant) && playerToggle;
 	}
 
 	template <class PerkEntry>
 	bool HasPerkOrPlayerToggle(Actor* giant, const PerkEntry& perk, bool playerToggle) {
-		return giant && (Runtime::HasPerk(giant, perk) || IsPlayerTinyCalamityToggleEnabled(giant, playerToggle));
+		if (!giant) {
+			return false;
+		}
+		if (HasTinyCalamityEffect(giant)) {
+			return Runtime::HasPerk(giant, perk);
+		}
+		return IsPlayerSimulatingTinyCalamity(giant) && IsPlayerTinyCalamityToggleEnabled(giant, playerToggle);
 	}
 
 	template <class PerkEntry>
 	bool HasTeamPerkOrPlayerToggle(Actor* giant, const PerkEntry& perk, bool playerToggle) {
-		return giant && (Runtime::HasPerkTeam(giant, perk) || IsPlayerTinyCalamityToggleEnabled(giant, playerToggle));
+		if (!giant) {
+			return false;
+		}
+		if (HasTinyCalamityEffect(giant)) {
+			return Runtime::HasPerkTeam(giant, perk);
+		}
+		return IsPlayerSimulatingTinyCalamity(giant) && IsPlayerTinyCalamityToggleEnabled(giant, playerToggle);
 	}
 
 }
@@ -452,7 +474,8 @@ namespace {
 		const bool has_effect = HasTinyCalamityEffect(giant);
 		const bool has_calamity_perk = Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamity);
 		const bool has_rage_perk = Runtime::HasPerkTeam(giant, Runtime::PERK.GTSPerkTinyCalamityRage);
-		const bool sim_active = is_player && Config::Advanced.bPlayerTinyCalamityActive;
+		const bool sim_config_active = is_player && Config::Advanced.bPlayerTinyCalamityActive;
+		const bool sim_mode = IsPlayerSimulatingTinyCalamity(giant);
 		const bool sim_action_boost = is_player && Config::Advanced.bPlayerTinyCalamityActionBoost;
 		const bool sim_rage = is_player && Config::Advanced.bPlayerTinyCalamityRage;
 		const bool active = TinyCalamityActive(giant);
@@ -460,14 +483,15 @@ namespace {
 		const bool rage = TinyCalamityHasRage(giant);
 
 		logger::warn(
-			"[TinyCalamityDiag:{}] actor='{}' player={} effect={} calamityPerk={} ragePerk={} simActive={} simActionBoost={} simRage={} active={} actionBoost={} rage={} sneaking={} targetScale={:.3f}",
+			"[TinyCalamityDiag:{}] actor='{}' player={} effect={} calamityPerk={} ragePerk={} simConfigActive={} simMode={} simActionBoost={} simRage={} active={} actionBoost={} rage={} sneaking={} targetScale={:.3f}",
 			tag,
 			giant->GetDisplayFullName(),
 			is_player,
 			has_effect,
 			has_calamity_perk,
 			has_rage_perk,
-			sim_active,
+			sim_config_active,
+			sim_mode,
 			sim_action_boost,
 			sim_rage,
 			active,
