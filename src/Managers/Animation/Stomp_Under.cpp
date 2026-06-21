@@ -53,7 +53,7 @@ namespace {
 		}
 
 
-        DoDamageEffect(giant, Damage_Stomp_Under_Light * damage * perk, Radius_Stomp_Strong, 8, 0.30f, Event, 1.0f, Source, false);
+        DoDamageEffect(giant, Damage_Stomp_Under_Light * damage * perk, Radius_Stomp_Strong, 8, 0.30f, Event, 1.0f, Source, false, FootActionDamageLimitKind::NormalStomp);
         DoImpactRumble(giant, Node, rumble);
         DoDustExplosion(giant, 1.0f * (SMT), Event, Node);
 

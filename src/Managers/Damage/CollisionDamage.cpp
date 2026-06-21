@@ -16,6 +16,7 @@
 
 #include "Utils/DeathReport.hpp"
 #include "Utils/MovementForce.hpp"
+#include "Utils/Actor/GTSUtils.hpp"
 
 
 using namespace GTS;
@@ -100,6 +101,32 @@ namespace {
 		return original_difference * (visual_tiny_scale / target_tiny_scale);
 	}
 
+	float GetFootActionDamageLimitPercent(FootActionDamageLimitKind damage_limit_kind) {
+		if (!Config::Advanced.bFootActionDamageLimit) {
+			return 0.0f;
+		}
+
+		bool enabled = false;
+		switch (damage_limit_kind) {
+			case FootActionDamageLimitKind::NormalStomp:
+				enabled = Config::Advanced.bFootActionDamageLimitNormal;
+				break;
+			case FootActionDamageLimitKind::StrongStomp:
+				enabled = Config::Advanced.bFootActionDamageLimitStrong;
+				break;
+			case FootActionDamageLimitKind::Trample:
+				enabled = Config::Advanced.bFootActionDamageLimitTrample;
+				break;
+			default:
+				break;
+		}
+
+		if (!enabled) {
+			return 0.0f;
+		}
+		return std::clamp(Config::Advanced.fFootActionDamageLimitMaxHealthPercent, 1.0f, 100.0f);
+	}
+
 	bool ApplyHighHeelBonus(Actor* giant, DamageSource cause) {
 		bool HighHeel = false;
 		switch (cause) {
@@ -168,7 +195,7 @@ namespace {
 namespace GTS {
 
 	// Safer optimization that preserves original behavior
-	void CollisionDamage::DoFootCollision(Actor* actor, float damage, float radius, int random, float bbmult, float crush_threshold, DamageSource Cause, bool Right, bool ApplyCooldown, bool ignore_rotation, bool SupportCalamity) {
+	void CollisionDamage::DoFootCollision(Actor* actor, float damage, float radius, int random, float bbmult, float crush_threshold, DamageSource Cause, bool Right, bool ApplyCooldown, bool ignore_rotation, bool SupportCalamity, FootActionDamageLimitKind damage_limit_kind) {
 
 		//GTS_PROFILE_SCOPE("CollisionDamage: DoFootCollision");
 
@@ -257,19 +284,19 @@ namespace GTS {
 					bool OnCooldown = IsActionOnCooldown(otherActor, CooldownSource::Damage_Thigh);
 					if (!OnCooldown) {
 						Utils_PushCheck(actor, otherActor, Get_Bone_Movement_Speed(actor, Cause));
-						DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage);
+						DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage, damage_limit_kind);
 						ApplyActionCooldown(otherActor, CooldownSource::Damage_Thigh);
 					}
 				}
 				else {
 					Utils_PushCheck(actor, otherActor, Get_Bone_Movement_Speed(actor, Cause));
-					DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage);
+					DoSizeDamage(actor, otherActor, damage, bbmult, crush_threshold, random, Cause, DoDamage, damage_limit_kind);
 				}
 			}
 		}
 	}
 
-	void CollisionDamage::DoSizeDamage(Actor* giant, Actor* tiny, float damage, float bbmult, float crush_threshold, int random, DamageSource Cause, bool apply_damage) { // Applies damage and crushing
+	void CollisionDamage::DoSizeDamage(Actor* giant, Actor* tiny, float damage, float bbmult, float crush_threshold, int random, DamageSource Cause, bool apply_damage, FootActionDamageLimitKind damage_limit_kind) { // Applies damage and crushing
 		GTS_PROFILE_SCOPE("CollisionDamage: DoSizeDamage");
 		if (!giant) {
 			return;
@@ -321,6 +348,7 @@ namespace GTS {
 				float damage_result = (damage * size_difference * damagebonus) * (normaldamage * sprintdamage) * (highheelsdamage * weightdamage) * vulnerability;
 
 				damage_result *= Might;
+				damage_result = LimitSizeDamageToMaxHealthPercent(giant, tiny, damage_result, GetFootActionDamageLimitPercent(damage_limit_kind));
 
 				TinyCalamity_ShrinkActor(giant, tiny, damage_result * 0.35f * Config::Balance.fSizeDamageMult);
 

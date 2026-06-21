@@ -440,6 +440,43 @@ namespace GTS {
 				ImGui::Spacing();
 			}
 		}
+
+		ImUtil_Unique
+		{
+			PSString T0 = "启用后，可对下方选中的脚部动作限制单次尺寸伤害。\n"
+			              "限制按目标最大生命值百分比计算，并会考虑技能等级、难度和全局尺寸伤害倍率后的最终伤害。";
+			PSString T1 = "限制普通轻踩及其脚下轻踩变体。";
+			PSString T2 = "限制重踩及其脚下重踩变体。";
+			PSString T3 = "限制践踏 Trample 的阶段伤害。";
+			PSString T4 = "单次命中最多造成目标最大生命值的多少百分比。\n"
+			              "例如 45% 表示 600 最大生命目标单次最多受到约 270 点最终尺寸伤害。";
+
+			Config::Advanced.fFootActionDamageLimitMaxHealthPercent = std::clamp(
+				Config::Advanced.fFootActionDamageLimitMaxHealthPercent,
+				1.0f,
+				100.0f
+			);
+
+			if (ImGui::CollapsingHeader("动作伤害限制", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("启用动作伤害限制", &Config::Advanced.bFootActionDamageLimit, T0);
+				ImGuiEx::CheckBox("轻踩", &Config::Advanced.bFootActionDamageLimitNormal, T1, !Config::Advanced.bFootActionDamageLimit);
+				ImGui::SameLine();
+				ImGuiEx::CheckBox("重踩", &Config::Advanced.bFootActionDamageLimitStrong, T2, !Config::Advanced.bFootActionDamageLimit);
+				ImGui::SameLine();
+				ImGuiEx::CheckBox("踩踏", &Config::Advanced.bFootActionDamageLimitTrample, T3, !Config::Advanced.bFootActionDamageLimit);
+				ImGuiEx::SliderF(
+					"单次最大伤害",
+					&Config::Advanced.fFootActionDamageLimitMaxHealthPercent,
+					1.0f,
+					100.0f,
+					T4,
+					"最大生命 %.0f%%",
+					!Config::Advanced.bFootActionDamageLimit
+				);
+
+				ImGui::Spacing();
+			}
+		}
 	}
 
 	void CategoryExtensions::DrawRight() {

@@ -25,6 +25,12 @@ namespace {
 
 	using namespace GTS;
 
+	float GetSizeDamageMultiplier(Actor* attacker) {
+		constexpr float difficulty = 2.0f; // taking Legendary Difficulty as a base
+		const float levelbonus = 1.0f + ((GetGtsSkillLevel(attacker) * 0.01f) * 0.50f);
+		return levelbonus * difficulty * Config::Balance.fSizeDamageMult;
+	}
+
 	struct SpringGrowData {
 		Spring amount = Spring(0.0f, 1.0f);
 		float addedSoFar = 0.0f;
@@ -673,15 +679,39 @@ namespace GTS {
 	}
 
 	void DoDamageEffect(Actor* giant, float damage, float radius, int random, float bonedamage, FootEvent kind, float crushmult, DamageSource Cause, bool ignore_rotation) {
+		DoDamageEffect(giant, damage, radius, random, bonedamage, kind, crushmult, Cause, ignore_rotation, FootActionDamageLimitKind::None);
+	}
+
+	void DoDamageEffect(Actor* giant, float damage, float radius, int random, float bonedamage, FootEvent kind, float crushmult, DamageSource Cause, bool ignore_rotation, FootActionDamageLimitKind damage_limit_kind) {
 		if (kind == FootEvent::Left) {
-			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, false, false, ignore_rotation, true);
+			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, false, false, ignore_rotation, true, damage_limit_kind);
 		}
 		if (kind == FootEvent::Right) {
-			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, true, false, ignore_rotation, true);
+			CollisionDamage::DoFootCollision(giant, damage, radius, random, bonedamage, crushmult, Cause, true, false, ignore_rotation, true, damage_limit_kind);
 			//                                                                                  ^         ^         ^ - - - - Normal Crush
 			//                                                       Chance to trigger bone crush   Damage of            Threshold multiplication
 			//                                                                                      Bone Crush
 		}
+	}
+
+	float LimitSizeDamageToMaxHealthPercent(Actor* attacker, Actor* receiver, float value, float max_health_percent) {
+		if (!attacker || !receiver || value <= 0.0f || max_health_percent <= 0.0f) {
+			return value;
+		}
+
+		const float max_health = GetMaxAV(receiver, ActorValue::kHealth);
+		if (max_health <= 0.0f) {
+			return value;
+		}
+
+		const float damage_multiplier = GetSizeDamageMultiplier(attacker);
+		if (damage_multiplier <= 0.0f) {
+			return value;
+		}
+
+		const float percent = std::clamp(max_health_percent, 0.0f, 100.0f) * 0.01f;
+		const float raw_damage_cap = (max_health * percent) / damage_multiplier;
+		return std::min(value, raw_damage_cap);
 	}
 
 	void InflictSizeDamage(Actor* attacker, Actor* receiver, float value) {
@@ -700,7 +730,6 @@ namespace GTS {
 
 		if (!receiver->IsDead()) {
 			float HpPercentage = GetHealthPercentage(receiver);
-			float difficulty = 2.0f; // taking Legendary Difficulty as a base
 			float levelbonus = 1.0f + ((GetGtsSkillLevel(attacker) * 0.01f) * 0.50f);
 			value *= levelbonus;
 
@@ -717,7 +746,7 @@ namespace GTS {
 
 			//The correct thing to do here is to pass the attacker.
 			//This however results in size damage causing overkills due to how the hook for TakeDamage is setup.
-			float damageDealt = value * difficulty * Config::Balance.fSizeDamageMult;
+			float damageDealt = value * 2.0f * Config::Balance.fSizeDamageMult;
 			if (damageDealt <= 0.0f) {
 				return;
 			}

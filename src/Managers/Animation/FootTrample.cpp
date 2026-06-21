@@ -77,7 +77,7 @@ namespace {
 			}
 
 			if (Finish - Start > 0.06) { 
-				DoDamageEffect(GiantRef, Damage_Trample * perk, Radius_Trample, 100, 0.10f, Event, 1.10f, Source, false);
+				DoDamageEffect(GiantRef, Damage_Trample * perk, Radius_Trample, 100, 0.10f, Event, 1.10f, Source, false, FootActionDamageLimitKind::Trample);
 				DrainStamina(GiantRef, "StaminaDrain_Trample", Runtime::PERK.GTSPerkDestructionBasics, true, 0.6f); // start stamina drain
 
 				float shake_power = Rumble_Trample_Stage1 * smt * GetHighHeelsBonusDamage(GiantRef, true);
@@ -111,7 +111,7 @@ namespace {
 		float shake_power = Rumble_Trample_Stage2 * smt * GetHighHeelsBonusDamage(giant, true);
 
 		Rumbling::Once(rumble, giant, shake_power, 0.0f, Node, 1.1f);
-		DoDamageEffect(giant, Damage_Trample_Repeat * perk, Radius_Trample_Repeat, 1, 0.12f, Event, 1.10f, Source, false);
+		DoDamageEffect(giant, Damage_Trample_Repeat * perk, Radius_Trample_Repeat, 1, 0.12f, Event, 1.10f, Source, false, FootActionDamageLimitKind::Trample);
 		StompManager::PlayNewOrOldStomps(giant, 1.0f, Event, Node, false);
 		DoDustExplosion(giant, dust * smt, Event, Node);
 		DoLaunch(giant, 0.85f * perk, 3.8f * perk, Event);
@@ -134,7 +134,7 @@ namespace {
 		float Augment = PerkHandler::Perks_Cataclysmic_EmpowerStomp(giant);
 		bool GotStacks = PerkHandler::Perks_Cataclysmic_HasStacks(giant);
 
-		DoDamageEffect(giant, Damage_Trample_Finisher * perk * Augment, Radius_Trample_Finisher, 1, 0.25f, Event, 0.85f, Source, false);
+		DoDamageEffect(giant, Damage_Trample_Finisher * perk * Augment, Radius_Trample_Finisher, 1, 0.25f, Event, 0.85f, Source, false, FootActionDamageLimitKind::Trample);
 		DoLaunch(giant, 1.25f * perk * Augment, 5.0f * perk * Augment, Event);
 		StompManager::PlayNewOrOldStomps(giant, 1.15f, Event, Node, true);
 		Rumbling::Once(rumble, giant, shake_power, 0.0f, Node, 1.2f);

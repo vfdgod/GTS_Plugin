@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Systems/Events/EventData.hpp"
+
 namespace GTS {
 
 	//----------------------------------------------------
@@ -62,6 +64,8 @@ namespace GTS {
 	//----------------------------------------------------
 	void DoDamageEffect(Actor* giant, float damage, float radius, int random, float bonedamage, FootEvent kind, float crushmult, DamageSource Cause);
 	void DoDamageEffect(Actor* giant, float damage, float radius, int random, float bonedamage, FootEvent kind, float crushmult, DamageSource Cause, bool ignore_rotation);
+	void DoDamageEffect(Actor* giant, float damage, float radius, int random, float bonedamage, FootEvent kind, float crushmult, DamageSource Cause, bool ignore_rotation, FootActionDamageLimitKind damage_limit_kind);
+	float LimitSizeDamageToMaxHealthPercent(Actor* attacker, Actor* receiver, float value, float max_health_percent);
 	void InflictSizeDamage(Actor* attacker, Actor* receiver, float value);
 
 	//----------------------------------------------------

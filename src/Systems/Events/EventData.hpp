@@ -174,6 +174,13 @@ namespace GTS {
 		Shockwave,
 	};
 
+	enum class FootActionDamageLimitKind {
+		None,
+		NormalStomp,
+		StrongStomp,
+		Trample,
+	};
+
 	enum class GrowthAnimation {
 		None,
 		Growth_1,

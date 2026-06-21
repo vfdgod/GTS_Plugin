@@ -63,6 +63,11 @@ struct SettingsAdvanced_t {
     float fStompAssistDuration = 1.0f;
     float fStompAssistSearchRadius = 36.0f;
     float fStompAssistSizeThreshold = 3.5f;
+    bool bFootActionDamageLimit = false;
+    bool bFootActionDamageLimitNormal = true;
+    bool bFootActionDamageLimitStrong = true;
+    bool bFootActionDamageLimitTrample = true;
+    float fFootActionDamageLimitMaxHealthPercent = 45.0f;
     bool bPlayerAI = false;
     float fAnimSpeedAdjMultPlayer = 1.0f;
     float fAnimSpeedAdjMultTeammate = 1.0f;
