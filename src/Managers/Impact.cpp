@@ -168,8 +168,10 @@ namespace {
 		bool EffectDelay = Config::General.bAlterPlayerGravity;
 		double gravity = 1.0;
 		
-		if (EffectDelay && actor->GetCharController()) {
-			gravity = std::clamp(actor->GetCharController()->gravity, 1.0f, 999999.0f);
+		if (EffectDelay) {
+			if (auto* charController = actor->GetCharController()) {
+				gravity = std::clamp(charController->gravity, 1.0f, 999999.0f);
+			}
 		}
 
 		const double EffectDelay_Gravity= static_cast<double>(EffectDelay ? Config::General.fAdditionalJumpEffectDelay_Gravity : 0.0f);

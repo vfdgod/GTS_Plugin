@@ -158,6 +158,10 @@ namespace {
 	}
 
 	bool IsFemale(Actor* a_Actor, bool AllowOverride) {
+		if (!a_Actor) {
+			return false;
+		}
+
 		if (AllowOverride) {
 			GTS_PROFILE_SCOPE("ActorUtils: IsFemale");
 

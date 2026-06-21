@@ -11,10 +11,18 @@ using namespace GTS;
 namespace {
 
 	void DisableEssentialFlag(Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
 		if (actor->IsEssential()) {
 			actor->GetActorRuntimeData().boolFlags.reset(RE::Actor::BOOL_FLAGS::kEssential); // Else they respawn.
 			actor->AsActorState()->actorState1.lifeState = ACTOR_LIFE_STATE::kDead;
-			auto data = actor->GetActorBase()->As<TESActorBaseData>();
+			auto* actorBase = actor->GetActorBase();
+			if (!actorBase) {
+				return;
+			}
+			auto data = actorBase->As<TESActorBaseData>();
 			if (data) {
 				data->actorData.actorBaseFlags.reset(ACTOR_BASE_DATA::Flag::kEssential);
 				data->actorData.actorBaseFlags.reset(ACTOR_BASE_DATA::Flag::kProtected);
@@ -23,6 +31,10 @@ namespace {
 	}
 
 	void DisableDeathDialogueTask(Actor* tiny) {
+		if (!tiny) {
+			return;
+		}
+
 		std::string name = std::format("MuteDeath_{}", tiny->formID);
 		ActorHandle tinyRef = tiny->CreateRefHandle();
 
@@ -143,6 +155,9 @@ namespace GTS {
 	}
 
 	void Task_InitHavokTask(Actor* tiny) {
+		if (!tiny) {
+			return;
+		}
 
 		double startTime = Time::WorldTimeElapsed();
 		ActorHandle tinyHandle = tiny->CreateRefHandle();
@@ -198,6 +213,10 @@ namespace GTS {
 	}
 
 	void KillActor(Actor* giant, Actor* tiny, bool silent) {
+		if (!giant || !tiny) {
+			return;
+		}
+
 		DisableEssentialFlag(tiny); // Prevent Essentials from reappearing
 		if (silent) {
 			DisableDeathDialogueTask(tiny);
@@ -222,6 +241,10 @@ namespace GTS {
 	
 
 	void ForceFlee(Actor* giant, Actor* tiny, float duration, bool apply_size_difference) {
+		if (!giant || !tiny) {
+			return;
+		}
+
 		float oldConfidence = GetAV(tiny, ActorValue::kConfidence);
 
 		double Start = Time::WorldTimeElapsed();

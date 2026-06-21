@@ -195,6 +195,10 @@ namespace GTS {
 	}
 
 	void Disintegrate(Actor* a_target) {
+		if (!a_target) {
+			return;
+		}
+
 		const std::string taskname = std::format("Disintegrate_{}", a_target->formID);
 		ActorHandle targetRef = a_target->CreateRefHandle();
 		TaskManager::RunOnce(taskname, [=](auto&) {
@@ -395,6 +399,10 @@ namespace GTS {
 
 
 	hkaRagdollInstance* GetRagdoll(Actor* a_actor) {
+		if (!a_actor) {
+			return nullptr;
+		}
+
 		BSAnimationGraphManagerPtr animGraphManager;
 		if (a_actor->GetAnimationGraphManager(animGraphManager)) {
 			for (BSTSmartPointer<BShkbAnimationGraph>& graph : animGraphManager->graphs) {
@@ -412,6 +420,10 @@ namespace GTS {
 	}
 
 	void DisarmActor(Actor* a_target, bool a_dropWeapon) {
+		if (!a_target) {
+			return;
+		}
+
 		if (!a_dropWeapon) {
 			for (const char* const& node : disarm_nodes) {
 				if (auto object = find_node(a_target, node)) {
@@ -420,11 +432,12 @@ namespace GTS {
 
 					std::string objectname = object->name.c_str();
 					std::string name = std::format("ScaleWeapons_{}_{}", a_target->formID, objectname);
+					std::string nodeName = objectname;
 					ActorHandle tinyHandle = a_target->CreateRefHandle();
 
 					double Start = Time::WorldTimeElapsed();
 
-					TaskManager::Run(name, [=](auto&) {
+					TaskManager::Run(name, [tinyHandle, nodeName, Start](auto&) {
 						if (!tinyHandle) {
 							return false;
 						}
@@ -432,14 +445,18 @@ namespace GTS {
 						if (!Tiny) {
 							return false;
 						}
+						auto currentObject = find_node(Tiny, nodeName);
+						if (!currentObject) {
+							return false;
+						}
 						double Finish = Time::WorldTimeElapsed();
 
-						object->local.scale = 0.01f;
-						update_node(object);
+						currentObject->local.scale = 0.01f;
+						update_node(currentObject);
 
 						if (Finish - Start > 0.25 && !AnimationVars::General::IsGTSBusy(Tiny)) {
-							object->local.scale = 1.0f;
-							update_node(object);
+							currentObject->local.scale = 1.0f;
+							update_node(currentObject);
 							return false;
 						}
 
@@ -467,9 +484,16 @@ namespace GTS {
 	}
 
 	void ManageRagdoll(Actor* a_actor, float a_deltaLength, NiPoint3 a_deltaLocation, NiPoint3 a_targetLocation) {
+		if (!a_actor) {
+			return;
+		}
+
 		if (a_deltaLength >= 70.0f) {
 			// WARP if > 1m
 			hkaRagdollInstance* ragDoll = GetRagdoll(a_actor);
+			if (!ragDoll) {
+				return;
+			}
 			hkVector4 delta = hkVector4(a_deltaLocation.x / 70.0f, a_deltaLocation.y / 70.0f, a_deltaLocation.z / 70, 1.0f);
 			for (auto rb : ragDoll->rigidBodies) {
 				if (rb) {
@@ -643,6 +667,10 @@ namespace GTS {
 	}
 
 	void PushTowards(Actor* a_source, Actor* a_target, std::string_view a_boneName, float a_power, bool a_doSizeCheck) {
+		if (!a_source || !a_target) {
+			return;
+		}
+
 		if (!AllowStagger(a_target)) {
 			return;
 		}
@@ -720,7 +748,15 @@ namespace GTS {
 	}
 
 	void PushTowards(Actor* a_source, Actor* a_target, NiAVObject* a_bone, float a_power, bool a_doSizeCheck) {
+		if (!a_source || !a_target || !a_bone) {
+			return;
+		}
+
 		NiPoint3 startCoords = a_bone->world.translate;
+		std::string boneName = a_bone->name.c_str();
+		if (boneName.empty()) {
+			return;
+		}
 
 		ActorHandle tinyHandle = a_target->CreateRefHandle();
 		ActorHandle giantHandle = a_source->CreateRefHandle();
@@ -755,7 +791,12 @@ namespace GTS {
 
 			if ((endTime - startTime) > 1e-4) {
 
-				NiPoint3 endCoords = a_bone->world.translate;
+				auto currentBone = find_node(giant, boneName);
+				if (!currentBone) {
+					return false;
+				}
+
+				NiPoint3 endCoords = currentBone->world.translate;
 
 				//log::info("Passing coords: Start: {}, End: {}", Vector2Str(startCoords), Vector2Str(endCoords));
 				// Because of delayed nature (and because coordinates become constant once we pass them to TaskManager)

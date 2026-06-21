@@ -334,7 +334,13 @@ namespace GTS {
 						if (m_originalData.hasVertecesShape && m_originalData.convexVerteces.size() == 18) { // Bone driven updates only for humanoids with 18-vertex shapes
 
 							if (IsHuman(Target)) {
-								if ((Target->IsPlayerRef() && Target->GetActorBase()->GetSex() != SEX::kMale) || (Config::Collision.bEnableBoneDrivenCollisionUpdatesFollowers && IsTeammate(Target))) {
+								bool playerUsesBoneDrivenCollision = false;
+								if (Target->IsPlayerRef()) {
+									const auto* actorBase = Target->GetActorBase();
+									playerUsesBoneDrivenCollision = actorBase && actorBase->GetSex() != SEX::kMale;
+								}
+
+								if (playerUsesBoneDrivenCollision || (Config::Collision.bEnableBoneDrivenCollisionUpdatesFollowers && IsTeammate(Target))) {
 
 									AdjustBoneDrivenHuman(); // Clamped inside function
 									UpdateControllerScaleAndSlope(controller, m_originalData, m_currentVisualScale);

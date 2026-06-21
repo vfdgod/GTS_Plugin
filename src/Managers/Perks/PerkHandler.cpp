@@ -35,6 +35,9 @@ namespace {
                 }
 
                 auto giantref = actorHandle.get().get();
+                if (!giantref) {
+                    return;
+                }
                 if (!giantref->Is3DLoaded()) {
                     return;
                 }
@@ -71,6 +74,10 @@ namespace {
     }
 
     void ManageSpellPerks(const AddPerkEvent& evt) {
+        if (!evt.actor) {
+            return;
+        }
+
         if (evt.actor->IsPlayerRef()) {
             if (evt.perk == Runtime::GetPerk(Runtime::PERK.GTSPerkGrowthDesireAug)) {
                 PrintMessageBox("你现在可以手动控制自己的变大和缩小了。默认按键是 L.Shift + 1 或 2。按 L.Shift + Left Arrow + Arrow Up 可以影响追随者，按 Left Arrow + Arrow Up 可以作用于自己。");
@@ -142,20 +149,22 @@ namespace {
 
             //log::info("Life force stolen: {}, added power: {}", data->Perk_lifeForceStolen, stack_power);
 
-            TaskManager::Run(name, [=](auto& progressData) {
+            TaskManager::Run(name, [gianthandle, Start, stack_duration, stack_power](auto& progressData) {
                 if (!gianthandle) {
                     return false;
                 }
+                Actor* giantref = gianthandle.get().get();
+                if (!giantref) {
+                    return false;
+                }
+
                 double Finish = Time::WorldTimeElapsed();
 
                 if (Finish - Start >= stack_duration) {
-                    if (data) {
-                        if (data->Stacks_Perk_LifeForce > 0) {
-                            data->Stacks_Perk_LifeForce -= 1;
-                            data->PerkLifeForceStolen -= stack_power;
-                        } else if (data->Stacks_Perk_LifeForce == 0) {
-                            return false;
-                        }
+                    auto currentData = Transient::GetActorData(giantref);
+                    if (currentData && currentData->Stacks_Perk_LifeForce > 0) {
+                        currentData->Stacks_Perk_LifeForce -= 1;
+                        currentData->PerkLifeForceStolen = std::max(0.0f, currentData->PerkLifeForceStolen - stack_power);
                     }
                     return false;
                 }
@@ -251,7 +260,12 @@ namespace GTS {
 
     void PerkHandler::RuntimeGivePerksToNPC(Actor* a_actor, float a_currentSkillLevel) {
 
-        if (a_actor->GetActorBase()->UsesTemplate()) {
+        auto* actorBase = a_actor ? a_actor->GetActorBase() : nullptr;
+        if (!actorBase) {
+            return;
+        }
+
+        if (actorBase->UsesTemplate()) {
             logger::trace("Can't give perks to Templated NPC's");
             return;
         }
@@ -281,7 +295,7 @@ namespace GTS {
 
                 if (RE2::PartialMatch(pname, intRegex, &reqLevel)) {
                     if (reqLevel > 0 && a_currentSkillLevel >= reqLevel) {
-                        a_actor->GetActorBase()->AddPerk(perkptr, 0);
+                        actorBase->AddPerk(perkptr, 0);
                         logger::trace("Gave Conditionless Perk: {} to {}", perkptr->GetName(), a_actor->GetName());
                     }
                 }
@@ -300,7 +314,7 @@ namespace GTS {
                             if (req <= a_currentSkillLevel) {
                                 //If level req. met give the perk.
                                 logger::trace("Gave Perk: {} to {}", perkptr->GetName(), a_actor->GetName());
-                                a_actor->GetActorBase()->AddPerk(perkptr, 1);
+                                actorBase->AddPerk(perkptr, 1);
                                 a_actor->ApplyTemporaryPerk(perkptr);
                                 break;
                             }

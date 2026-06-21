@@ -3,9 +3,31 @@
 
 namespace GTS {
 
+	namespace {
+		std::vector<hkpWorldObject*> GetWorldObjectsFrom(
+			const std::vector<hkpRigidBody*>& a_rigidBodies,
+			const std::vector<hkpPhantom*>& a_phantoms
+		) {
+			std::vector<hkpWorldObject*> entities;
+			entities.reserve(a_rigidBodies.size() + a_phantoms.size());
+
+			for (auto* rb : a_rigidBodies) {
+				entities.push_back(rb);
+			}
+			for (auto* phantom : a_phantoms) {
+				entities.push_back(phantom);
+			}
+
+			return entities;
+		}
+	}
+
 	void ColliderData::Activate() {
 		logger::info("Activate RBs");
 		for (auto rb: GetRigidBodies()) {
+			if (!rb) {
+				continue;
+			}
 			logger::info("  - Activating");
 			rb->SetMotionType(hkpMotion::MotionType::kCharacter, hkpEntityActivation::kDoActivate, hkpUpdateCollisionFilterOnEntityMode::kFullCheck);
 		}
@@ -84,15 +106,24 @@ namespace GTS {
 	}
 
 	void ColliderData::DisableCollisions() {
-		std::vector<hkpWorldObject*> entities = GetWorldObjects();
-		for (auto& rb: GetRigidBodies()) {
+		const auto rigidBodies = GetRigidBodies();
+		const auto phantoms = GetPhantoms();
+		const auto worldObjects = GetWorldObjectsFrom(rigidBodies, phantoms);
+
+		for (auto& rb: rigidBodies) {
+			if (!rb) {
+				continue;
+			}
 			// Disable gravity
 			// log::info("Disable gravity (was {})", rb->motion.gravityFactor);
 			rb->motion.gravityFactor = 0.0f;
 			rb->motion.SetMassInv(0.0f);
 		}
 
-		for (auto& ent: GetWorldObjects()) {
+		for (auto& ent: worldObjects) {
+			if (!ent) {
+				continue;
+			}
 			auto collidable = ent->GetCollidable();
 			if (collidable) {
 				// log::info("- Disable collision");
@@ -111,13 +142,23 @@ namespace GTS {
 	}
 
 	void ColliderData::EnableCollisions() {
-		for (auto& rb: GetRigidBodies()) {
+		const auto rigidBodies = GetRigidBodies();
+		const auto phantoms = GetPhantoms();
+		const auto worldObjects = GetWorldObjectsFrom(rigidBodies, phantoms);
+
+		for (auto& rb: rigidBodies) {
+			if (!rb) {
+				continue;
+			}
 			// Enable gravity
 			rb->motion.gravityFactor = 1.0f;
 			rb->motion.SetMassInv(1.0f);
 		}
 
-		for (auto& ent: GetWorldObjects()) {
+		for (auto& ent: worldObjects) {
+			if (!ent) {
+				continue;
+			}
 			auto collidable = ent->GetCollidable();
 			if (collidable) {
 				// log::info("- Enabling collision");

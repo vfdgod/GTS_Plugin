@@ -196,6 +196,10 @@ namespace GTS {
 
 	float GetMovementModifier(Actor* a_target) {
 		float modifier = 1.0f;
+		if (!a_target) {
+			return modifier;
+		}
+
 		if (a_target->AsActorState()->IsSprinting()) {
 			modifier *= 1.33f;
 		}
@@ -215,6 +219,10 @@ namespace GTS {
 	}
 
 	void StartActorResetTask(Actor* a_target) {
+		if (!a_target) {
+			return;
+		}
+
 		if (a_target->IsPlayerRef()) {
 			return; //Don't reset Player
 		}
@@ -240,6 +248,10 @@ namespace GTS {
 	}
 
 	float GetFallModifier(Actor* a_target) {
+		if (!a_target) {
+			return 1.0f;
+		}
+
 		auto transient = Transient::GetActorData(a_target);
 		float fallmod = 1.0f;
 		if (transient) {
@@ -250,11 +262,13 @@ namespace GTS {
 	}
 
 	bool AllowStagger(Actor* a_target) {
-		bool giantIsFriendly = (a_target->IsPlayerRef() || IsTeammate(a_target));
-		bool tinyIsFriendly = (a_target->IsPlayerRef() || IsTeammate(a_target));
+		if (!a_target) {
+			return false;
+		}
 
 		//If Tiny is follower or player dont allow stagger
-		if (tinyIsFriendly && giantIsFriendly) {
+		const bool isFriendly = (a_target->IsPlayerRef() || IsTeammate(a_target));
+		if (isFriendly) {
 			return Config::Balance.bAllowFriendlyStagger;
 		}
 
@@ -264,6 +278,9 @@ namespace GTS {
 	}
 
 	void GainWeight(Actor* a_target, float a_value) {
+		if (!a_target) {
+			return;
+		}
 
 		if (Config::Gameplay.ActionSettings.bVoreWeightGain) {
 
@@ -278,7 +295,11 @@ namespace GTS {
 					if (!giantref) {
 						return false;
 					}
-					float& original_weight = giantref->GetActorBase()->weight;
+					auto* actorBase = giantref->GetActorBase();
+					if (!actorBase) {
+						return false;
+					}
+					float& original_weight = actorBase->weight;
 					if (original_weight >= 100.0f) {
 						return false;
 					}

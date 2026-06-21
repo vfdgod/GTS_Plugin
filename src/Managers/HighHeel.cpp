@@ -73,6 +73,10 @@ namespace GTS {
 	}
 
 	void HighHeelManager::ActorEquip(Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
 		ActorHandle actorHandle = actor->CreateRefHandle();
 		std::string taskname = std::format("ActorEquip_{}", actor->formID);
 
@@ -89,6 +93,10 @@ namespace GTS {
 		});
 	}
 	void HighHeelManager::ActorLoaded(Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
 		ActorHandle actorHandle = actor->CreateRefHandle();
 		std::string taskname = std::format("ActorLoaded_{}", actor->formID);
 

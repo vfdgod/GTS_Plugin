@@ -138,12 +138,17 @@ namespace {
 		TESObjectREFR* Tree = nullptr;
 
 		if (obj_A && obj_B) {
+			const auto* base_A = obj_A->GetBaseObject();
+			const auto* base_B = obj_B->GetBaseObject();
+			if (!base_A || !base_B) {
+				return false;
+			}
 
-			if (obj_A->formType.get() == FormType::ActorCharacter && obj_B->GetBaseObject()->formType.get() == FormType::Tree) {
+			if (obj_A->formType.get() == FormType::ActorCharacter && base_B->formType.get() == FormType::Tree) {
 				Target = skyrim_cast<Actor*>(obj_A);
 				Tree = obj_B;
 			}
-			else if (obj_B->formType.get() == FormType::ActorCharacter && obj_A->GetBaseObject()->formType.get() == FormType::Tree) {
+			else if (obj_B->formType.get() == FormType::ActorCharacter && base_A->formType.get() == FormType::Tree) {
 				Target = skyrim_cast<Actor*>(obj_B);
 				Tree = obj_A;
 			};

@@ -160,11 +160,12 @@ namespace GTS {
 
         if (actor) {
             if (AIProcess* aiProcess = actor->GetActorRuntimeData().currentProcess) {
-                if (ObjectRefHandle handle = aiProcess->GetOccupiedFurniture()) {
-                   if (!handle) ResetTrackedFurniture(actor);
-                   else{
-                       FurnitureEvent(actor, handle.get().get(), true);
-                   }
+                ObjectRefHandle handle = aiProcess->GetOccupiedFurniture();
+                if (!handle) {
+                    ResetTrackedFurniture(actor);
+                }
+                else {
+                    FurnitureEvent(actor, handle.get().get(), true);
                 }
             }
         }
@@ -190,7 +191,7 @@ namespace GTS {
 	// This "fix" happens only after the "enter" anim completes but its better than nothing.
     void FurnitureManager::RecordAndHandleFurnState(RE::Actor* activator, TESObjectREFR* object, bool enter) {
 
-        if (object) {
+        if (activator && object) {
 			//Almost all "invisible" furns have "Marker" in their name, skip these.
 			//easiest way to avoid scaling invisible furnitures.
 			//it would be better if the actual model was checked to see if it contains visible geometry.
@@ -240,6 +241,10 @@ namespace GTS {
     }
 
     void FurnitureManager::Furniture_EnableButtHitboxes(RE::Actor* activator, FurnitureDamageSwitch type) {
+        if (!activator) {
+            return;
+        }
+
         GTS_Hitboxes::ApplySitDamage_Once(activator);
         GTS_Hitboxes::StartLoopDamage(activator);
 
