@@ -2,8 +2,10 @@
 
 #include "Config/Config.hpp"
 
+#include "Managers/AI/StompKick/StompKickSwipeAI.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
+#include "Utils/Actor/AutoAimUtils.hpp"
 #include "Managers/Cameras/CamUtil.hpp"
 #include "Managers/Audio/Footstep.hpp"
 #include "Managers/Audio/Stomps.hpp"
@@ -34,9 +36,6 @@ namespace {
             }
         }
     }
-
-
-
 
     void UnderStomp_DoEverything(Actor* giant, float animSpeed, bool right, FootEvent Event, DamageSource Source, std::string_view Node, std::string_view rumble) {
 		float perk = GetPerkBonus_Basics(giant);
@@ -95,28 +94,27 @@ namespace {
 
 }
 namespace GTS {
-
-    bool AnimationUnderStomp::ShouldStompUnder_NPC(Actor* giant, float distance) {
-        //log::info("Distance of {} is {}", giant->GetDisplayFullName(), distance);
-        constexpr float min_distance = 37.5f;
-        const float blending = std::clamp(distance / min_distance, 0.0f, 1.0f);
-
-        bool blend = false;
-
-        if (distance <= min_distance) {
-            AnimationVars::Stomp::SetUnderStompBlend(giant, blending);
-            blend = true;
-        }
-
-        //log::info("Blend Bool: {}, Blending Float: {}, dist min dist: {}", blend, blending, distance / min_distance);
-            
-        return blend;
-    }
-
-    bool AnimationUnderStomp::ShouldStompUnder(Actor* giant) {
+    bool AnimationUnderStomp::PerformUnderstompOrAutoAim(Actor* giant, bool autoAim, bool& left) {
         if (giant->IsPlayerRef() && IsFreeCameraEnabled()) {
             return false;
         }
+        if (autoAim) {
+            if (AutoAim_IsSneakingOrCrawling(giant)) {
+                bool hitTarget = false; // Don't do understomps if HIT the target
+                if (AutoAim_Hand_TryHandAim(giant, left, hitTarget)) {
+                    return !hitTarget; // Hand shouldn't count as Understomp, else actor uses foot to attack
+                }
+            } else if (AutoAim_Foot_Directional(giant, left, false)) {
+                return true;
+            }
+            if (!giant->IsPlayerRef()) { // If NPC didn't hit anyone, prevent look-up-down based blend below
+                return false;
+            }
+        }
+        return CrosshairUnderstomp(giant);
+    }
+
+    bool AnimationUnderStomp::CrosshairUnderstomp(Actor* giant) {
         //Range is between -1 (looking down) and 1 (looking up)
         //abs makes it become 1 -> 0 -> 1 for down -> middle -> up
         const float absPitch = abs(GetCameraRotation().entry[2][1]);
@@ -128,7 +126,8 @@ namespace GTS {
         // Allow to stomp when looking from above or below
         if (allow) {
             float blend = std::clamp(InvLookdownIntensity * 1.3f, 0.0f, 1.0f);
-            AnimationVars::Stomp::SetUnderStompBlend(giant, blend);
+            AnimationVars::Stomp::SetUnderStompBlend_X(giant, blend);
+            AnimationVars::Stomp::SetUnderStompBlend_Y(giant, 0.0f);
             // Blend between "close" and "far" under-stomps
         }
         return allow;

@@ -113,6 +113,8 @@ struct SettingsBalance_t {
     bool bSizeLimitRulesInitialized = false;
     std::vector<SizeLimitRule_t> SizeLimitRules = {};
 
+    // Movement Speed Config
+    float fSizeSpeedPercentage = 1.0f;
 
     // Balance mode adjustments
     bool bBalanceMode = false;

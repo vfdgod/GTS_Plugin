@@ -3,6 +3,7 @@
 #include "Managers/Animation/StompAssist.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 
+#include "Config/Config.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/Audio/Footstep.hpp"
 #include "Managers/Audio/Stomps.hpp"
@@ -10,6 +11,8 @@
 #include "Managers/Rumble.hpp"
 
 #include "Utils/Actions/InputConditions.hpp"
+#include "Utils/Actor/AutoAimUtils.hpp"
+
 using namespace GTS;
 
 namespace {
@@ -271,18 +274,28 @@ namespace {
 		StopLoopRumble(&data.giant);
 	}
 
+	void StartStomp(Actor* player, bool right, bool forceAutoAim) {
+		const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
+		bool left = useAutoAim ? AutoAim_SetUpDefaultSide(player) : !right;
+		bool UnderStomp = AnimationUnderStomp::PerformUnderstompOrAutoAim(player, useAutoAim, left);
+		const std::string_view StompType_R = UnderStomp ? "UnderStompRight" : "StompRight";
+		const std::string_view StompType_L = UnderStomp ? "UnderStompLeft" : "StompLeft";
+		DoStompOrUnderStomp(player, left ? StompType_L : StompType_R, !left, !UnderStomp);
+	}
+
 	void RightStompEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
-		const std::string_view StompType = UnderStomp ? "UnderStompRight" : "StompRight";
-		DoStompOrUnderStomp(player, StompType, true, !UnderStomp);
+		StartStomp(player, true, false);
 	}
 
 	void LeftStompEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
-		const std::string_view StompType = UnderStomp ? "UnderStompLeft" : "StompLeft";
-		DoStompOrUnderStomp(player, StompType, false, !UnderStomp);
+		StartStomp(player, false, false);
+	}
+
+	void StompEvent(const ManagedInputEvent& data) {
+		auto player = PlayerCharacter::GetSingleton();
+		StartStomp(player, true, true);
 	}
 }
 
@@ -302,6 +315,7 @@ namespace GTS
 
 		InputManager::RegisterInputEvent("RightStomp", RightStompEvent, StompCondition);
 		InputManager::RegisterInputEvent("LeftStomp", LeftStompEvent, StompCondition);
+		InputManager::RegisterInputEvent("Stomp", StompEvent, StompCondition);
 	}
 
 	void AnimationStomp::RegisterTriggers() {

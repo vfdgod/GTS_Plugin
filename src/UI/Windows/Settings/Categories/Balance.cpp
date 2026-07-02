@@ -282,7 +282,7 @@ namespace GTS {
 
     void CategoryBalance::DrawLeft() {
 
-        ImUtil_Unique 
+        ImUtil_Unique
 		{
 
             PSString T0 = "启用/禁用平衡模式。";
@@ -315,9 +315,31 @@ namespace GTS {
             }
         }
 
+
+        ImUtil_Unique
+		{
+
+            PSString T0 = "Controls how much character size affects movement speed.\n"
+            "\n"
+            "- Lower values reduce movement speed, but may cause foot sliding (ice skating).\n"
+            "- Higher values better match model movement, but make large characters move faster.\n"
+            "\n"
+            "Default: 1.0 (Recommended)";
+
+            if (ImGui::CollapsingHeader("Movement Speed", ImUtil::HeaderFlagsDefaultOpen)) {
+
+                {
+                    ImGui::Text("Movement Speed Scaling");
+                    ImGuiEx::SliderF("Size Influence", &Config::Balance.fSizeSpeedPercentage, 0.3f, 1.0f, T0, "%.2fx");
+                }
+
+                ImGui::Spacing();
+            }
+        }
+
     	// ---- Misc
 
-        ImUtil_Unique 
+        ImUtil_Unique
 		{
 
             PSString T0 = "决定玩家是否会受到友方的尺寸相关伤害。";
@@ -365,7 +387,7 @@ namespace GTS {
 
     void CategoryBalance::DrawRight() {
 
-        ImUtil_Unique 
+        ImUtil_Unique
 		{
 
             PSString T0 = "修改所有体型成长使用的计算公式。";
@@ -393,7 +415,7 @@ namespace GTS {
             }
         }
 
-        ImUtil_Unique 
+        ImUtil_Unique
 		{
 
             PSString THelp = "最大体型并不只由这些滑条决定。\n"
@@ -585,7 +607,7 @@ namespace GTS {
 
         // ---- Multipiers
 
-        ImUtil_Unique 
+        ImUtil_Unique
 		{
 
             PSString T0 = "修改尺寸相关动作造成的伤害倍率。";

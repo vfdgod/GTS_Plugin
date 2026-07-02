@@ -300,7 +300,13 @@ namespace {
 		}
 		return false;
 	}
-
+	bool CanBeCrushed(Actor* actor) {
+		auto transient = Transient::GetActorData(actor);
+		if (transient) {
+			return transient->CanBeCrushed;
+		}
+		return false;
+	}
 	bool CanDoDamage(Actor* giant, Actor* tiny, bool HoldCheck) {
 
 		if (!giant || !tiny) return false;

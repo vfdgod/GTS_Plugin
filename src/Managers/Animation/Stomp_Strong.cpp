@@ -3,6 +3,7 @@
 #include "Managers/Animation/StompAssist.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 
+#include "Config/Config.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/Audio/Footstep.hpp"
 #include "Managers/Audio/Stomps.hpp"
@@ -10,8 +11,8 @@
 #include "Managers/Rumble.hpp"
 
 #include "Utils/Actions/InputConditions.hpp"
-
 #include "Managers/Perks/PerkHandler.hpp"
+#include "Utils/Actor/AutoAimUtils.hpp"
 
 using namespace GTS;
 
@@ -41,7 +42,7 @@ namespace {
 		std::string_view message = "You're too tired to perform heavy stomp";
 
 		if (player->IsSneaking()) {
-			if (AnimationUnderStomp::ShouldStompUnder(player)) {
+			if (AnimationVars::Crawl::IsCrawling(player) && AnimationUnderStomp::CrosshairUnderstomp(player)) {
 				if (!AnimationVars::Crawl::IsCrawling(player)) {
 					message = "You're too tired to perform sneak butt crush";
 					WasteStamina *= 1.8f;
@@ -287,18 +288,28 @@ namespace {
 		Rumbling::Stop("StompR", &data.giant);
 	}
 
+	void StartStrongStomp(Actor* player, bool right, bool forceAutoAim) {
+		const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
+		bool left = useAutoAim ? AutoAim_SetUpDefaultSide(player) : !right;
+		bool UnderStomp = AnimationUnderStomp::PerformUnderstompOrAutoAim(player, useAutoAim, left);
+		const std::string_view StompType_R = UnderStomp ? "UnderStompStrongRight" : "StrongStompRight";
+		const std::string_view StompType_L = UnderStomp ? "UnderStompStrongLeft" : "StrongStompLeft";
+		DoStompOrUnderStomp(player, left ? StompType_L : StompType_R, !left, !UnderStomp);
+	}
+
 	void RightStrongStompEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
-		const std::string_view StompType = UnderStomp ? "UnderStompStrongRight" : "StrongStompRight";
-		DoStompOrUnderStomp(player, StompType, true, !UnderStomp);
+		StartStrongStomp(player, true, false);
 	}
 
 	void LeftStrongStompEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-		bool UnderStomp = AnimationUnderStomp::ShouldStompUnder(player);
-		const std::string_view StompType = UnderStomp ? "UnderStompStrongLeft" : "StrongStompLeft";
-		DoStompOrUnderStomp(player, StompType, false, !UnderStomp);
+		StartStrongStomp(player, false, false);
+	}
+
+	void StrongStompEvent(const ManagedInputEvent& data) {
+		auto player = PlayerCharacter::GetSingleton();
+		StartStrongStomp(player, true, true);
 	}
 }
 
@@ -324,6 +335,7 @@ namespace GTS
 
 		InputManager::RegisterInputEvent("RightStomp_Strong", RightStrongStompEvent, StompCondition);
 		InputManager::RegisterInputEvent("LeftStomp_Strong", LeftStrongStompEvent, StompCondition);
+		InputManager::RegisterInputEvent("Strong_Stomp", StrongStompEvent, StompCondition);
 	}
 
 	void AnimationStrongStomp::RegisterTriggers() {

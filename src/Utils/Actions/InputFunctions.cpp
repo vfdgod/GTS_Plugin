@@ -294,7 +294,7 @@ namespace {
 	}
 
 	void ResetEscapeDataTask() {
-		std::string name = std::format("ResetStruggle");
+		std::string name = std::format("ResetStruggle_{}", Time::WorldTimeElapsed());
 		auto player = PlayerCharacter::GetSingleton();
 
 		ActorHandle gianthandle = player->CreateRefHandle();
@@ -310,7 +310,7 @@ namespace {
 			}
 			double Finish = Time::WorldTimeElapsed();
 			double timepassed = Finish - Start;
-			if (timepassed > 0.5f) {
+			if (timepassed > 0.25f) {
 				auto transient = Transient::GetActorData(giantref);
 				if (transient) {
 					transient->EscapingInteraction = false;
@@ -865,7 +865,6 @@ namespace {
 			auto transient = Transient::GetActorData(player);
 			if (transient) {
 				float& EscapeProgress = transient->EscapingActionProgress;
-				const bool Grabbed = transient->BeingHeld;
 				if (EscapeProgress < 1.0f) {
 					float stamina = GetAV(player, ActorValue::kStamina);
 					float stamina_req = 10.0f * EscapeProgress;
@@ -874,7 +873,7 @@ namespace {
 						DamageAV(player, ActorValue::kStamina, stamina_req);
 						shake_camera(player, 2.75f * EscapeProgress, 0.35f);
 
-						EscapeProgress += 1.0f / 40; // Need to struggle 40 times
+						EscapeProgress += 1.0f / StruggleMax; // Need to struggle 40 times
 						EscapeProgress = std::clamp(EscapeProgress, 0.0f, 1.0f); // Can't go higher than 1
 						logger::info("Escape Progress: {}", EscapeProgress);
 						if (EscapeProgress >= 1.0f) {

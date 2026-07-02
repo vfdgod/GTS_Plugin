@@ -83,6 +83,8 @@ namespace GTS {
 		bool KissVoring = false;
 		bool SizeOverrideRestoreActive = false;
 
+		bool AutoAim_TargetLeft = false;
+
 		float EscapingActionProgress = 0.0f;
 		bool EscapingInteraction = false;
 
@@ -113,6 +115,7 @@ namespace GTS {
 		Timer DelayedShrinkTimer = Timer(10);
 
 		std::vector<ActorHandle> shrinkies;
+		std::vector<Actor*> toSandwich;
 		float fRecordedFurnScale = 1.0f;
 		bool bIsUsingFurniture = false;
 		bool IsBeingSizeDamaged = false;

@@ -4,6 +4,7 @@
 
 #include "Stomp_Under.hpp"
 
+#include "Config/Config.hpp"
 #include "Managers/Animation/Utils/AnimationUtils.hpp"
 #include "Managers/Animation/AnimationManager.hpp"
 #include "Managers/Input/InputManager.hpp"
@@ -12,6 +13,7 @@
 
 #include "Utils/Actions/InputConditions.hpp"
 #include "Managers/Perks/PerkHandler.hpp"
+#include "Utils/Actor/AutoAimUtils.hpp"
 
 using namespace GTS;
 
@@ -247,18 +249,20 @@ namespace {
 
 	/////////////////////////////////////////////////////////// Triggers
 
-	void TrampleLeftEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		float WasteStamina = 35.0f * GetWasteMult(player);
+	void StartTrample(Actor* player, bool right, bool forceAutoAim) {
+		const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
+		bool left = useAutoAim ? AutoAim_SetUpDefaultSide(player) : !right;
+		bool UnderTrample = AnimationUnderStomp::PerformUnderstompOrAutoAim(player, useAutoAim, left);
 
-		bool UnderTrample = AnimationUnderStomp::ShouldStompUnder(player);
+		const std::string_view TrampleType_R = UnderTrample ? "UnderTrampleR" : "TrampleR";
 		const std::string_view TrampleType_L = UnderTrample ? "UnderTrampleL" : "TrampleL";
 
+		float WasteStamina = 35.0f * GetWasteMult(player);
 		if (GetAV(player, ActorValue::kStamina) > WasteStamina) {
 			if (!UnderTrample) {
-				TryStompAssist(player, false, StompAssistAction::Trample);
+				TryStompAssist(player, !left, StompAssistAction::Trample);
 			}
-			AnimationManager::StartAnim(TrampleType_L, player);
+			AnimationManager::StartAnim(left ? TrampleType_L : TrampleType_R, player);
 		} else {
 			NotifyWithSound(player, "You're too tired to perform trample");
 		}
@@ -266,27 +270,27 @@ namespace {
 
 	void TrampleRightEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-		float WasteStamina = 35.0f * GetWasteMult(player);
-
-		bool UnderTrample = AnimationUnderStomp::ShouldStompUnder(player);
-		const std::string_view TrampleType_R = UnderTrample ? "UnderTrampleR" : "TrampleR";
-
-		if (GetAV(player, ActorValue::kStamina) > WasteStamina) {
-			if (!UnderTrample) {
-				TryStompAssist(player, true, StompAssistAction::Trample);
-			}
-			AnimationManager::StartAnim(TrampleType_R, player);
-		} else {
-			NotifyWithSound(player, "You're too tired to perform trample");
-		}
+		StartTrample(player, true, false);
 	}
+
+	void TrampleLeftEvent(const ManagedInputEvent& data) {
+		auto player = PlayerCharacter::GetSingleton();
+		StartTrample(player, false, false);
+	}
+
+	void TrampleEvent(const ManagedInputEvent& data) {
+		auto player = PlayerCharacter::GetSingleton();
+		StartTrample(player, true, true);
+	}
+
 }
 
 namespace GTS
 {
 	void AnimationFootTrample::RegisterEvents() {
-		InputManager::RegisterInputEvent("TrampleLeft", TrampleLeftEvent, TrampleCondition);
 		InputManager::RegisterInputEvent("TrampleRight", TrampleRightEvent, TrampleCondition);
+		InputManager::RegisterInputEvent("TrampleLeft", TrampleLeftEvent, TrampleCondition);
+		InputManager::RegisterInputEvent("Trample", TrampleEvent, TrampleCondition);
 
 		AnimationManager::RegisterEvent("GTS_Trample_Leg_Raise_L", "Trample", GTS_Trample_Leg_Raise_L);
 		AnimationManager::RegisterEvent("GTS_Trample_Leg_Raise_R", "Trample", GTS_Trample_Leg_Raise_R);

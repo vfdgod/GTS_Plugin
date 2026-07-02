@@ -4,8 +4,8 @@ namespace GTS {
 
 	class AnimationUnderStomp {
 		public:
-			static bool ShouldStompUnder_NPC(Actor* giant, float distance);
-            static bool ShouldStompUnder(Actor* giant);
+            static bool PerformUnderstompOrAutoAim(Actor* giant, bool autoAim, bool& left);
+			static bool CrosshairUnderstomp(Actor* giant);
 
 			static void RegisterEvents();
 

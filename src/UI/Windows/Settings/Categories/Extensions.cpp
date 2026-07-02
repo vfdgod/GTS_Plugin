@@ -413,6 +413,18 @@ namespace GTS {
 
 		ImUtil_Unique
 		{
+			PSString T0 = "开启后，玩家的轻踩、重踩、践踏、踢击和爬行挥击会自动选择更靠近目标的一侧。\n"
+			              "关闭时保留左右脚/左右手分开的按键控制。\n"
+			              "这是作者新增的实验性功能，默认关闭。";
+
+			if (ImGui::CollapsingHeader("脚部 Auto-Aim", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("启用玩家脚部 Auto-Aim", &Config::Advanced.bPlayerFootAutoAim, T0);
+				ImGui::Spacing();
+			}
+		}
+
+		ImUtil_Unique
+		{
 			PSString T0 = "按下启用的玩家踩踏动作时，把附近足够小的目标预吸附到对应脚下。";
 			PSString T1 = "普通轻踩按键是否使用踩踏辅助。";
 			PSString T2 = "重踩按键是否使用踩踏辅助。";
