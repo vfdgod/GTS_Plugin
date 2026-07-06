@@ -230,45 +230,22 @@ namespace GTS {
 		{
 	        .UICategory    = LInputCategory_t::kStomp,
 		    .AdvFeature    = false,
-		    .UIName        = "开始轻踩（右）",
+		    .UIName        = "开始轻踩",
 		    .UIDescription = "开始轻踩动作。",
 			.Event = {
-		        .Event      = "RightStomp",
+		        .Event      = "Stomp",
 		        .Keys       = {"LSHIFT", "E"},
-		        .Trigger    = "Release",
-		    }
-        },
-        {
-	        .UICategory    = LInputCategory_t::kStomp,
-		    .AdvFeature    = false,
-		    .UIName        = "开始轻踩（左）",
-		    .UIDescription = "开始轻踩动作。",
-			.Event = {
-		        .Event      = "LeftStomp",
-		        .Keys       = {"LSHIFT", "Q"},
 		        .Trigger    = "Release",
 		    }
         },
         {
 			.UICategory    = LInputCategory_t::kStomp,
 			.AdvFeature    = false,
-			.UIName        = "开始重踩（右）",
+			.UIName        = "开始重踩",
 			.UIDescription = "开始重踩动作。",
 			.Event = {
-		        .Event      = "RightStomp_Strong",
+		        .Event      = "Strong_Stomp",
 		        .Keys       = {"LSHIFT", "E"},
-		        .Trigger    = "Continuous",
-		        .Duration   = 0.44f,
-		    }
-        },
-        {
-			.UICategory    = LInputCategory_t::kStomp,
-			.AdvFeature    = false,
-			.UIName        = "开始重踩（左）",
-			.UIDescription = "开始重踩动作。",
-			.Event = {
-		        .Event      = "LeftStomp_Strong",
-		        .Keys       = {"LSHIFT", "Q"},
 		        .Trigger    = "Continuous",
 		        .Duration   = 0.44f,
 		    }
@@ -276,23 +253,11 @@ namespace GTS {
 		{
 			.UICategory    = LInputCategory_t::kStomp,
 			.AdvFeature    = false,
-			.UIName        = "开始践踏（右）",
+			.UIName        = "开始践踏",
 			.UIDescription = "开始践踏动作。",
 			.Event = {
-		        .Event      = "TrampleRight",
+		        .Event      = "Trample",
 		        .Keys       = {"LSHIFT", "E"},
-		        .Trigger    = "Release",
-		        .Duration   = 0.20f,
-		    }
-        },
-        {
-			.UICategory    = LInputCategory_t::kStomp,
-			.AdvFeature    = false,
-			.UIName        = "开始践踏（左）",
-			.UIDescription = "开始践踏动作。",
-			.Event = {
-		        .Event      = "TrampleLeft",
-		        .Keys       = {"LSHIFT", "Q"},
 		        .Trigger    = "Release",
 		        .Duration   = 0.20f,
 		    }
@@ -512,10 +477,10 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "开始轻踢（右）",
+			.UIName        = "开始轻踢",
 			.UIDescription = "执行轻踢。",
 			.Event = {
-		        .Event      = "LightKickRight",
+		        .Event      = "LightKick",
 		        .Keys       = {"LALT", "E"},
 		        .Trigger    = "Release",
 		    }
@@ -523,21 +488,10 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "开始轻踢（左）",
-			.UIDescription = "执行轻踢。",
-			.Event = {
-		        .Event      = "LightKickLeft",
-		        .Keys       = {"LALT", "Q"},
-		        .Trigger    = "Release",
-		    }
-        },
-        {
-			.UICategory    = LInputCategory_t::kKickSwipe,
-			.AdvFeature    = false,
-			.UIName        = "开始重踢（右）",
+			.UIName        = "开始重踢",
 			.UIDescription = "执行重踢。",
 			.Event = {
-		        .Event      = "HeavyKickRight",
+		        .Event      = "HeavyKick_High",
 		        .Keys       = {"LALT", "E"},
 		        .Trigger    = "Continuous",
 		        .Duration   = 0.33f,
@@ -546,35 +500,11 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "开始重踢（左）",
-			.UIDescription = "执行重踢。",
-			.Event = {
-		        .Event      = "HeavyKickLeft",
-		        .Keys       = {"LALT", "Q"},
-		        .Trigger    = "Continuous",
-		        .Duration   = 0.33f,
-		    }
-        },
-        {
-			.UICategory    = LInputCategory_t::kKickSwipe,
-			.AdvFeature    = false,
-			.UIName        = "开始重低踢（右）",
+			.UIName        = "开始重低踢",
 			.UIDescription = "执行重踢的替代版本。",
 			.Event = {
-		        .Event      = "HeavyKickRight_Low",
+		        .Event      = "HeavyKick_Low",
 		        .Keys       = {"LALT", "E"},
-		        .Trigger    = "Release",
-		        .Duration   = 0.1f,
-		    }
-        },
-        {
-			.UICategory    = LInputCategory_t::kKickSwipe,
-			.AdvFeature    = false,
-			.UIName        = "开始重低踢（左）",
-			.UIDescription = "执行重踢的替代版本。",
-			.Event = {
-		        .Event      = "HeavyKickLeft_Low",
-		        .Keys       = {"LALT", "Q"},
 		        .Trigger    = "Release",
 		        .Duration   = 0.1f,
 		    }
@@ -607,10 +537,10 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "开始轻挥击（右）",
+			.UIName        = "开始轻挥击",
 			.UIDescription = "执行轻挥击攻击（仅在潜行/爬行时生效）。",
 			.Event = {
-		        .Event      = "LightSwipeRight",
+		        .Event      = "LightSwipe",
 		        .Keys       = {"LALT", "E"},
 		        .Trigger    = "Release",
 		    }
@@ -618,34 +548,11 @@ namespace GTS {
         {
 			.UICategory    = LInputCategory_t::kKickSwipe,
 			.AdvFeature    = false,
-			.UIName        = "开始轻挥击（左）",
-			.UIDescription = "执行轻挥击攻击（仅在潜行/爬行时生效）。",
-			.Event = {
-		        .Event      = "LightSwipeLeft",
-		        .Keys       = {"LALT", "Q"},
-		        .Trigger    = "Release",
-		    }
-        },
-        {
-			.UICategory    = LInputCategory_t::kKickSwipe,
-			.AdvFeature    = false,
-			.UIName        = "开始重挥击（右）",
+			.UIName        = "开始重挥击",
 			.UIDescription = "执行重挥击攻击（仅在潜行/爬行时生效）。",
 			.Event = {
-		        .Event      = "HeavySwipeRight",
+		        .Event      = "HeavySwipe",
 		        .Keys       = {"LALT", "E"},
-		        .Trigger    = "Continuous",
-		        .Duration   = 0.33f,
-		    }
-        },
-        {
-			.UICategory    = LInputCategory_t::kKickSwipe,
-			.AdvFeature    = false,
-			.UIName        = "开始重挥击（左）",
-			.UIDescription = "执行重挥击攻击（仅在潜行/爬行时生效）。",
-			.Event = {
-		        .Event      = "HeavySwipeLeft",
-		        .Keys       = {"LALT", "Q"},
 		        .Trigger    = "Continuous",
 		        .Duration   = 0.33f,
 		    }

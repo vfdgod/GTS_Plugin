@@ -273,12 +273,11 @@ namespace {
 		DrainStamina(&data.giant, "StaminaDrain_CrawlSwipeStrong", Runtime::PERK.GTSPerkDestructionBasics, false, 10.0f);
 	}
 
-	void StartSwipe(bool right, bool forceAutoAim, std::string_view leftSwipe, std::string_view rightSwipe, float staminaDrain) {
+	void StartSwipe(std::string_view leftSwipe, std::string_view rightSwipe, float staminaDrain) {
 		auto player = PlayerCharacter::GetSingleton();
 		float WasteStamina = staminaDrain * GetWasteMult(player);
 		if (GetAV(player, ActorValue::kStamina) > WasteStamina) {
-			const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
-			const bool left = useAutoAim ? AutoAim_Kick_DeterminePreferredKick(player) : !right;
+			const bool left = AutoAim_Kick_DeterminePreferredKick(player);
 			Utils_UpdateHighHeelBlend(player, false);
 			AnimationManager::StartAnim(left ? leftSwipe : rightSwipe, player);
 		} else {
@@ -286,28 +285,12 @@ namespace {
 		}
 	}
 
-	void LightSwipeLeftEvent(const ManagedInputEvent& data) {
-		StartSwipe(false, false, "SwipeLight_Left", "SwipeLight_Right", 25.0f);
-	}
-
-	void LightSwipeRightEvent(const ManagedInputEvent& data) {
-		StartSwipe(true, false, "SwipeLight_Left", "SwipeLight_Right", 25.0f);
-	}
-
-	void HeavySwipeLeftEvent(const ManagedInputEvent& data) {
-		StartSwipe(false, false, "SwipeHeavy_Left", "SwipeHeavy_Right", 70.0f);
-	}
-
-	void HeavySwipeRightEvent(const ManagedInputEvent& data) {
-		StartSwipe(true, false, "SwipeHeavy_Left", "SwipeHeavy_Right", 70.0f);
-	}
-
 	void LightSwipeEvent(const ManagedInputEvent& data) {
-		StartSwipe(true, true, "SwipeLight_Left", "SwipeLight_Right", 25.0f);
+		StartSwipe("SwipeLight_Left", "SwipeLight_Right", 25.0f);
 	}
 
 	void HeavySwipeEvent(const ManagedInputEvent& data) {
-		StartSwipe(true, true, "SwipeHeavy_Left", "SwipeHeavy_Right", 70.0f);
+		StartSwipe("SwipeHeavy_Left", "SwipeHeavy_Right", 70.0f);
 	}
 }
 
@@ -315,10 +298,6 @@ namespace GTS
 {
 	void AnimationCrawling::RegisterEvents() {
 
-		InputManager::RegisterInputEvent("LightSwipeLeft", LightSwipeLeftEvent, SwipeCondition);
-		InputManager::RegisterInputEvent("LightSwipeRight", LightSwipeRightEvent, SwipeCondition);
-		InputManager::RegisterInputEvent("HeavySwipeLeft", HeavySwipeLeftEvent, SwipeCondition);
-		InputManager::RegisterInputEvent("HeavySwipeRight", HeavySwipeRightEvent, SwipeCondition);
 		InputManager::RegisterInputEvent("LightSwipe", LightSwipeEvent, SwipeCondition);
 		InputManager::RegisterInputEvent("HeavySwipe", HeavySwipeEvent, SwipeCondition);
 

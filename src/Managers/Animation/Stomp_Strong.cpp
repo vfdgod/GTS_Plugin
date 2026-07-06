@@ -288,29 +288,16 @@ namespace {
 		Rumbling::Stop("StompR", &data.giant);
 	}
 
-	void StartStrongStomp(Actor* player, bool right, bool forceAutoAim) {
-		const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
-		bool left = useAutoAim ? AutoAim_SetUpDefaultSide(player) : !right;
-		bool UnderStomp = AnimationUnderStomp::PerformUnderstompOrAutoAim(player, useAutoAim, left);
+	void StrongStompEvent(const ManagedInputEvent& data) {
+		auto player = PlayerCharacter::GetSingleton();
+		bool left = AutoAim_SetUpDefaultSide(player);
+		bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(player, left, true);
+
 		const std::string_view StompType_R = UnderStomp ? "UnderStompStrongRight" : "StrongStompRight";
 		const std::string_view StompType_L = UnderStomp ? "UnderStompStrongLeft" : "StrongStompLeft";
 		DoStompOrUnderStomp(player, left ? StompType_L : StompType_R, !left, !UnderStomp);
 	}
 
-	void RightStrongStompEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartStrongStomp(player, true, false);
-	}
-
-	void LeftStrongStompEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartStrongStomp(player, false, false);
-	}
-
-	void StrongStompEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartStrongStomp(player, true, true);
-	}
 }
 
 namespace GTS
@@ -333,8 +320,6 @@ namespace GTS
 		AnimationManager::RegisterEvent("GTS_Next", "StrongStomp", GTS_Next);
 		AnimationManager::RegisterEvent("GTSBEH_Exit", "StrongStomp", GTSBEH_Exit);
 
-		InputManager::RegisterInputEvent("RightStomp_Strong", RightStrongStompEvent, StompCondition);
-		InputManager::RegisterInputEvent("LeftStomp_Strong", LeftStrongStompEvent, StompCondition);
 		InputManager::RegisterInputEvent("Strong_Stomp", StrongStompEvent, StompCondition);
 	}
 

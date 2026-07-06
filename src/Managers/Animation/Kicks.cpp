@@ -114,58 +114,27 @@ namespace {
 	//  Animation Triggers
 	// ======================================================================================
 
-	void StartKick(bool right, bool forceAutoAim, std::string_view leftKick, std::string_view rightKick, float staminaDrain, bool strong) {
-		const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
-		const bool left = useAutoAim ? AutoAim_Kick_DeterminePreferredKick(PlayerCharacter::GetSingleton()) : !right;
+	void StartKick(std::string_view leftKick, std::string_view rightKick, float staminaDrain, bool strong) {
+		const bool left = AutoAim_Kick_DeterminePreferredKick(PlayerCharacter::GetSingleton());
 		PerformKick(left ? leftKick : rightKick, staminaDrain, strong);
 	}
 
-	void LightKickLeftEvent(const ManagedInputEvent& data) {
-		StartKick(false, false, "SwipeLight_Left", "SwipeLight_Right", 35.0f, false);
-	}
-
-	void LightKickRightEvent(const ManagedInputEvent& data) {
-		StartKick(true, false, "SwipeLight_Left", "SwipeLight_Right", 35.0f, false);
-	}
-
-	void HeavyKickLeftEvent(const ManagedInputEvent& data) {
-		StartKick(false, false, "SwipeHeavy_Left", "SwipeHeavy_Right", 110.0f, true);
-	}
-
-	void HeavyKickRightEvent(const ManagedInputEvent& data) {
-		StartKick(true, false, "SwipeHeavy_Left", "SwipeHeavy_Right", 110.0f, true);
-	}
-
-	void HeavyKickLeftLowEvent(const ManagedInputEvent& data) {
-		StartKick(false, false, "StrongKick_Low_Left", "StrongKick_Low_Right", 110.0f, true);
-	}
-
-	void HeavyKickRightLowEvent(const ManagedInputEvent& data) {
-		StartKick(true, false, "StrongKick_Low_Left", "StrongKick_Low_Right", 110.0f, true);
-	}
-
 	void LightKickEvent(const ManagedInputEvent& data) {
-		StartKick(true, true, "SwipeLight_Left", "SwipeLight_Right", 35.0f, false);
+		StartKick("SwipeLight_Left", "SwipeLight_Right", 35.0f, false);
 	}
 
 	void HeavyKickHighEvent(const ManagedInputEvent& data) {
-		StartKick(true, true, "SwipeHeavy_Left", "SwipeHeavy_Right", 110.0f, true);
+		StartKick("SwipeHeavy_Left", "SwipeHeavy_Right", 110.0f, true);
 	}
 
 	void HeavyKickLowEvent(const ManagedInputEvent& data) {
-		StartKick(true, true, "StrongKick_Low_Left", "StrongKick_Low_Right", 110.0f, true);
+		StartKick("StrongKick_Low_Left", "StrongKick_Low_Right", 110.0f, true);
 	}
 }
 
 namespace GTS
 {
 	void AnimationKicks::RegisterEvents() {
-		InputManager::RegisterInputEvent("LightKickLeft", LightKickLeftEvent, KickCondition);
-		InputManager::RegisterInputEvent("LightKickRight", LightKickRightEvent, KickCondition);
-		InputManager::RegisterInputEvent("HeavyKickLeft", HeavyKickLeftEvent, KickCondition);
-		InputManager::RegisterInputEvent("HeavyKickRight", HeavyKickRightEvent, KickCondition);
-		InputManager::RegisterInputEvent("HeavyKickLeft_Low", HeavyKickLeftLowEvent, KickCondition);
-		InputManager::RegisterInputEvent("HeavyKickRight_Low", HeavyKickRightLowEvent, KickCondition);
 		InputManager::RegisterInputEvent("LightKick", LightKickEvent, KickCondition);
 		InputManager::RegisterInputEvent("HeavyKick_High", HeavyKickHighEvent, KickCondition);
 		InputManager::RegisterInputEvent("HeavyKick_Low", HeavyKickLowEvent, KickCondition);

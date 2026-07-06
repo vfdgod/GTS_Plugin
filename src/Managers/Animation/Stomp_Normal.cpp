@@ -274,28 +274,14 @@ namespace {
 		StopLoopRumble(&data.giant);
 	}
 
-	void StartStomp(Actor* player, bool right, bool forceAutoAim) {
-		const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
-		bool left = useAutoAim ? AutoAim_SetUpDefaultSide(player) : !right;
-		bool UnderStomp = AnimationUnderStomp::PerformUnderstompOrAutoAim(player, useAutoAim, left);
+	void StompEvent(const ManagedInputEvent& data) {
+		auto player = PlayerCharacter::GetSingleton();
+		bool left = AutoAim_SetUpDefaultSide(player);
+		bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(player, left);
+
 		const std::string_view StompType_R = UnderStomp ? "UnderStompRight" : "StompRight";
 		const std::string_view StompType_L = UnderStomp ? "UnderStompLeft" : "StompLeft";
 		DoStompOrUnderStomp(player, left ? StompType_L : StompType_R, !left, !UnderStomp);
-	}
-
-	void RightStompEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartStomp(player, true, false);
-	}
-
-	void LeftStompEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartStomp(player, false, false);
-	}
-
-	void StompEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartStomp(player, true, true);
 	}
 }
 
@@ -313,8 +299,6 @@ namespace GTS
 		AnimationManager::RegisterEvent("GTS_Next", "Stomp", GTS_Next);
 		AnimationManager::RegisterEvent("GTSBEH_Exit", "Stomp", GTSBEH_Exit);
 
-		InputManager::RegisterInputEvent("RightStomp", RightStompEvent, StompCondition);
-		InputManager::RegisterInputEvent("LeftStomp", LeftStompEvent, StompCondition);
 		InputManager::RegisterInputEvent("Stomp", StompEvent, StompCondition);
 	}
 

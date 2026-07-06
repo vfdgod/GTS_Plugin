@@ -249,10 +249,10 @@ namespace {
 
 	/////////////////////////////////////////////////////////// Triggers
 
-	void StartTrample(Actor* player, bool right, bool forceAutoAim) {
-		const bool useAutoAim = forceAutoAim || Config::Advanced.bPlayerFootAutoAim;
-		bool left = useAutoAim ? AutoAim_SetUpDefaultSide(player) : !right;
-		bool UnderTrample = AnimationUnderStomp::PerformUnderstompOrAutoAim(player, useAutoAim, left);
+	void TrampleEvent(const ManagedInputEvent& data) {
+		auto player = PlayerCharacter::GetSingleton();
+		bool left = AutoAim_SetUpDefaultSide(player);
+		bool UnderTrample = AnimationUnderStomp::AutoAim_And_DetermineStompType(player, left);
 
 		const std::string_view TrampleType_R = UnderTrample ? "UnderTrampleR" : "TrampleR";
 		const std::string_view TrampleType_L = UnderTrample ? "UnderTrampleL" : "TrampleL";
@@ -268,28 +268,11 @@ namespace {
 		}
 	}
 
-	void TrampleRightEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartTrample(player, true, false);
-	}
-
-	void TrampleLeftEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartTrample(player, false, false);
-	}
-
-	void TrampleEvent(const ManagedInputEvent& data) {
-		auto player = PlayerCharacter::GetSingleton();
-		StartTrample(player, true, true);
-	}
-
 }
 
 namespace GTS
 {
 	void AnimationFootTrample::RegisterEvents() {
-		InputManager::RegisterInputEvent("TrampleRight", TrampleRightEvent, TrampleCondition);
-		InputManager::RegisterInputEvent("TrampleLeft", TrampleLeftEvent, TrampleCondition);
 		InputManager::RegisterInputEvent("Trample", TrampleEvent, TrampleCondition);
 
 		AnimationManager::RegisterEvent("GTS_Trample_Leg_Raise_L", "Trample", GTS_Trample_Leg_Raise_L);

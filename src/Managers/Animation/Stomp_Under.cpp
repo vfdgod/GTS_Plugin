@@ -94,27 +94,41 @@ namespace {
 
 }
 namespace GTS {
-    bool AnimationUnderStomp::PerformUnderstompOrAutoAim(Actor* giant, bool autoAim, bool& left) {
+    bool AnimationUnderStomp::AutoAim_And_DetermineStompType(Actor* giant, bool& left, bool strong_Attack) {
+        const bool autoAim = Config::AutoAim.bEnableAutoAim;
         if (giant->IsPlayerRef() && IsFreeCameraEnabled()) {
             return false;
         }
-        if (autoAim) {
-            if (AutoAim_IsSneakingOrCrawling(giant)) {
-                bool hitTarget = false; // Don't do understomps if HIT the target
-                if (AutoAim_Hand_TryHandAim(giant, left, hitTarget)) {
-                    return !hitTarget; // Hand shouldn't count as Understomp, else actor uses foot to attack
+        if (autoAim || !giant->IsPlayerRef()) {
+            if (AutoAim_IsSneakingOrCrawling(giant)) { // Sneak or Crawl branch
+                if (strong_Attack && giant->IsSneaking() && AutoAim_Butt_TryButtSlam(giant, left))  { // Strong Attack ?  First check if we can butt slam
+                    return true; // Always counts as UnderStomp
                 }
-            } else if (AutoAim_Foot_Directional(giant, left, false)) {
+                if (strong_Attack && AnimationVars::Crawl::IsCrawling(giant) && AutoAim_Butt_TryBreastSlam(giant, left)) { // Strong Attack ? Try to breast slam
+                    return true; // Count as under-stomp
+                }
+                if (!AnimationVars::Crawl::IsCrawling(giant) && AutoAim_Foot_Directional(giant, left, false)) { // Try to foot stomp under self next
+                    return true; // Count as under-stomp
+                }
+                if (AutoAim_Hand_TryHandAim(giant, left)) { // Didn't find anyone for butt, breast or stomp attacks, try hand now
+                    return false; // Hand shouldn't count as Understomp, else actor uses foot to attack instead
+                }
+                return RandomBool(); // Everything failed, just rng it
+            }
+            else if (AutoAim_Foot_Directional(giant, left, false)) { // Not sneaking or crawling/didn't find any hand targets, try normal understomp
                 return true;
             }
-            if (!giant->IsPlayerRef()) { // If NPC didn't hit anyone, prevent look-up-down based blend below
-                return false;
+            else if (AutoAim_Foot_Directional_FarStomp(giant, left, strong_Attack)) { // Couldn't find anyone, try far stomp now
+                return false; // Not an understomp
             }
         }
-        return CrosshairUnderstomp(giant);
+        return Config::AutoAim.bPreventFarStomps ? true : CrosshairUnderstomp(giant);
     }
 
-    bool AnimationUnderStomp::CrosshairUnderstomp(Actor* giant) {
+    bool AnimationUnderStomp::CrosshairUnderstomp(Actor* giant) { // Should be player exclusive
+        if (!giant->IsPlayerRef()) { // NPC's shouldn't be able to use it
+            return false;
+        }
         //Range is between -1 (looking down) and 1 (looking up)
         //abs makes it become 1 -> 0 -> 1 for down -> middle -> up
         const float absPitch = abs(GetCameraRotation().entry[2][1]);
@@ -125,7 +139,8 @@ namespace GTS {
         bool allow = absPitch > InvLookDownStartAngle;
         // Allow to stomp when looking from above or below
         if (allow) {
-            float blend = std::clamp(InvLookdownIntensity * 1.3f, 0.0f, 1.0f);
+            float blend = std::clamp(InvLookdownIntensity * 1.2f, 0.0f, 1.0f);
+            AnimationVars::Stomp::SetUnderStompBlend_Legacy(giant, blend);
             AnimationVars::Stomp::SetUnderStompBlend_X(giant, blend);
             AnimationVars::Stomp::SetUnderStompBlend_Y(giant, 0.0f);
             // Blend between "close" and "far" under-stomps
@@ -139,7 +154,7 @@ namespace GTS {
 
         AnimationManager::RegisterEvent("GTS_UnderStomp_CamOffR", "UnderStomp", GTS_UnderStomp_CamOffR);
 		AnimationManager::RegisterEvent("GTS_UnderStomp_CamOffL", "UnderStomp", GTS_UnderStomp_CamOffL);
-        
+
 
 		AnimationManager::RegisterEvent("GTS_UnderStomp_ImpactR", "UnderStomp", GTS_UnderStomp_ImpactR);
 		AnimationManager::RegisterEvent("GTS_UnderStomp_ImpactL", "UnderStomp", GTS_UnderStomp_ImpactL);
