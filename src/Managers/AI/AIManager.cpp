@@ -299,7 +299,8 @@ namespace {
 			auto& grab = Grab::GetSingleton();
 
 			for (auto& data : grab.data | std::views::values) {
-				if (data.tiny && data.tiny->IsPlayerRef()) {
+				auto tiny = data.tiny.get().get();
+				if (tiny && tiny->IsPlayerRef()) {
 					IsPlayerBeingGrabbed = true;
 					break;
 				}
