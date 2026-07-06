@@ -47,6 +47,7 @@ struct SettingsAdvanced_t {
     bool bPlayerTinyCalamityActive = false;
     bool bPlayerTinyCalamitySprintBoost = false;
     bool bPlayerTinyCalamityActionBoost = false;
+    bool bPlayerTinyCalamityActionBoostIgnoreNaturalFootIdle = true;
     bool bPlayerTinyCalamityShrinkBoost = false;
     bool bPlayerTinyCalamityAttributeBoost = false;
     bool bPlayerTinyCalamityRefresh = false;

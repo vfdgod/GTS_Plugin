@@ -11,6 +11,7 @@
 #include "Managers/GTSSizeManager.hpp"
 
 #include "Magic/Effects/Common.hpp"
+#include "Scale/Scale.hpp"
 
 
 
@@ -189,6 +190,24 @@ namespace {
 		
 		return value;
 	}
+
+	bool IsFootIdleDamageSource(DamageSource cause) {
+		return cause == DamageSource::FootIdleL || cause == DamageSource::FootIdleR;
+	}
+
+	bool ShouldIgnoreNaturalScaleFootIdle(Actor* giant, Actor* tiny, DamageSource cause) {
+		if (!Config::Advanced.bPlayerTinyCalamityActionBoostIgnoreNaturalFootIdle) {
+			return false;
+		}
+		if (!TinyCalamityActionBoostActive(giant) || !IsFootIdleDamageSource(cause)) {
+			return false;
+		}
+
+		constexpr float NATURAL_SCALE_EPS = 0.02f;
+		const float naturalScale = get_natural_scale(tiny, true);
+		const float visualScale = get_visual_scale(tiny);
+		return visualScale >= naturalScale * (1.0f - NATURAL_SCALE_EPS);
+	}
 }
 
 
@@ -250,6 +269,7 @@ namespace GTS {
 			// Compute scale once instead of in condition
 			float tinyScale = get_visual_scale(otherActor) * GetSizeFromBoundingBox(otherActor);
 			if (giantScale / tinyScale <= SCALE_RATIO) continue;
+			if (ShouldIgnoreNaturalScaleFootIdle(actor, otherActor, Cause)) continue;
 
 			int nodeCollisions = 0;
 			bool DoDamage = true;

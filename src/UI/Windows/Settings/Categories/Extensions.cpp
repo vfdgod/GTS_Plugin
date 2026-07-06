@@ -333,29 +333,33 @@ namespace GTS {
 			              "不会播放龙吼启动音效、爆发特效，也不会自动压制玩家体型。";
 			PSString T1 = "开启后，玩家冲刺时启用微型灾厄的蓄力速度、冲撞检测和直接碾碎逻辑。";
 			PSString T2 = "开启后，尺寸动作、脚步、踩踏、投掷、抓握、吞噬距离等动作判定按微型灾厄强化规则结算。";
-			PSString T3 = "开启后，微型灾厄相关缩小逻辑生效，包括尺寸伤害后的额外缩小和吸收术额外缩小强度。";
-			PSString T4 = "开启后，玩家生命抗性、攻击和负重按微型灾厄属性加成规则结算。";
-			PSString T5 = "模拟永恒灾厄：微型灾厄击杀/碾碎会延长持续时间，并减少龙吼冷却。";
-			PSString T6 = "模拟迫近灾难：冲刺速度蓄力上限更高，微型灾厄碾碎后的速度衰减更轻。";
-			PSString T7 = "模拟生命窃取：微型灾厄缩小时获得治疗，并提升额外缩小强度；真实龙吼开始时也会获得更长持续时间。";
-			PSString T8 = "模拟狂怒灾厄：微型灾厄激活时，可对低生命值目标触发处决动画。";
-			PSString T9 = "模拟缩小凝视：微型灾厄激活时，玩家准星凝视敌人会持续缩小目标。";
+			PSString T3 = "动作强化生效时，普通移动的脚下空闲碰撞会忽略仍处于自然体型的目标。\n"
+			              "这会阻止正常走路把未缩小的 NPC 伤害、硬直或撞倒；已经低于自然体型的目标仍会受影响。";
+			PSString T4 = "开启后，微型灾厄相关缩小逻辑生效，包括尺寸伤害后的额外缩小和吸收术额外缩小强度。";
+			PSString T5 = "开启后，玩家生命抗性、攻击和负重按微型灾厄属性加成规则结算。";
+			PSString T6 = "模拟永恒灾厄：微型灾厄击杀/碾碎会延长持续时间，并减少龙吼冷却。";
+			PSString T7 = "模拟迫近灾难：冲刺速度蓄力上限更高，微型灾厄碾碎后的速度衰减更轻。";
+			PSString T8 = "模拟生命窃取：微型灾厄缩小时获得治疗，并提升额外缩小强度；真实龙吼开始时也会获得更长持续时间。";
+			PSString T9 = "模拟狂怒灾厄：微型灾厄激活时，可对低生命值目标触发处决动画。";
+			PSString T10 = "模拟缩小凝视：微型灾厄激活时，玩家准星凝视敌人会持续缩小目标。";
 
 			if (ImGui::CollapsingHeader("微型灾厄", ImUtil::HeaderFlagsDefaultOpen)) {
 				ImGuiEx::CheckBox("模拟微型灾厄激活", &Config::Advanced.bPlayerTinyCalamityActive, T0);
 				ImGuiEx::CheckBox("冲刺碰撞", &Config::Advanced.bPlayerTinyCalamitySprintBoost, T1);
 				ImGui::SameLine();
 				ImGuiEx::CheckBox("动作强化", &Config::Advanced.bPlayerTinyCalamityActionBoost, T2);
-				ImGuiEx::CheckBox("缩小强化", &Config::Advanced.bPlayerTinyCalamityShrinkBoost, T3);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("属性加成", &Config::Advanced.bPlayerTinyCalamityAttributeBoost, T4);
-				ImGuiEx::CheckBox("永恒灾厄", &Config::Advanced.bPlayerTinyCalamityRefresh, T5);
+				ImGuiEx::CheckBox("忽略自然体型", &Config::Advanced.bPlayerTinyCalamityActionBoostIgnoreNaturalFootIdle, T3, !Config::Advanced.bPlayerTinyCalamityActionBoost);
+				ImGuiEx::CheckBox("缩小强化", &Config::Advanced.bPlayerTinyCalamityShrinkBoost, T4);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("迫近灾难", &Config::Advanced.bPlayerTinyCalamityAug, T6);
-				ImGuiEx::CheckBox("生命窃取", &Config::Advanced.bPlayerTinyCalamitySizeSteal, T7);
+				ImGuiEx::CheckBox("属性加成", &Config::Advanced.bPlayerTinyCalamityAttributeBoost, T5);
+				ImGuiEx::CheckBox("永恒灾厄", &Config::Advanced.bPlayerTinyCalamityRefresh, T6);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("狂怒灾厄", &Config::Advanced.bPlayerTinyCalamityRage, T8, !Config::Advanced.bPlayerTinyCalamityActive);
-				ImGuiEx::CheckBox("缩小凝视", &Config::Advanced.bPlayerTinyCalamityShrinkingGaze, T9, !Config::Advanced.bPlayerTinyCalamityActive);
+				ImGuiEx::CheckBox("迫近灾难", &Config::Advanced.bPlayerTinyCalamityAug, T7);
+				ImGuiEx::CheckBox("生命窃取", &Config::Advanced.bPlayerTinyCalamitySizeSteal, T8);
+				ImGui::SameLine();
+				ImGuiEx::CheckBox("狂怒灾厄", &Config::Advanced.bPlayerTinyCalamityRage, T9, !Config::Advanced.bPlayerTinyCalamityActive);
+				ImGuiEx::CheckBox("缩小凝视", &Config::Advanced.bPlayerTinyCalamityShrinkingGaze, T10, !Config::Advanced.bPlayerTinyCalamityActive);
 
 				if (ImGuiEx::Button("清空技能冷却")) {
 					CooldownManager::GetSingleton().Reset();
