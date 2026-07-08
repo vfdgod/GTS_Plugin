@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config/Config.hpp"
 #include "Managers/Animation/Grab.hpp"
 #include "Managers/Animation/HugShrink.hpp"
 
