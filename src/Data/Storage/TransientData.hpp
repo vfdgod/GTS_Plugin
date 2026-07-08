@@ -82,6 +82,7 @@ namespace GTS {
 		bool ReattachingTiny = false;
 		bool KissVoring = false;
 		bool SizeOverrideRestoreActive = false;
+		bool ShrinkAttackBlockActive = false;
 
 		bool AutoAim_TargetLeft = false;
 

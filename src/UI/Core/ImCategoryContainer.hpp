@@ -10,7 +10,7 @@ namespace GTS {
         std::vector<std::unique_ptr<ImCategory>> m_categories;
 
         public:
-        uint8_t m_activeIndex;
+        uint8_t m_activeIndex = 0;
         ~ImCategoryContainer() = default;
 
         [[nodiscard]] std::vector<std::unique_ptr<ImCategory>>& GetCategories();

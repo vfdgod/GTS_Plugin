@@ -319,6 +319,9 @@ namespace {
 						npc->GetActorRuntimeData().boolFlags.set(Actor::BOOL_FLAGS::kAttackingDisabled);
 						npc->GetActorRuntimeData().boolFlags.set(Actor::BOOL_FLAGS::kCastingDisabled);
 					}
+					else if (AttackManager::ShouldBlockShrunkAttacks(npc)) {
+						AttackManager::SetAttacksDisabled(npc, true);
+					}
 					else {
 						//Allow Attacks
 						npc->GetActorRuntimeData().boolFlags.reset(Actor::BOOL_FLAGS::kAttackingDisabled);

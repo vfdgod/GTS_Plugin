@@ -357,7 +357,7 @@ namespace SizeOverride {
 	}
 
 	bool SizeOverrideEnabled() {
-		return !Config::Balance.bBalanceMode && Persistent::UnlockMaxSizeSliders.value;
+		return Config::Balance.bSizeLimitRulesEnabled && !Config::Balance.bBalanceMode && Persistent::UnlockMaxSizeSliders.value;
 	}
 
 	void MassMode_ApplySizeOverride(Actor* a_actor, float& GetLimit) {
@@ -379,7 +379,7 @@ namespace {
 
     bool IsSizeUnlocked() {
 		// Reports true when player has ColossalGrowth perk and used gts unlimited command, else it's false
-		if (Persistent::UnlockMaxSizeSliders.value) {
+		if (Config::Balance.bSizeLimitRulesEnabled && Persistent::UnlockMaxSizeSliders.value) {
 			const bool Unlocked = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth);
 			return Unlocked;
 		}

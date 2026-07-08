@@ -5,6 +5,28 @@
 using namespace GTS;
 
 namespace {
+	constexpr float kShrinkAttackBlockEpsilon = 1e-3f;
+
+	bool IsShrunkBelowNaturalScale(Actor* a_Actor) {
+		const float naturalScale = std::max(get_natural_scale(a_Actor, true), 0.01f);
+		return get_visual_scale(a_Actor) < naturalScale - kShrinkAttackBlockEpsilon;
+	}
+
+	void SetAttackFlags(Actor* a_Actor, bool a_Disabled) {
+		if (!a_Actor) {
+			return;
+		}
+
+		auto& flags = a_Actor->GetActorRuntimeData().boolFlags;
+		if (a_Disabled) {
+			flags.set(Actor::BOOL_FLAGS::kAttackingDisabled);
+			flags.set(Actor::BOOL_FLAGS::kCastingDisabled);
+		}
+		else {
+			flags.reset(Actor::BOOL_FLAGS::kAttackingDisabled);
+			flags.reset(Actor::BOOL_FLAGS::kCastingDisabled);
+		}
+	}
 
 	void DisableAttacks_Melee(Actor* a_Giant, float a_SizeDiff, float a_Threshold, bool a_Reset) {
 
@@ -40,7 +62,24 @@ namespace {
 
 namespace GTS {
 
+	bool AttackManager::ShouldBlockShrunkAttacks(Actor* a_Actor) {
+		return Config::Balance.bShrinkDisableAttacks &&
+			a_Actor &&
+			!a_Actor->IsPlayerRef() &&
+			!a_Actor->IsDead() &&
+			IsShrunkBelowNaturalScale(a_Actor);
+	}
+
+	void AttackManager::SetAttacksDisabled(Actor* a_Actor, bool a_Disabled) {
+		SetAttackFlags(a_Actor, a_Disabled);
+	}
+
 	void AttackManager::PreventAttacks(Actor* a_Giant, Actor* a_Tiny) {
+
+		if (ShouldBlockShrunkAttacks(a_Giant)) {
+			SetAttackFlags(a_Giant, true);
+			return;
+		}
 
 		if (a_Giant && !a_Giant->IsPlayerRef() && IsHumanoid(a_Giant)) {
 

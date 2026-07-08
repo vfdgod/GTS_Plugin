@@ -24,6 +24,7 @@ enum class LInputCategory_t : uint8_t {
 	kCamera,
 	kAbility,
 	kMisc,
+	kExtension,
 
 	kTotal
 };
@@ -89,7 +90,8 @@ namespace Strings::Keybinds {
 			"（抓取）乳沟",
 			"镜头",
 			"能力 / Perk",
-			"其他"
+			"其他",
+			"扩展"
 	};
 
 	static_assert(std::size(CategoryNames) == static_cast<size_t>(LInputCategory_t::kTotal));
@@ -1415,7 +1417,7 @@ namespace GTS {
 		    }
         },
         {
-			.UICategory    = LInputCategory_t::kAbility,
+			.UICategory    = LInputCategory_t::kExtension,
 			.AdvFeature    = false,
 			.UIName        = "移动缩小目标到附近",
 			.UIDescription = "把搜索范围内、已经缩小过的角色移动到你附近，并让他们短暂停步。",
@@ -1425,7 +1427,28 @@ namespace GTS {
 		        .Trigger    = "Once",
 		        .BlockInput = "Never"
 		    }
+        },
+        {
+			.UICategory    = LInputCategory_t::kExtension,
+			.AdvFeature    = false,
+			.UIName        = "体型上限规则开关",
+			.UIDescription = "快速启用或关闭扩展页的体型上限规则。",
+			.Event = {
+		        .Event      = "ToggleSizeLimitRules",
+		        .Keys       = {"NUMPAD9"},
+		        .Trigger    = "Once",
+		        .BlockInput = "Never"
+		    }
         }
 		
     };
+
+	inline bool IsExtensionInputEvent(const std::string& a_event) {
+		for (const auto& item : DefaultEvents) {
+			if (item.Event.Event == a_event) {
+				return item.UICategory == LInputCategory_t::kExtension;
+			}
+		}
+		return false;
+	}
 }

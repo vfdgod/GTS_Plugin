@@ -110,6 +110,7 @@ struct SettingsBalance_t {
     bool bOtherDynamicActionFit = false;
     // Legacy config entry kept so older exported settings still deserialize cleanly.
     float fMaxOrdinaryNPCSize = 0.0f;
+    bool bSizeLimitRulesEnabled = true;
     bool bSizeLimitRulesInitialized = false;
     std::vector<SizeLimitRule_t> SizeLimitRules = {};
 
@@ -126,6 +127,7 @@ struct SettingsBalance_t {
     float fBMShrinkOnHitMult = 1.0f;
     bool bSharePerks = false;
     bool bShrinkStealResources = false;
+    bool bShrinkDisableAttacks = false;
     std::string sShrinkRecallFilterMode = "kAllShrunken";
     std::vector<std::string> ShrinkRecallTargets = {};
     std::string sShrinkRecallPlacement = "kRing";

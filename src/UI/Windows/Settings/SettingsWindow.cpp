@@ -211,10 +211,21 @@ namespace GTS {
 				msgQueue->AddMessage(RE::Console::MENU_NAME, RE::UI_MESSAGE_TYPE::kHide, nullptr);
 			}
 
+			if (CategoryMgr) {
+				auto& categories = CategoryMgr->GetCategories();
+				if (!categories.empty()) {
+					const auto lastIndex = std::min<size_t>(Config::UI.iLastSettingsCategory, categories.size() - 1);
+					CategoryMgr->m_activeIndex = static_cast<uint8_t>(lastIndex);
+				}
+			}
+
 			m_show = true;
 		}
 
 		else {
+			if (CategoryMgr) {
+				Config::UI.iLastSettingsCategory = CategoryMgr->m_activeIndex;
+			}
 
 			if (m_MorphDataWasModified) {
 				ConfigModHandler::HandleRaceMenuDataUpdate();
@@ -340,6 +351,7 @@ namespace GTS {
 					0,
 					ImVec2(fullWidth - paddingX, 0))) {
 					CategoryMgr->m_activeIndex = i;
+					Config::UI.iLastSettingsCategory = i;
 				}
 				
 			}

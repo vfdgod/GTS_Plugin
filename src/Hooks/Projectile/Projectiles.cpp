@@ -46,8 +46,7 @@ namespace {
 	}
 	void ScaleProjectile(Projectile* projectile, float speed_limit, bool apply_speed) {
 
-		//Probably impossible, but while testing the killfeed this ptr was 0xFFFFFFFFFFFFFFFF  according to the debugger
-		if (!projectile || reinterpret_cast<uintptr_t>(projectile) == 0xFFFFFFFFFFFFFFFF) {
+		if (!projectile) {
 			return;
 		}
 

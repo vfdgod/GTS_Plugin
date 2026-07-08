@@ -238,6 +238,17 @@ namespace GTS {
 		return true;
 	}
 
+	static bool ToggleSizeLimitRulesCondition() {
+		auto target = PlayerCharacter::GetSingleton();
+		if (!target) {
+			return false;
+		}
+		if (Config::Balance.bBalanceMode || !Persistent::UnlockMaxSizeSliders.value) {
+			return false;
+		}
+		return Runtime::HasPerk(target, Runtime::PERK.GTSPerkColossalGrowth);
+	}
+
 
 
 	//---------------------------

@@ -825,6 +825,23 @@ namespace {
 		RecallShrunkenActors(true, true);
 	}
 
+	void ToggleSizeLimitRulesEvent(const ManagedInputEvent& data) {
+		Config::Balance.bSizeLimitRulesEnabled ^= true;
+		Notify("体型上限规则：{}", Config::Balance.bSizeLimitRulesEnabled ? "已启用" : "已禁用");
+
+		for (auto actor : find_actors()) {
+			if (!actor) {
+				continue;
+			}
+			UpdateGlobalSizeLimit(actor);
+			UpdateMaxScale(actor);
+		}
+
+		if (!Config::SaveSettings()) {
+			logger::warn("Failed to save settings after ToggleSizeLimitRules");
+		}
+	}
+
 	void AnimSpeedUpEvent(const ManagedInputEvent& data) {
 		AnimationManager::AdjustAnimSpeed(0.045f); // Increase speed and power
 	}
@@ -1002,6 +1019,7 @@ namespace GTS {
 		InputManager::RegisterInputEvent("ShrinkOutburst", ShrinkOutburstEvent, ShrinkOutburstCondition);
 		InputManager::RegisterInputEvent("ProtectSmallOnes", ProtectSmallOnesEvent, ProtectSmallOnesCondition);
 		InputManager::RegisterInputEvent("RecallShrunkenActors", RecallShrunkenActorsEvent, RecallShrunkenActorsCondition);
+		InputManager::RegisterInputEvent("ToggleSizeLimitRules", ToggleSizeLimitRulesEvent, ToggleSizeLimitRulesCondition);
 
 		InputManager::RegisterInputEvent("ManualGrow", TotalControlGrowEvent, TotalControlCondition);
 		InputManager::RegisterInputEvent("ManualShrink", TotalControlShrinkEvent, TotalControlCondition);

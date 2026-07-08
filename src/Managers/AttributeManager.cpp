@@ -6,6 +6,7 @@
 
 #include "Managers/Damage/TinyCalamity.hpp"
 #include "Managers/GTSSizeManager.hpp"
+#include "Managers/AttackManager.hpp"
 #include "Managers/Perks/ShrinkingGaze.hpp"
 #include "Utils/Actor/ActorBools.hpp"
 
@@ -122,6 +123,29 @@ namespace {
 		DrainShrunkActorValue(actor, player, ActorValue::kMagicka, scaleRatio);
 	}
 
+	void ManageShrinkAttackBlock(Actor* actor) {
+		if (!actor || actor->IsPlayerRef()) {
+			return;
+		}
+
+		auto transient = Transient::GetActorData(actor);
+		if (!transient) {
+			return;
+		}
+
+		const bool shouldBlock = AttackManager::ShouldBlockShrunkAttacks(actor);
+		if (shouldBlock) {
+			AttackManager::SetAttacksDisabled(actor, true);
+			transient->ShrinkAttackBlockActive = true;
+			return;
+		}
+
+		if (transient->ShrinkAttackBlockActive) {
+			AttackManager::SetAttacksDisabled(actor, false);
+			transient->ShrinkAttackBlockActive = false;
+		}
+	}
+
 	void ManagePerkBonuses(Actor* actor) {
 
 		auto& SizeManager = SizeManager::GetSingleton();
@@ -178,6 +202,7 @@ namespace {
 		if (actor) {
 			ManagePerkBonuses(actor);
 			ManageShrinkResourceSteal(actor);
+			ManageShrinkAttackBlock(actor);
 			if (actor->IsPlayerRef()) {
 				TinyCalamity_BonusSpeed(actor); // Manages SMT bonuses
 				if (TinyCalamityActive(actor) && TinyCalamityHasShrinkingGaze(actor)) {

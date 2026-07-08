@@ -1,17 +1,22 @@
 #include "UI/Windows/Settings/Categories/Extensions.hpp"
+#include "UI/Windows/Settings/SettingsWindow.hpp"
 
+#include "UI/Core/ImInput.hpp"
 #include "UI/Core/ImUtil.hpp"
 
 #include "UI/Controls/Button.hpp"
 #include "UI/Controls/CheckBox.hpp"
+#include "UI/Controls/ComboBox.hpp"
 #include "UI/Controls/ConditionalHeader.hpp"
 #include "UI/Controls/Slider.hpp"
 #include "UI/Controls/Text.hpp"
 #include "UI/Controls/ToolTip.hpp"
 
 #include "Config/Config.hpp"
+#include "Config/Keybinds.hpp"
 #include "Managers/Animation/Utils/CooldownManager.hpp"
 #include "Managers/MaxSizeManager.hpp"
+#include "UI/GTSMenu.hpp"
 
 #include <algorithm>
 
@@ -20,6 +25,33 @@ namespace GTS {
 	namespace {
 		constexpr float SizeRuleFixedLimitMin = 0.05f;
 		constexpr float SizeRuleFixedLimitMax = 255.0f;
+
+		PSString TKeyDisabled = "禁用此输入事件。\n"
+			"禁用的事件会被游戏完全忽略，永远不会触发。";
+
+		PSString TKeyExclusive = "当动作标记为独占时，只有按下完全匹配的按键组合才会激活。\n"
+			"（例如：某动作需要 ALT+E 激活，而你在触发时还按着 W，则在此标记启用时不会发生任何事，除非先松开 W。）";
+
+		PSString TKeyTrigger = "动作触发类型会改变动作的激活方式。\n\n"
+			"- Once：按下按键组合时触发一次动作。\n"
+			"- Release：按下后松开按键时才触发动作。\n"
+			"- Continuous：只要按住按键组合，每个游戏帧都会触发动作事件。";
+
+		PSString TKeyBlockInput = "通常按下按键组合时，当前按住的按键会同时发送给模组和游戏。\n"
+			"根据按键不同，这可能产生不想要的效果，所以需要此选项。\n\n"
+			"- Automatic：仅当对应 GTS 动作有效时，阻止游戏读取该动作按键。\n"
+			"- Never：即使动作有效，也永不阻止游戏读取该动作按键。\n"
+			"- Always：无论动作是否会触发/执行，都始终阻止游戏读取此按键组合。";
+
+		PSString TKeyDuration = "按下按键后，为动作触发添加时间延迟。\n"
+			"（例如触发类型为 Once 且此值为 1.0 时，需要按住正确按键组合至少 1 秒，此事件动作才会触发。）";
+
+		PSString TKeyRebind = "修改触发此事件的按键组合。\n"
+			"创建按键组合时不需要一直按住按键；按下一次就会追加到列表中。\n"
+			"输入新的按键组合后，再次点击此按钮即可保存。\n"
+			"按 ESC 可取消重新绑定。";
+
+		PSString TKeyOptions = "点击打开此按键绑定的高级设置。";
 
 		template <class Enum>
 		std::string EnumName(Enum a_value) {
@@ -312,6 +344,183 @@ namespace GTS {
 		m_name = "扩展";
 	}
 
+	void CategoryExtensions::SetWindowBusy(bool a_busy) {
+		if (auto window = dynamic_cast<SettingsWindow*>(GTSMenu::WindowManager->wSettings)) {
+			window->m_busy = a_busy;
+			window->m_disableUIInteraction = a_busy;
+		}
+	}
+
+	bool CategoryExtensions::DrawExtensionInputEvent(BaseEventData_t& a_event, const InputEvent_t& a_defaultEvent) {
+		const bool isRebinding = m_rebindingEvent == a_event.Event;
+		const bool isAnotherRebinding = !m_rebindingEvent.empty() && !isRebinding;
+		const std::string displayName = a_defaultEvent.UIName && a_defaultEvent.UIName[0] != '\0' ?
+			a_defaultEvent.UIName :
+			HumanizeString(a_event.Event);
+		const char* description = a_defaultEvent.UIDescription ? a_defaultEvent.UIDescription : "";
+
+		std::string visualKeyString;
+		auto& visualKeyList = isRebinding ? m_tempKeys : a_event.Keys;
+		for (size_t i = 0; i < visualKeyList.size(); ++i) {
+			visualKeyString += visualKeyList[i];
+			if (i + 1 < visualKeyList.size()) {
+				visualKeyString += " + ";
+			}
+		}
+		std::string inputText = visualKeyString.empty() ? "按任意键，或按 ESC 取消" : visualKeyString;
+
+		ImGui::PushID(a_event.Event.c_str());
+		ImGui::BeginDisabled(isAnotherRebinding);
+
+		if (ImGui::BeginTable("##ExtensionKeybindRow", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX)) {
+			const float buttonImageSize = 18.0f * ImGui::GetStyle().FontScaleMain;
+			const float buttonSize = buttonImageSize + ImGui::GetStyle().ItemSpacing.x + (ImGui::GetStyle().FramePadding.x * 2.0f);
+			const float contentWidth = ImGui::GetContentRegionAvail().x;
+			const float nameColWidth = std::min(contentWidth * 0.34f, ImGui::GetFontSize() * 12.0f);
+			const float keysColWidth = std::max(contentWidth - nameColWidth - (buttonSize * 2.0f) - (ImGui::GetStyle().ItemSpacing.x * 4.0f), ImGui::GetFontSize() * 8.0f);
+
+			ImGui::TableSetupColumn("##Name", ImGuiTableColumnFlags_WidthFixed, nameColWidth);
+			ImGui::TableSetupColumn("##Keys", ImGuiTableColumnFlags_WidthFixed, keysColWidth);
+			ImGui::TableSetupColumn("##Rebind", ImGuiTableColumnFlags_WidthFixed, buttonSize);
+			ImGui::TableSetupColumn("##Options", ImGuiTableColumnFlags_WidthFixed, buttonSize);
+
+			ImGui::TableNextColumn();
+			ImGui::PushFont(nullptr, 21.0f);
+			ImGuiEx::TextColorShadow(a_event.Disabled ? ImUtil::Colors::Warning : ImGui::GetStyle().Colors[ImGuiCol_Text], "%s", displayName.c_str());
+			if (description[0] != '\0') {
+				ImGuiEx::Tooltip(description, true);
+			}
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::SetNextItemWidth(keysColWidth - ImGui::GetStyle().CellPadding.x * 2.0f);
+			ImGui::BeginDisabled(a_event.Disabled);
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::InputText("##KeyRebind", &inputText, ImGuiInputTextFlags_ReadOnly);
+			ImGui::PopItemFlag();
+			ImGui::EndDisabled();
+
+			ImGui::TableNextColumn();
+			SetWindowBusy(!m_rebindingEvent.empty());
+			ImGui::BeginDisabled((m_tempKeys.empty() && isRebinding) || a_event.Disabled);
+			if (ImGuiEx::ImageButton("##Rebind", isRebinding ? ImageList::Generic_OK : ImageList::Keybind_EditKeybind, 18, TKeyRebind)) {
+				if (isRebinding) {
+					if (!m_tempKeys.empty()) {
+						a_event.Keys = m_tempKeys;
+						m_tempKeys.clear();
+					}
+					m_rebindingEvent.clear();
+				}
+				else {
+					m_rebindingEvent = a_event.Event;
+					m_tempKeys.clear();
+				}
+			}
+			ImGui::EndDisabled();
+
+			ImGui::TableNextColumn();
+			ImGui::BeginDisabled(isRebinding);
+			if (ImGuiEx::ImageButton("##OptionsOpen", ImageList::Keybind_ShowAdvanced, 18, TKeyOptions)) {
+				ImGui::OpenPopup("##Options");
+			}
+			ImGui::EndDisabled();
+
+			if (ImGui::BeginPopup("##Options")) {
+				ImGui::Text("额外选项：%s", displayName.c_str());
+				ImGui::Separator();
+				ImGui::PushItemWidth(250.0f);
+				ImGuiEx::CheckBox("禁用", &a_event.Disabled, TKeyDisabled);
+				if (!a_event.Disabled) {
+					ImGui::BeginDisabled(isRebinding);
+					ImGuiEx::CheckBox("独占", &a_event.Exclusive, TKeyExclusive);
+					ImGuiEx::ComboEx<LTriggerType_t>("触发类型", a_event.Trigger, TKeyTrigger);
+					ImGuiEx::ComboEx<LBlockInputTypes_t>("阻止输入", a_event.BlockInput, TKeyBlockInput);
+					ImGui::InputFloat("触发延迟", &a_event.Duration, 0.1f, 0.01f, "%.2f 秒");
+					ImGuiEx::Tooltip(TKeyDuration);
+					a_event.Duration = std::clamp(a_event.Duration, 0.0f, 10.0f);
+					ImGui::EndDisabled();
+				}
+				ImGui::PopItemWidth();
+				ImGui::EndPopup();
+			}
+
+			ImGui::EndTable();
+		}
+
+		if (isRebinding) {
+			if (ImGui::IsKeyReleased(ImGuiKey_Escape)) {
+				m_rebindingEvent.clear();
+				m_tempKeys.clear();
+			}
+			else if (!(ImGui::IsAnyItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left))) {
+				for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; ++key) {
+					if (key == ImGuiKey_Escape) {
+						continue;
+					}
+					if (ImGui::IsKeyPressed(static_cast<ImGuiKey>(key))) {
+						auto keyName = ImInput::ImGuiKeyToDIKString(static_cast<ImGuiKey>(key));
+						if (keyName == "INVALID") {
+							continue;
+						}
+						if (std::ranges::find(m_tempKeys, keyName) == m_tempKeys.end() && m_tempKeys.size() < 5) {
+							m_tempKeys.push_back(keyName);
+							std::ranges::sort(m_tempKeys, [](auto& a, auto& b) {
+								return a.size() > b.size();
+							});
+						}
+					}
+				}
+			}
+		}
+
+		ImGui::EndDisabled();
+		ImGui::PopID();
+		return true;
+	}
+
+	void CategoryExtensions::DrawExtensionKeybinds() {
+		if (ImGui::CollapsingHeader("扩展快捷键", ImUtil::HeaderFlagsDefaultOpen)) {
+			ImGuiEx::HelpText("保存方式", "这些快捷键和原按键绑定使用同一份 Input.toml，但只在扩展页显示和编辑。");
+
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 4.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 4.0f));
+
+			bool any = false;
+			for (const auto& defaultEvent : DefaultEvents) {
+				if (defaultEvent.UICategory != LInputCategory_t::kExtension) {
+					continue;
+				}
+
+				auto eventIt = std::ranges::find_if(Keybinds::InputEvents, [&](const BaseEventData_t& event) {
+					return event.Event == defaultEvent.Event.Event;
+				});
+
+				if (eventIt == Keybinds::InputEvents.end()) {
+					continue;
+				}
+
+				any = true;
+				DrawExtensionInputEvent(*eventIt, defaultEvent);
+			}
+
+			if (!any) {
+				ImGui::TextDisabled("没有可用的扩展快捷键。");
+			}
+
+			if (m_rebindingEvent.empty()) {
+				SetWindowBusy(false);
+			}
+
+			ImGui::PopStyleVar(2);
+			ImGui::Spacing();
+		}
+		else if (!m_rebindingEvent.empty()) {
+			m_rebindingEvent.clear();
+			m_tempKeys.clear();
+			SetWindowBusy(false);
+		}
+	}
+
 	void CategoryExtensions::DrawLeft() {
 
 		ImUtil_Unique
@@ -408,9 +617,12 @@ namespace GTS {
 			              "只要低于自然体型，就会持续被抽取；低于自然体型的 50% 时，会直接被抽到 0。\n"
 			              "被抽走的数值会优先回复玩家的对应资源；如果玩家该资源已满，则按 100 点资源 = 1.0 点 GTS 经验折算。\n"
 			              "没有魔力值的目标只会处理耐力。";
+			PSString T1 = "启用后，所有非玩家角色在缩小到自然体型以下时，会被禁止普通攻击和远程/施法类行为。\n"
+			              "恢复到自然体型及以上，或关闭此选项后，会自动解除限制。";
 
-			if (ImGui::CollapsingHeader("缩小时资源掠夺", ImUtil::HeaderFlagsDefaultOpen)) {
+			if (ImGui::CollapsingHeader("缩小后处理", ImUtil::HeaderFlagsDefaultOpen)) {
 				ImGuiEx::CheckBox("启用非玩家缩小时抽取耐力/魔力", &Config::Balance.bShrinkStealResources, T0);
+				ImGuiEx::CheckBox("缩小后禁止远程/攻击", &Config::Balance.bShrinkDisableAttacks, T1);
 				ImGui::Spacing();
 			}
 		}
@@ -485,6 +697,8 @@ namespace GTS {
 
 	void CategoryExtensions::DrawRight() {
 
+		DrawExtensionKeybinds();
+
 		ImUtil_Unique
 		{
 			PSString T0 = "设置“移动缩小目标到附近”快捷键按下后，会扫描玩家周围多大的范围。\n"
@@ -519,7 +733,7 @@ namespace GTS {
 			Config::Balance.fShrinkRecallNotifyInterval = std::clamp(Config::Balance.fShrinkRecallNotifyInterval, 1.0f, 600.0f);
 
 			if (ImGui::CollapsingHeader("移动缩小目标到附近", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::HelpText("快捷键说明", "快捷键本身在“按键绑定 -> 能力 / Perk”里设置，默认是 NUMPAD0。");
+				ImGuiEx::HelpText("快捷键说明", "快捷键本身在本页“扩展快捷键”里设置，默认是 NUMPAD0。");
 
 				if (ImGui::BeginCombo("移动筛选", GetRecallFilterModeLabel(filterMode))) {
 					for (int rawMode = 0; rawMode < static_cast<int>(LShrinkRecallFilterMode_t::kTotal); ++rawMode) {
@@ -595,6 +809,7 @@ namespace GTS {
 			                 "它还会受到以下因素影响：\n"
 			                 "- 游戏缩放（SetScale）\n"
 			                 "- 角色自然体型";
+			PSString TEnable = "关闭后，下面的扩展体型上限规则暂时不生效；规则本身会保留，之后可以用这里或快捷键重新开启。";
 
 			const bool HasPerk = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth);
 			const bool Unlock = Persistent::UnlockMaxSizeSliders.value;
@@ -612,6 +827,7 @@ namespace GTS {
 
 			if (ImGuiEx::ConditionalHeader("体型上限规则", DisableReason, HasPerk && Unlock && !Config::Balance.bBalanceMode)) {
 				EnsureSizeLimitRulesInitialized();
+				ImGuiEx::CheckBox("启用体型上限规则", &Config::Balance.bSizeLimitRulesEnabled, TEnable);
 				ImGuiEx::HelpText("最大体型由什么决定", THelp);
 				ImGuiEx::HelpText(
 					"规则如何工作",

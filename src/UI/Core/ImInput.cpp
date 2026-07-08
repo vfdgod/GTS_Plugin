@@ -376,11 +376,11 @@ namespace GTS {
 			case ImGuiKey_Keypad7:         return "NUMPAD7";
 			case ImGuiKey_Keypad8:         return "NUMPAD8";
 			case ImGuiKey_Keypad9:         return "NUMPAD9";
-			case ImGuiKey_KeypadDecimal:   return "NUMPAD_DECIMAL";
-			case ImGuiKey_KeypadDivide:    return "NUMPAD_DIVIDE";
-			case ImGuiKey_KeypadMultiply:  return "NUMPAD_MULTIPLY";
-			case ImGuiKey_KeypadSubtract:  return "NUMPAD_SUBTRACT";
-			case ImGuiKey_KeypadAdd:       return "NUMPAD_ADD";
+			case ImGuiKey_KeypadDecimal:   return "DECIMAL";
+			case ImGuiKey_KeypadDivide:    return "DIVIDE";
+			case ImGuiKey_KeypadMultiply:  return "MULTIPLY";
+			case ImGuiKey_KeypadSubtract:  return "SUBTRACT";
+			case ImGuiKey_KeypadAdd:       return "ADD";
 
 			// Modifier keys
 			case ImGuiKey_LeftShift:       return "LSHIFT";

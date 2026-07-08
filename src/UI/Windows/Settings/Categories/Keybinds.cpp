@@ -169,6 +169,9 @@ namespace GTS {
             groups.reserve(128);
 
             for (auto& ev : Keybinds::InputEvents) {
+                if (IsExtensionInputEvent(ev.Event)) {
+                    continue;
+                }
 
                 // Check if hidden (skip if not in advanced mode)
                 if (!Config::Hidden.IKnowWhatImDoing) {
@@ -205,6 +208,10 @@ namespace GTS {
             // Measure widest name across ALL events globally (do this once before any category loop)
             std::vector GlobalColumnNameWidths(Div, 0.0f);
             for (auto& evt : Keybinds::InputEvents) {
+                if (IsExtensionInputEvent(evt.Event)) {
+                    continue;
+                }
+
                 // Get UI name for width calculation
                 std::string displayName;
                 auto nameIt = uiNameMap.find(evt.Event);

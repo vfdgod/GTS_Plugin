@@ -48,6 +48,7 @@ struct SettingsUI_t {
     bool bDoBGBlur = true;
     bool bDoPause = true;
     bool bDoSlowdown = true;
+    uint8_t iLastSettingsCategory = 0;
 
     // Red: 0.273f, 0.0106f, 0.0106f
 	// White: 0.81834f, 0.797923f, 0.834302f
