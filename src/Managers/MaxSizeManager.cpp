@@ -16,26 +16,18 @@ namespace SizeOverride {
 	constexpr float ACTION_FIT_RESULT_MIN = 0.051f;
 	constexpr float ACTION_FIT_RESULT_MAX = 1.0f;
 	constexpr float ACTION_FIT_STRICTEST_THRESHOLD = Action_Vore + 0.01f;
-	constexpr float ACTION_FIT_UPDATE_INTERVAL = 0.15f;
-	constexpr float ACTION_FIT_SCALE_THRESHOLD = 0.01f;
-
-	struct ActionFitCache {
-		float PlayerVisualScale = 1.0f;
-		float Limit = ACTION_FIT_RESULT_MAX;
-		double RefreshAfter = 0.0;
-		bool Initialized = false;
-	};
-
-	ActionFitCache& GetActionFitCache() {
-		static ActionFitCache cache;
-		return cache;
-	}
 
 	struct ResolvedSizeLimitRule {
-		bool Matched = false;
 		bool HasOverrideLimit = false;
 		bool LockToNatural = false;
 		float OverrideLimit = 0.0f;
+	};
+
+	struct ParsedSizeLimitRule {
+		LSizeLimitRuleTarget_t Target = LSizeLimitRuleTarget_t::kHumanoidNPC;
+		LSizeLimitRuleMode_t Mode = LSizeLimitRuleMode_t::kFixedLimit;
+		float Value = SIZE_RULE_DEFAULT_FIXED_LIMIT;
+		bool CombatOnly = false;
 	};
 
 	template <class Enum>
@@ -178,6 +170,47 @@ namespace SizeOverride {
 		}
 	}
 
+	const std::vector<ParsedSizeLimitRule>& GetParsedRules() {
+		struct RuleCache {
+			std::uint64_t Frame = std::numeric_limits<std::uint64_t>::max();
+			std::vector<ParsedSizeLimitRule> Rules;
+		};
+
+		thread_local RuleCache cache;
+		const auto currentFrame = Time::FramesElapsed();
+		if (cache.Frame == currentFrame) {
+			return cache.Rules;
+		}
+
+		EnsureInitialized();
+		cache.Frame = currentFrame;
+		cache.Rules.clear();
+		cache.Rules.reserve(Config::Balance.SizeLimitRules.size());
+
+		for (const auto& rule : Config::Balance.SizeLimitRules) {
+			if (!rule.bEnabled) {
+				continue;
+			}
+
+			LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
+			LSizeLimitRuleMode_t mode = LSizeLimitRuleMode_t::kFixedLimit;
+			if (!TryParseTarget(rule.sTarget, target) ||
+				!TryParseMode(rule.sMode, mode) ||
+				!IsModeAllowedForTarget(target, mode)) {
+				continue;
+			}
+
+			cache.Rules.push_back({
+				.Target = target,
+				.Mode = mode,
+				.Value = rule.fValue,
+				.CombatOnly = rule.bCombatOnly,
+			});
+		}
+
+		return cache.Rules;
+	}
+
 	bool IsImportantTarget(Actor* a_actor) {
 		return a_actor && !a_actor->IsPlayerRef() && a_actor->IsEssential();
 	}
@@ -211,26 +244,13 @@ namespace SizeOverride {
 		return std::clamp(actionLimit, ACTION_FIT_RESULT_MIN, ACTION_FIT_RESULT_MAX);
 	}
 
-	float GetActionFitLimit(bool a_forceRefresh = false) {
+	float GetActionFitLimit() {
 		Actor* player = PlayerCharacter::GetSingleton();
 		if (!player) {
 			return ACTION_FIT_RESULT_MAX;
 		}
 
-		auto& cache = GetActionFitCache();
-		const float playerScale = get_visual_scale(player);
-		const double now = Time::WorldTimeElapsed();
-		const bool playerScaleChanged = std::abs(playerScale - cache.PlayerVisualScale) >= ACTION_FIT_SCALE_THRESHOLD;
-		const bool refreshExpired = now >= cache.RefreshAfter;
-
-		if (a_forceRefresh || !cache.Initialized || playerScaleChanged || refreshExpired) {
-			cache.PlayerVisualScale = playerScale;
-			cache.Limit = ComputeActionFitLimit(playerScale);
-			cache.RefreshAfter = now + ACTION_FIT_UPDATE_INTERVAL;
-			cache.Initialized = true;
-		}
-
-		return cache.Limit;
+		return ComputeActionFitLimit(get_visual_scale(player));
 	}
 
 	bool IsAnimalTarget(Actor* a_actor) {
@@ -284,42 +304,21 @@ namespace SizeOverride {
 		}
 	}
 
-	bool RuleMatchesExtraFilters(Actor* a_actor, const SizeLimitRule_t& a_rule, LSizeLimitRuleTarget_t a_target) {
-		if (!RuleTargetSupportsCombatOnly(a_target) || !a_rule.bCombatOnly) {
-			return true;
-		}
-
-		return a_actor && a_actor->IsInCombat();
-	}
-
 	ResolvedSizeLimitRule ResolveRuleForActor(Actor* a_actor) {
-		EnsureInitialized();
-
 		ResolvedSizeLimitRule resolved;
 		if (!a_actor) {
 			return resolved;
 		}
 
-		for (const auto& rule : Config::Balance.SizeLimitRules) {
-			if (!rule.bEnabled) {
+		for (const auto& rule : GetParsedRules()) {
+			if (!ActorMatchesRuleTarget(a_actor, rule.Target)) {
+				continue;
+			}
+			if (rule.CombatOnly && RuleTargetSupportsCombatOnly(rule.Target) && !a_actor->IsInCombat()) {
 				continue;
 			}
 
-			LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
-			if (!TryParseTarget(rule.sTarget, target) ||
-				!ActorMatchesRuleTarget(a_actor, target) ||
-				!RuleMatchesExtraFilters(a_actor, rule, target)) {
-				continue;
-			}
-
-			LSizeLimitRuleMode_t mode = LSizeLimitRuleMode_t::kFixedLimit;
-			if (!TryParseMode(rule.sMode, mode) || !IsModeAllowedForTarget(target, mode)) {
-				mode = LSizeLimitRuleMode_t::kFixedLimit;
-			}
-
-			resolved.Matched = true;
-
-			switch (mode) {
+			switch (rule.Mode) {
 				case LSizeLimitRuleMode_t::kNaturalCeiling:
 					resolved.HasOverrideLimit = true;
 					resolved.OverrideLimit = std::max(get_natural_scale(a_actor, true), SIZE_OVERRIDE_MIN);
@@ -331,7 +330,7 @@ namespace SizeOverride {
 					return resolved;
 				case LSizeLimitRuleMode_t::kFixedLimit:
 					resolved.HasOverrideLimit = true;
-					resolved.OverrideLimit = std::clamp(rule.fValue, SIZE_OVERRIDE_MIN, SIZE_OVERRIDE_MAX);
+					resolved.OverrideLimit = std::clamp(rule.Value, SIZE_OVERRIDE_MIN, SIZE_OVERRIDE_MAX);
 					return resolved;
 				case LSizeLimitRuleMode_t::kActionFit:
 					resolved.HasOverrideLimit = true;
@@ -377,11 +376,12 @@ namespace {
 	constexpr float SIZE_OVERRIDE_RESTORE_MAX = 1.0f;
 	constexpr float SIZE_OVERRIDE_RESTORE_EPS = 0.0001f;
 
-    bool IsSizeUnlocked() {
-		// Reports true when player has ColossalGrowth perk and used gts unlimited command, else it's false
-		if (Config::Balance.bSizeLimitRulesEnabled && Persistent::UnlockMaxSizeSliders.value) {
-			const bool Unlocked = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth);
-			return Unlocked;
+	bool IsSizeUnlocked() {
+		// Custom rules require their global toggle, non-balance mode, the console unlock and the player perk.
+		if (SizeOverride::SizeOverrideEnabled()) {
+			if (Actor* player = PlayerCharacter::GetSingleton()) {
+				return Runtime::HasPerk(player, Runtime::PERK.GTSPerkColossalGrowth);
+			}
 		}
 		return false;
 	}
@@ -413,16 +413,6 @@ namespace {
 		}
 
 		return BonusSize;
-	}
-
-    float get_endless_height(Actor* actor) {
-		float endless = 0.0f;
-
-		if (Runtime::HasPerk(actor, Runtime::PERK.GTSPerkColossalGrowth) && Persistent::UnlockMaxSizeSliders.value) {
-			endless = DEFAULT_MAX;
-		}
-
-		return endless;
 	}
 
 	void UpdateSizeOverrideRestore(Actor* actor, float overrideLimit, bool overrideActive) {
@@ -476,16 +466,13 @@ namespace {
 
 		transient->SizeOverrideLastRawLimit = overrideLimit;
 	}
-
-
-
     float get_mass_based_limit(Actor* actor, float NaturalScale) { // gets mass based size limit for Player if using Mass Based mode
 
 		float GetLimit = 1.0f;
 
 		if (auto data = Persistent::GetActorData(actor); data) {
 			float ExtraMagicSize = data->fExtraPotionMaxScale * MassMode_ElixirPowerMultiplier;
-			float MaxSize = data->fSizeLimit; // Cap max size through normal size rules
+			const float MaxSize = std::max(data->fSizeLimit, NaturalScale); // std::clamp requires low <= high.
 			float size_calc = NaturalScale + data->fMassBasedLimit + ExtraMagicSize;
 
 			// Multiplying MassBasedSizeLimit by Natural Scale is a bad idea, it messes up max scaling with level 100 perk, displays 32x out of 34x
@@ -496,27 +483,6 @@ namespace {
 
         return GetLimit;
     }
-
-	float get_default_size_limit(float NaturalScale, float BaseLimit) { // default size limit for everyone
-		float size_calc = NaturalScale + ((BaseLimit - 1.0f) * NaturalScale);
-		float GetLimit = std::clamp(size_calc, 0.1f, DEFAULT_MAX);
-
-		return GetLimit;
-	}
-
-    /*float get_follower_size_limit(float NaturalScale, float FollowerLimit) { // Self explanatory
-        float size_calc = NaturalScale + ((FollowerLimit) * NaturalScale);
-        float GetLimit = std::clamp(size_calc, 1.0f * FollowerLimit, DEFAULT_MAX);
-
-        return GetLimit;
-    }
-
-    float get_npc_size_limit(float NaturalScale, float NPCLimit) { // get non-follower size limit
-        float size_calc = NaturalScale + ((NPCLimit - 1.0f) * NaturalScale);
-		float GetLimit = std::clamp(size_calc, 1.0f * NPCLimit, DEFAULT_MAX);
-
-        return GetLimit;
-    }*/
 }
 
 namespace GTS {
@@ -529,8 +495,8 @@ namespace GTS {
 		SizeOverride::EnsureInitialized();
 	}
 
-	float GetActionCompatibleSizeLimit(bool a_forceRefresh) {
-		return SizeOverride::GetActionFitLimit(a_forceRefresh);
+	float GetActionCompatibleSizeLimit() {
+		return SizeOverride::GetActionFitLimit();
 	}
 
     void UpdateMaxScale(Actor* a_actor) {
@@ -547,21 +513,13 @@ namespace GTS {
 
 		// Apply custom limits only if player has Perk and gts unlimited command was executed, else use GlobalLimit
 
-        float Endless = get_endless_height(a_actor);
-
         const float NaturalScale = get_natural_scale(a_actor, true);
-		float GetLimit = get_default_size_limit(NaturalScale, Limit); // Default size limit
+		const float defaultLimit = NaturalScale + ((Limit - 1.0f) * NaturalScale);
+		float GetLimit = std::clamp(defaultLimit, 0.1f, DEFAULT_MAX);
 		
 		if (IsMassBased) {
 			GetLimit = get_mass_based_limit(a_actor, NaturalScale); // Apply Player Mass-Based max size
 		}
-
-		/*else if (QuestStage > 100 && FollowerLimit > 0.0f && FollowerLimit != 1.0f && !a_actor->IsPlayerRef() && IsTeammate(a_actor)) {
-			GetLimit = get_follower_size_limit(NaturalScale, FollowerLimit); // Apply Follower Max Size
-		}
-		else if (QuestStage > 100 && NPCLimit > 0.0f && NPCLimit != 1.0f && !a_actor->IsPlayerRef() && !IsTeammate(a_actor)) {
-            GetLimit = get_npc_size_limit(NaturalScale, NPCLimit); // Apply Other NPC's max size
-		}*/
 
 		float TotalLimit = GetLimit;
 		float OverrideLimit = 0.0f;
@@ -581,7 +539,7 @@ namespace GTS {
 
 		Ench_Potions_ApplyBonuses(a_actor, TotalLimit); // Apply after size override, else Butt Crush growth won't be able to surpass size limit for example
 
-		if (get_max_scale(a_actor) < TotalLimit + Endless || get_max_scale(a_actor) > TotalLimit + Endless) {
+		if (std::abs(get_max_scale(a_actor) - TotalLimit) > SIZE_OVERRIDE_RESTORE_EPS) {
 			set_max_scale(a_actor, TotalLimit);
 		}
 

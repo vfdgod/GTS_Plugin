@@ -20,7 +20,7 @@ namespace GTS {
         void Init() override;
         void RequestClose() override;
         bool WantsToDraw() override;
-        virtual float GetBackgroundAlpha() override;
+        float GetBackgroundAlpha() override;
 
         WindowSettingsKillFeed_t m_extraSettings = {};
 

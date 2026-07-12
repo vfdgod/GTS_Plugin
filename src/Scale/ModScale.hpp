@@ -16,7 +16,6 @@ namespace GTS {
 	void ResetToInitScale(Actor* actor);
 
 	void RefreshInitialScales(Actor* actor);
-	void set_ref_scale(Actor* actor, float target_scale);
 	bool set_model_scale(Actor* actor, float target_scale);
 	bool set_npcnode_scale(Actor* actor, float target_scale);
 

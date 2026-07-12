@@ -82,7 +82,6 @@ namespace GTS {
 		//Always draw all if the widget page is open in settings
 		if (*m_isConfiguring && *m_settingsVisible) {
 			this->ResetFadeState();
-			return true;
 		}
 
 		return true;
@@ -258,7 +257,7 @@ namespace GTS {
 		static ImGuiEx::KillFeedStyle Style = {};
 		{
 			Style.visDuration  = BaseSettings.fFadeAfter;
-			Style.neverFade    = Configuring ? true : !BaseSettings.bEnableFade;
+			Style.neverFade    = Configuring || !BaseSettings.bEnableFade;
 			Style.bgColor      = ImUtil::Colors::fRGBToU32(ExtraSettings.f3BGColor);
 			Style.attackerCol  = ImUtil::Colors::fRGBToU32(ExtraSettings.f3AttackerColor);
 			Style.victimCol    = ImUtil::Colors::fRGBToU32(ExtraSettings.f3VictimColor);

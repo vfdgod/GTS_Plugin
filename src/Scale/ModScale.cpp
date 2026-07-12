@@ -183,19 +183,6 @@ namespace GTS {
 		}
 	}
 
-	//No longer used
-	void set_ref_scale(Actor* actor, float target_scale) {
-		// This is how the game sets scale with the `SetScale` command
-		// It is limited to x10 and messes up all sorts of things like actor damage
-		// and anim speeds
-		// Calling too fast also kills frames
-		float refScale = static_cast<float>(actor->GetReferenceRuntimeData().refScale) / 100.0F;
-		if (fabs(refScale - target_scale) > 1e-5) {
-			actor->GetReferenceRuntimeData().refScale = static_cast<std::uint16_t>(target_scale * 100.0F);
-			actor->DoReset3D(false);
-		}
-	}
-
 	bool set_model_scale(Actor* actor, float target_scale) {
 		// This will set the scale of the model root (not the root npc node)
 		if (!actor->Is3DLoaded()) {

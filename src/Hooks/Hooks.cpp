@@ -1,7 +1,5 @@
 #include "Hooks/Hooks.hpp"
 
-#include "Experiments/Experiments.hpp"
-
 #include "Hooks/Actor/Actor.hpp"
 #include "Hooks/Actor/ActorValueOwner.hpp"
 #include "Hooks/Actor/ActorEquipManager.hpp"
@@ -84,9 +82,6 @@ namespace Hooks {
 
 		//UI
 		Hook_Console::Install();
-
-		//Experiments
-		//Hook_Experiments::Install();
 
 		logger::info("Finished applying hooks");
 		logger::info("Default Trampoline Used: {}/{} Bytes", SKSETrampoline.allocated_size(), SKSETrampoline.capacity());

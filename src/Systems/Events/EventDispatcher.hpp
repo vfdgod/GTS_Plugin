@@ -13,7 +13,6 @@ namespace GTS {
 
 		static void AddListener(EventListener* a_listener);
 		static void RemoveListener(EventListener* a_listener);
-		static void Compact();
 
 		static void DoUpdate();
 		static void DoActorUpdate(RE::Actor* actor);
@@ -75,8 +74,6 @@ namespace GTS {
 
 		static void AddListenerTo(tbb::concurrent_vector<ListenerEntry>& listeners, EventListener* a_listener);
 		static bool RemoveListenerFrom(tbb::concurrent_vector<ListenerEntry>& listeners, EventListener* a_listener);
-		static void CompactListeners(tbb::concurrent_vector<ListenerEntry>& listeners);
-		static void CompactUnlocked();
 
 		template <typename Container, typename Func>
 		static void ForEachListenerIn(Container& listeners, Func&& func) {
@@ -102,13 +99,5 @@ namespace GTS {
 			ForEachListenerIn(m_actorAnimEventListeners, std::forward<Func>(func));
 		}
 
-		template <typename Func>
-		static void ForEachListenerConcurrent(Func&& func) {
-			tbb::parallel_for_each(m_listeners.begin(), m_listeners.end(), [&](auto& entry) {
-				if (EventListener* listener = entry.ptr.load(std::memory_order_acquire)) {
-					func(listener);
-				}
-			});
-		}
 	};
 }

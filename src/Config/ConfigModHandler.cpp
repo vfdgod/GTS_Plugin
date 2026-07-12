@@ -101,20 +101,4 @@ namespace GTS {
 		spdlog::set_level(spdlog::level::from_str(Config::Advanced.sLogLevel));
 	}
 
-	void ConfigModHandler::MenuChange(const RE::MenuOpenCloseEvent* menu_event) {
-		if (!menu_event) {
-			return;
-		}
-
-		//No longer needed, Handled by Reset() now.
-
-		/*//Run Reset if the main menu is loaded
-		if (menu_event->menuName == RE::MainMenu::MENU_NAME && menu_event->opening) {
-
-			Config::ResetToDefaults();
-			ImStyleManager::ApplyStyle();
-			spdlog::set_level(spdlog::level::from_str(Config::Advanced.sLogLevel));
-
-		}*/
-	}
 }

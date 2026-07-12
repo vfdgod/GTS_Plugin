@@ -14,10 +14,6 @@
 
 namespace GTS {
 
-    bool ImWindowManager::HasWindows() const {
-        return Windows.size() > 0;
-    }
-
     bool ImWindowManager::HasInputConsumers() {
 		return HasActiveWindows() && Context->GetCurrentConfig().cursorEnabled;
     }
@@ -98,14 +94,16 @@ namespace GTS {
     void ImWindowManager::Update() {
         GTS_PROFILE_SCOPE("ImWindowManager Update");
 
-        if (!HasWindows()) [[unlikely]] {
+        if (Windows.empty()) [[unlikely]] {
             return;
         }
 
 		// Update cached teammate count once per update.
         m_cachedTeamMateList = FindTeammates();
 
-        float deltaTime = GetDeltaTime();
+        const float currentTime = ImGui::GetTime();
+        const float deltaTime = currentTime - m_lastFrameTime;
+        m_lastFrameTime = currentTime;
         bool isDebugging = false;
 
         for (const auto& window : Windows) {
@@ -151,17 +149,6 @@ namespace GTS {
             Context->ApplyPendingSwitch();
         }
 
-    }
-
-    float ImWindowManager::GetDeltaTime() const {
-        float currentTime = ImGui::GetTime();
-        float deltaTime = currentTime - m_lastFrameTime;
-        const_cast<ImWindowManager*>(this)->m_lastFrameTime = currentTime;
-        return deltaTime;
-    }
-
-    const std::vector<std::unique_ptr<ImWindow>>& ImWindowManager::GetWindows() const {
-        return Windows;
     }
 
     void ImWindowManager::Init() {

@@ -49,25 +49,6 @@ namespace GTS {
 		return removed;
 	}
 
-	void EventDispatcher::CompactListeners(tbb::concurrent_vector<ListenerEntry>& listeners) {
-		tbb::concurrent_vector<ListenerEntry> compacted;
-		compacted.reserve(listeners.size());
-
-		for (auto& entry : listeners) {
-			if (EventListener* listener = entry.ptr.load(std::memory_order_relaxed)) {
-				compacted.push_back(ListenerEntry(listener));
-			}
-		}
-
-		listeners.swap(compacted);
-	}
-
-	void EventDispatcher::CompactUnlocked() {
-		CompactListeners(m_listeners);
-		CompactListeners(m_actorUpdateListeners);
-		CompactListeners(m_actorAnimEventListeners);
-	}
-
 	void EventDispatcher::RemoveListener(EventListener* a_listener) {
 		if (!a_listener) return;
 		std::lock_guard lock(m_lock);
@@ -81,19 +62,7 @@ namespace GTS {
 		}
 	}
 
-	void EventDispatcher::Compact() {
-		std::lock_guard lock(m_lock);
-		CompactUnlocked();
-	}
-
 	void EventDispatcher::DoUpdate() {
-
-		////Experiment
-		//ForEachListenerConcurrent([](EventListener* listener) {
-		//	GTS_PROFILE_SCOPE(listener->DebugName());
-		//	listener->Update();
-		//});
-
 		ForEachListener([](EventListener* listener) {
 			GTS_PROFILE_SCOPE(listener->DebugName());
 			listener->Update();
@@ -101,13 +70,6 @@ namespace GTS {
 	}
 
 	void EventDispatcher::DoActorUpdate(RE::Actor* actor) {
-
-		////Experiment
-		//ForEachListenerConcurrent([](EventListener* listener) {
-		//	GTS_PROFILE_SCOPE(listener->DebugName());
-		//	listener->Update();
-		//});
-
 		ForEachActorUpdateListener([actor](EventListener* listener) {
 			GTS_PROFILE_SCOPE(listener->DebugName());
 			listener->ActorUpdate(actor);
@@ -304,6 +266,10 @@ namespace GTS {
 	}
 
 	void EventDispatcher::DoFurnitureEvent(const TESFurnitureEvent* a_event) {
+		if (!a_event) {
+			return;
+		}
+
 		Actor* actor = skyrim_cast<Actor*>(a_event->actor.get());
 		TESObjectREFR* object = a_event->targetFurniture.get();
 		const bool entering = a_event->type == TESFurnitureEvent::FurnitureEventType::kEnter;
@@ -320,6 +286,10 @@ namespace GTS {
 	}
 
 	void EventDispatcher::DoDeathEvent(const TESDeathEvent* a_event) {
+		if (!a_event) {
+			return;
+		}
+
 		Actor* killer = skyrim_cast<Actor*>(a_event->actorKiller.get());
 		Actor* victim = skyrim_cast<Actor*>(a_event->actorDying.get());
 		const bool dead = a_event->dead;

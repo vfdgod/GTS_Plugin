@@ -52,16 +52,6 @@ namespace {
 		return false;
 	}
 
-	bool ContainsRecallTarget(const std::vector<std::string>& a_targets, LSizeLimitRuleTarget_t a_target) {
-		const std::string_view targetName = magic_enum::enum_name(a_target);
-		for (const auto& target : a_targets) {
-			if (target == targetName) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	LShrinkRecallFilterMode_t GetRecallFilterMode() {
 		LShrinkRecallFilterMode_t mode = LShrinkRecallFilterMode_t::kAllShrunken;
 		TryParseEnumString(Config::Balance.sShrinkRecallFilterMode, mode);
@@ -108,13 +98,9 @@ namespace {
 	}
 
 	bool MatchesRecallCustomTargets(Actor* actor) {
-		for (int rawTarget = 0; rawTarget < static_cast<int>(LSizeLimitRuleTarget_t::kTotal); ++rawTarget) {
-			const auto target = static_cast<LSizeLimitRuleTarget_t>(rawTarget);
-			if (target == LSizeLimitRuleTarget_t::kPlayer) {
-				continue;
-			}
-
-			if (!ContainsRecallTarget(Config::Balance.ShrinkRecallTargets, target)) {
+		for (const auto& targetName : Config::Balance.ShrinkRecallTargets) {
+			LSizeLimitRuleTarget_t target = LSizeLimitRuleTarget_t::kHumanoidNPC;
+			if (!TryParseEnumString(targetName, target) || target == LSizeLimitRuleTarget_t::kPlayer) {
 				continue;
 			}
 
@@ -126,14 +112,16 @@ namespace {
 		return false;
 	}
 
-	bool ShouldRecallActor(Actor* player, Actor* actor, float searchRadius) {
-		if (!player || !actor || actor->IsPlayerRef()) {
+	bool ShouldRecallActor(Actor* actor, const NiPoint3& playerPosition, float searchRadiusSquared, bool useCustomTargets) {
+		if (!actor || actor->IsPlayerRef()) {
 			return false;
 		}
 		if (actor->IsDead() || !actor->Is3DLoaded()) {
 			return false;
 		}
-		if ((actor->GetPosition() - player->GetPosition()).Length() > searchRadius) {
+
+		const NiPoint3 distance = actor->GetPosition() - playerPosition;
+		if (distance.x * distance.x + distance.y * distance.y + distance.z * distance.z > searchRadiusSquared) {
 			return false;
 		}
 
@@ -151,7 +139,7 @@ namespace {
 			return false;
 		}
 
-		if (GetRecallFilterMode() == LShrinkRecallFilterMode_t::kCustomTargets) {
+		if (useCustomTargets) {
 			return MatchesRecallCustomTargets(actor);
 		}
 
@@ -181,9 +169,12 @@ namespace {
 	std::vector<Actor*> CollectRecallActors(Actor* player, float searchRadius) {
 		std::vector<Actor*> recalledActors;
 		recalledActors.reserve(16);
+		const NiPoint3 playerPosition = player->GetPosition();
+		const float searchRadiusSquared = searchRadius * searchRadius;
+		const bool useCustomTargets = GetRecallFilterMode() == LShrinkRecallFilterMode_t::kCustomTargets;
 
 		for (auto actor : find_actors()) {
-			if (!ShouldRecallActor(player, actor, searchRadius)) {
+			if (!ShouldRecallActor(actor, playerPosition, searchRadiusSquared, useCustomTargets)) {
 				continue;
 			}
 			recalledActors.push_back(actor);
@@ -640,7 +631,7 @@ namespace {
 				float magicka = std::clamp(GetMagikaPercentage(player), 0.05f, 1.0f);
 				DamageAV(player, ActorValue::kMagicka, 0.15f * perk * (npcscale * 0.5f + 0.5f) * magicka * TimeScale());
 				Grow(actor, 0.0010f * magicka, 0.0f);
-				float Volume = std::clamp(0.20f, 2.0f, get_visual_scale(actor)/16.0f);
+				float Volume = std::clamp(get_visual_scale(actor) / 16.0f, 0.20f, 2.0f);
 				Rumbling::Once("TotalControlOther", actor, 0.15f, 0.05f);
 				static Timer timergrowth = Timer(2.00);
 				if (timergrowth.ShouldRun()) {
@@ -679,80 +670,74 @@ namespace {
 	void RapidGrowthEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
 		float target = get_target_scale(player);
-		float max_scale = get_max_scale(player);// * get_natural_scale(player);
+		float max_scale = get_max_scale(player);
 		if (target >= max_scale) {
 			NotifyWithSound(player, "已经无法再继续变大了");
 			Rumbling::Once("CantGrow", player, 0.25f, 0.05f);
 			return;
 		}
-			AnimationManager::StartAnim("TriggerGrowth", player);
+		AnimationManager::StartAnim("TriggerGrowth", player);
 	}
 
 	void RapidShrinkEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-			float target = get_target_scale(player);
-			if (target <= Minimum_Actor_Scale) {
-				NotifyWithSound(player, "已经无法再继续缩小了");
-				Rumbling::Once("CantGrow", player, 0.25f, 0.05f);
-				return;
-			}
-			AnimationManager::StartAnim("TriggerShrink", player);
+		float target = get_target_scale(player);
+		if (target <= Minimum_Actor_Scale) {
+			NotifyWithSound(player, "已经无法再继续缩小了");
+			Rumbling::Once("CantGrow", player, 0.25f, 0.05f);
+			return;
+		}
+		AnimationManager::StartAnim("TriggerShrink", player);
 	}
 
 	////////////////////////////////////////////////////////////////////
 
 	void SizeReserveEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-		auto Cache = Persistent::GetActorData(player);
-		if (Cache) {
-			if (Cache->fSizeReserve > 0.0f) {
-				bool Attacking = AnimationVars::Grab::IsGrabAttacking(player);
-
-				if (!Attacking) {
-					float duration = data.Duration();
-					
-					if (duration >= 1.2f && Runtime::HasPerk(player, Runtime::PERK.GTSPerkSizeReserve)) {
-						bool ShouldPrevent = get_target_scale(player) >= 1.49f && TinyCalamityActive(player); // So we don't waste it on Calamity that shrinks player back
-						if (!ShouldPrevent) {
-							bool HandsBusy = Grab::GetHeldActor(player);
-							if (!HandsBusy) {
-								float SizeCalculation = duration - 1.2f;
-								float gigantism = 1.0f + Ench_Aspect_GetPower(player);
-								float Volume = std::clamp(get_visual_scale(player) * Cache->fSizeReserve/10.0f, 0.10f, 2.0f);
-								static Timer timergrowth = Timer(3.00);
-								if (timergrowth.ShouldRunFrame()) {
-									Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundGrowth, player, Cache->fSizeReserve/50 * duration, "NPC Pelvis [Pelv]");
-									Task_FacialEmotionTask_Moan(player, 2.0f, "SizeReserve");
-									Sound_PlayMoans(player, 0.8f, 0.14f, EmotionTriggerSource::Growth);
-								}
-
-								float shake_power = std::clamp(Cache->fSizeReserve/15 * duration, 0.0f, 2.0f);
-								Rumbling::Once("SizeReserve", player, shake_power, 0.05f);
-
-								update_target_scale(player, (SizeCalculation/80) * gigantism, SizeEffectType::kNeutral);
-								regenerate_health(player, (SizeCalculation/80) * gigantism);
-
-								Cache->fSizeReserve -= SizeCalculation/80;
-								if (Cache->fSizeReserve <= 0) {
-									Cache->fSizeReserve = 0.0f; // Protect against negative values.
-								}
-							}
-						}
-					}
-				}
-			}
+		if (!player) {
+			return;
 		}
+
+		auto cache = Persistent::GetActorData(player);
+		if (!cache || cache->fSizeReserve <= 0.0f || AnimationVars::Grab::IsGrabAttacking(player)) {
+			return;
+		}
+
+		const float duration = data.Duration();
+		if (duration < 1.2f || !Runtime::HasPerk(player, Runtime::PERK.GTSPerkSizeReserve)) {
+			return;
+		}
+		if ((get_target_scale(player) >= 1.49f && TinyCalamityActive(player)) || Grab::GetHeldActor(player)) {
+			return;
+		}
+
+		const float sizeCalculation = duration - 1.2f;
+		const float gigantism = 1.0f + Ench_Aspect_GetPower(player);
+		static Timer growthTimer = Timer(3.00);
+		if (growthTimer.ShouldRunFrame()) {
+			Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundGrowth, player, cache->fSizeReserve / 50 * duration, "NPC Pelvis [Pelv]");
+			Task_FacialEmotionTask_Moan(player, 2.0f, "SizeReserve");
+			Sound_PlayMoans(player, 0.8f, 0.14f, EmotionTriggerSource::Growth);
+		}
+
+		const float shakePower = std::clamp(cache->fSizeReserve / 15 * duration, 0.0f, 2.0f);
+		Rumbling::Once("SizeReserve", player, shakePower, 0.05f);
+
+		const float reserveUsed = sizeCalculation / 80;
+		update_target_scale(player, reserveUsed * gigantism, SizeEffectType::kNeutral);
+		regenerate_health(player, reserveUsed * gigantism);
+		cache->fSizeReserve = std::max(0.0f, cache->fSizeReserve - reserveUsed);
 	}
 
 	void DisplaySizeReserveEvent(const ManagedInputEvent& data) {
 		auto player = PlayerCharacter::GetSingleton();
-		auto Cache = Persistent::GetActorData(player);
-		if (Cache) {
-			if (Runtime::HasPerk(player, Runtime::PERK.GTSPerkSizeReserve)) {
-				float gigantism = 1.0f + Ench_Aspect_GetPower(player);
-				float Value = Cache->fSizeReserve * gigantism;
-				Notify("体型储备：{:.2f}", Value);
-			}
+		if (!player || !Runtime::HasPerk(player, Runtime::PERK.GTSPerkSizeReserve)) {
+			return;
+		}
+
+		if (auto cache = Persistent::GetActorData(player)) {
+			const float gigantism = 1.0f + Ench_Aspect_GetPower(player);
+			Notify("体型储备：{:.2f}", cache->fSizeReserve * gigantism);
 		}
 	}
 
@@ -776,7 +761,6 @@ namespace {
 
 		float multi = AttributeManager::GetAttributeBonus(player, ActorValue::kHealth);
 
-		float healthMax = GetMaxAV(player, ActorValue::kHealth);
 		float healthCur = GetAV(player, ActorValue::kHealth);
 		float damagehp = 80.0f;
 
@@ -967,7 +951,7 @@ namespace {
 		auto UI = UI::GetSingleton();
 		if (!UI) return;
 
-		if (!State::IsInBlockingMenu() && !UI->IsMenuOpen(DialogueMenu::MENU_NAME) && UI->IsMenuOpen(Console::MENU_NAME)) {
+		if (State::IsInBlockingMenu() || UI->IsMenuOpen(DialogueMenu::MENU_NAME) || UI->IsMenuOpen(Console::MENU_NAME)) {
 			Notify("打开技能树前，请先关闭其他菜单");
 			return;
 		}

@@ -37,13 +37,10 @@ namespace GTS {
         ImWindow* wSBarF5 = nullptr;
 
         [[nodiscard]] ImWindow* GetWindowByName(const std::string& a_name) const;
-        [[nodiscard]] bool HasWindows() const;
         [[nodiscard]] bool HasInputConsumers();
         [[nodiscard]] bool HasActiveWindows();
         bool CloseInputConsumers() const;
         [[nodiscard]] ImWindow::WindowType GetHighestVisibleWindowType() const;
-        float GetDeltaTime() const;
-        const std::vector<std::unique_ptr<ImWindow>>& GetWindows() const;
         void AddWindow(std::unique_ptr<ImWindow> a_window, ImWindow** a_accessor = nullptr);
         void Update();
         void Init();
