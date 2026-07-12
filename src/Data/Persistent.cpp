@@ -140,9 +140,6 @@ namespace GTS {
 			MSGSeenGrowthSpurt.Load(serde, RecordType, RecordVersion, RecordSize);
 			MSGSeenAspectOfGTS.Load(serde, RecordType, RecordVersion, RecordSize);
 
-			// ---- Unlimited Size slider unlocker
-			UnlockMaxSizeSliders.Load(serde, RecordType, RecordVersion, RecordSize);
-
 			// ---- Mod Settings
 			ModSettings.Load(serde, RecordType, RecordVersion, RecordSize);
 
@@ -177,9 +174,6 @@ namespace GTS {
 		MSGSeenTinyCamity.Save(serde);
 		MSGSeenGrowthSpurt.Save(serde);
 		MSGSeenAspectOfGTS.Save(serde);
-
-		// ---- Unlimited Size slider unlocker
-		UnlockMaxSizeSliders.Save(serde);
 
 		// ---- Mod Settings
 		ModSettings.Save(serde);
@@ -258,7 +252,6 @@ namespace GTS {
 		MSGSeenTinyCamity        = false;
 		MSGSeenGrowthSpurt       = false;
 		MSGSeenAspectOfGTS       = false;
-		UnlockMaxSizeSliders     = false;
 		ModSettings.value.clear();
 
 	}

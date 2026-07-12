@@ -815,21 +815,12 @@ namespace GTS {
 				"如果当前没有可执行的 GT 动作，随从会暂时不攻击。\n"
 				"此选项开启期间，AI 页的两个“体型较大时禁用普通攻击”选项不再生效。";
 
-			const bool HasPerk = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth);
-			const bool Unlock = Persistent::UnlockMaxSizeSliders.value;
-
 			std::string DisableReason = "";
 			if (Config::Balance.bBalanceMode) {
 				DisableReason += "平衡模式已启用";
 			}
-			else if (!HasPerk) {
-				DisableReason += "缺少 Perk：\"巨型成长\"";
-			}
-			else if (!Unlock) {
-				DisableReason += "需要先执行控制台命令：gts unlimited";
-			}
 
-			if (ImGuiEx::ConditionalHeader("体型上限规则", DisableReason, HasPerk && Unlock && !Config::Balance.bBalanceMode)) {
+			if (ImGuiEx::ConditionalHeader("体型上限规则", DisableReason, !Config::Balance.bBalanceMode)) {
 				EnsureSizeLimitRulesInitialized();
 				ImGuiEx::CheckBox("启用体型上限规则", &Config::Balance.bSizeLimitRulesEnabled, TEnable);
 				ImGuiEx::CheckBox("随从仅使用 GT 动作", &Config::AI.bFollowersGTOnly, TFollowersGTOnly);

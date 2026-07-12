@@ -356,18 +356,9 @@ namespace SizeOverride {
 	}
 
 	bool SizeOverrideEnabled() {
-		return Config::Balance.bSizeLimitRulesEnabled && !Config::Balance.bBalanceMode && Persistent::UnlockMaxSizeSliders.value;
+		return Config::Balance.bSizeLimitRulesEnabled && !Config::Balance.bBalanceMode;
 	}
 
-	void MassMode_ApplySizeOverride(Actor* a_actor, float& GetLimit) {
-		if (SizeOverrideEnabled()) {
-			float overrideLimit = GetConfiguredOverrideForActor(a_actor);
-
-			if (overrideLimit > SIZE_OVERRIDE_MIN) {
-				GetLimit = overrideLimit;
-			}
-		}
-	}
 }
 
 namespace {
@@ -375,16 +366,6 @@ namespace {
     constexpr float DEFAULT_MAX = 1'000'000.0f;
 	constexpr float SIZE_OVERRIDE_RESTORE_MAX = 1.0f;
 	constexpr float SIZE_OVERRIDE_RESTORE_EPS = 0.0001f;
-
-	bool IsSizeUnlocked() {
-		// Custom rules require their global toggle, non-balance mode, the console unlock and the player perk.
-		if (SizeOverride::SizeOverrideEnabled()) {
-			if (Actor* player = PlayerCharacter::GetSingleton()) {
-				return Runtime::HasPerk(player, Runtime::PERK.GTSPerkColossalGrowth);
-			}
-		}
-		return false;
-	}
 
 	void RecordOverkillSize_Transient(TransientActorData* Data, float value, float kills) {
 		if (Data) {
@@ -415,15 +396,8 @@ namespace {
 		return BonusSize;
 	}
 
-	void UpdateSizeOverrideRestore(Actor* actor, float overrideLimit, bool overrideActive) {
-		if (!actor) {
-			return;
-		}
-
-		auto persistent = Persistent::GetActorData(actor);
-		auto transient = Transient::GetActorData(actor);
-
-		if (!persistent || !transient) {
+	void UpdateSizeOverrideRestore(Actor* actor, TransientActorData* transient, float overrideLimit, bool overrideActive) {
+		if (!actor || !transient) {
 			return;
 		}
 
@@ -466,11 +440,11 @@ namespace {
 
 		transient->SizeOverrideLastRawLimit = overrideLimit;
 	}
-    float get_mass_based_limit(Actor* actor, float NaturalScale) { // gets mass based size limit for Player if using Mass Based mode
+	float get_mass_based_limit(PersistentActorData* data, float NaturalScale) { // gets mass based size limit for Player if using Mass Based mode
 
 		float GetLimit = 1.0f;
 
-		if (auto data = Persistent::GetActorData(actor); data) {
+		if (data) {
 			float ExtraMagicSize = data->fExtraPotionMaxScale * MassMode_ElixirPowerMultiplier;
 			const float MaxSize = std::max(data->fSizeLimit, NaturalScale); // std::clamp requires low <= high.
 			float size_calc = NaturalScale + data->fMassBasedLimit + ExtraMagicSize;
@@ -478,11 +452,60 @@ namespace {
 			// Multiplying MassBasedSizeLimit by Natural Scale is a bad idea, it messes up max scaling with level 100 perk, displays 32x out of 34x
 
 			GetLimit = std::clamp(size_calc, NaturalScale, MaxSize);
-			SizeOverride::MassMode_ApplySizeOverride(actor, GetLimit);
 		}
 
         return GetLimit;
     }
+
+	float ComputeExpectedMaxSize(Actor* a_actor, PersistentActorData* a_persistent, TransientActorData* a_transient) {
+		if (!a_actor) {
+			return 1.0f;
+		}
+
+		const bool IsMassBased = Config::Balance.sSizeMode == "kMassBased";
+		const float LevelBonus = 1.0f + GetGtsSkillLevel(a_actor) * 0.006f;
+		const float PotionSize = a_persistent ?
+			a_persistent->fExtraPotionMaxScale * (IsMassBased ? MassMode_ElixirPowerMultiplier : 1.0f) :
+			0.0f;
+		float Colossal_kills = 0.0f;
+		float Colossal_lvl = 1.0f;
+		float QuestMult = 0.6f;
+
+		const auto Quest = Runtime::GetQuest(Runtime::QUST.GTSQuestProgression);
+		if (!Quest) {
+			return 1.0f;
+		}
+
+		if (a_actor->IsPlayerRef()) {
+			const auto Stage = Quest->GetCurrentStageID();
+			if (Stage < 20) {
+				return 1.0f;
+			}
+
+			// Each stage after 20 adds 0.04 in steps of 10 stages.
+			QuestMult = 0.10f + static_cast<float>(Stage - 20) / 10.0f * 0.04f;
+			if (Stage >= 80) {
+				QuestMult = 0.60f;
+			}
+		}
+
+		if (Runtime::HasPerk(a_actor, Runtime::PERK.GTSPerkColossalGrowth)) {
+			Colossal_lvl = 1.15f;
+			if (auto KillData = Persistent::GetKillCountData(a_actor)) {
+				Colossal_kills = static_cast<float>(KillData->iTotalKills) * (0.02f / Characters_AssumedCharSize);
+				if (Runtime::HasPerk(a_actor, Runtime::PERK.GTSPerkOverindulgence)) {
+					Colossal_lvl += KillData->iTotalKills * Overkills_BonusSizePerKill;
+				}
+			}
+			RecordOverkillSize_Transient(a_transient, Colossal_lvl, Colossal_kills);
+		}
+		else {
+			RecordOverkillSize_Transient(a_transient, 1.0f, 0.0f);
+		}
+
+		const float MaxAllowedSize = 1.0f + (QuestMult + GetSizeFromPerks(a_actor)) * LevelBonus;
+		return (MaxAllowedSize + PotionSize + Colossal_kills) * Colossal_lvl;
+	}
 }
 
 namespace GTS {
@@ -496,33 +519,39 @@ namespace GTS {
 	}
 
 	bool SizeLimitRulesActive() {
-		return IsSizeUnlocked();
+		return SizeOverride::SizeOverrideEnabled();
 	}
 
 	float GetActionCompatibleSizeLimit() {
 		return SizeOverride::GetActionFitLimit();
 	}
 
-    void UpdateMaxScale(Actor* a_actor) {
-       	GTS_PROFILE_SCOPE("MaxSizeManager: UpdateMaxScale");
-
-		const bool IsMassBased = Config::Balance.sSizeMode == "kMassBased"; // Should DLL use mass based formula for Player?
-
-		float Limit = 1.0f;
-		// -------------------------------------------------------------------------------------------------
-
-		if (auto data = Persistent::GetActorData(a_actor); data) {
-			Limit = data->fSizeLimit; // Cap max size through normal size rules
+    void UpdateMaxScale(Actor* a_actor, PersistentActorData* a_persistent, TransientActorData* a_transient) {
+		GTS_PROFILE_SCOPE("MaxSizeManager: UpdateMaxScale");
+		if (!a_actor) {
+			return;
 		}
 
-		// Apply custom limits only if player has Perk and gts unlimited command was executed, else use GlobalLimit
+		if (!a_persistent) {
+			a_persistent = Persistent::GetActorData(a_actor);
+		}
+		if (!a_persistent) {
+			return;
+		}
+		if (!a_transient) {
+			a_transient = Transient::GetActorData(a_actor);
+		}
+
+		const bool IsMassBased = Config::Balance.sSizeMode == "kMassBased"; // Should DLL use mass based formula for Player?
+		a_persistent->fSizeLimit = ComputeExpectedMaxSize(a_actor, a_persistent, a_transient);
+		const float Limit = a_persistent->fSizeLimit;
 
         const float NaturalScale = get_natural_scale(a_actor, true);
 		const float defaultLimit = NaturalScale + ((Limit - 1.0f) * NaturalScale);
 		float GetLimit = std::clamp(defaultLimit, 0.1f, DEFAULT_MAX);
 		
 		if (IsMassBased) {
-			GetLimit = get_mass_based_limit(a_actor, NaturalScale); // Apply Player Mass-Based max size
+			GetLimit = get_mass_based_limit(a_persistent, NaturalScale); // Apply Player Mass-Based max size
 		}
 
 		float TotalLimit = GetLimit;
@@ -530,7 +559,7 @@ namespace GTS {
 		bool HasOverrideLimit = false;
 		bool LockToNatural = false;
 
-		if (IsSizeUnlocked()) {
+		if (SizeOverride::SizeOverrideEnabled()) {
 			const auto resolvedRule = SizeOverride::ResolveRuleForActor(a_actor);
 			OverrideLimit = resolvedRule.OverrideLimit;
 			LockToNatural = resolvedRule.LockToNatural;
@@ -551,80 +580,12 @@ namespace GTS {
 			set_target_scale(a_actor, NaturalScale);
 		}
 
-		UpdateSizeOverrideRestore(a_actor, OverrideLimit, HasOverrideLimit);
+		UpdateSizeOverrideRestore(a_actor, a_transient, OverrideLimit, HasOverrideLimit);
 		
     }
 
-    //Ported From Papyrus
-	float GetExpectedMaxSize(RE::Actor* a_Actor, float start_value) {
-		const bool IsMassBased = Config::Balance.sSizeMode == "kMassBased";
-		const float LevelBonus = 1.0f + GetGtsSkillLevel(a_Actor) * 0.006f;
-		float PotionSize = 0.0f;
-		float Colossal_kills = 0.0f;
-		float Colossal_lvl = 1.0f;
-		float QuestMult = 0.6f;
-
-		if (auto data = Persistent::GetActorData(a_Actor); data) {
-			PotionSize = data->fExtraPotionMaxScale * (IsMassBased ? MassMode_ElixirPowerMultiplier : 1.0f);
-		}
-
-		const auto Quest = Runtime::GetQuest(Runtime::QUST.GTSQuestProgression);
-		if (!Quest) {
-			return 1.0f;
-		}
-
-
-
-		if (a_Actor->IsPlayerRef()) {
-			//If Player
-			const auto Stage = Quest->GetCurrentStageID();
-			if (Stage < 20) {
-				return 1.0f;
-			}
-			//Each stage after 20 adds 0.04f in steps of 10 stages
-			//Base value + Current Stage - 20 / 10
-			QuestMult = 0.10f + static_cast<float>(Stage - 20) / 10.f * 0.04f;
-			if (Stage >= 80) QuestMult = 0.60f;
-		}
-
-		auto Transient = Transient::GetActorData(a_Actor);
-
-			if (Runtime::HasPerk(a_Actor, Runtime::PERK.GTSPerkColossalGrowth)) { //Total Size Control Perk
-			Colossal_lvl = 1.15f;
-			if (auto KillData = Persistent::GetKillCountData(a_Actor)) {
-				Colossal_kills = static_cast<float>(KillData->iTotalKills) * (0.02f / Characters_AssumedCharSize);
-				if (Runtime::HasPerk(a_Actor, Runtime::PERK.GTSPerkOverindulgence)) {
-					Colossal_lvl += KillData->iTotalKills * Overkills_BonusSizePerKill;
-				}
-			}
-
-			RecordOverkillSize_Transient(Transient, Colossal_lvl, Colossal_kills);
-			
-			if (SizeOverride::SizeOverrideEnabled()) {
-				float overrideLimit = SizeOverride::GetConfiguredOverrideForActor(a_Actor);
-
-				if (overrideLimit > SizeOverride::SIZE_OVERRIDE_MIN) {
-					return overrideLimit;
-				}
-			}
-		} 
-    	else {
-			RecordOverkillSize_Transient(Transient, 1.0f, 0.0f);
-		}
-
-		const float MaxAllowedSize = start_value + (QuestMult + GetSizeFromPerks(a_Actor)) * LevelBonus;
-		return (MaxAllowedSize + PotionSize + Colossal_kills) * Colossal_lvl;
-	}
-
-    //Ported From Papyrus
-	void UpdateGlobalSizeLimit(Actor* a_actor) {
-		if (const auto data = Persistent::GetActorData(a_actor)) {
-			data->fSizeLimit = GetExpectedMaxSize(a_actor);
-		}
-	}
-
 	void VisualScale_CheckForSizeAdjustment(Actor* actor, float& ScaleMult) {
-		if (IsSizeUnlocked()) {
+		if (SizeOverride::SizeOverrideEnabled()) {
 			const float SizeLimit = SizeOverride::GetConfiguredOverrideForActor(actor);
 			if (SizeLimit > SizeOverride::SIZE_OVERRIDE_MIN) {
 				const float NaturalScale = std::max(get_natural_scale(actor, true), 0.001f);

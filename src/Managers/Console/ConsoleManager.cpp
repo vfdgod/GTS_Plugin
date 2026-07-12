@@ -82,24 +82,10 @@ namespace GTS {
 		Cprint("Git Commit Date: {}", git_CommitDate());
 	}
 
-	void ConsoleManager::CMD_Unlimited() {
-		auto Player = PlayerCharacter::GetSingleton();
-		if (Player) {
-			if (Runtime::HasPerk(Player, Runtime::PERK.GTSPerkColossalGrowth)) {
-				Persistent::UnlockMaxSizeSliders.value = !Persistent::UnlockMaxSizeSliders.value;
-				Cprint("Max Size Sliders unlocked: {}", Persistent::UnlockMaxSizeSliders.value);
-			}
-			else {
-				Cprint("You need to obtain Colossal Growth perk to use this command");
-			}
-		}
-	}
-
 	void ConsoleManager::Init() {
 		logger::info("Loading Default Command List");
 		RegisterCommand("help", CMD_Help, "Show this list");
 		RegisterCommand("version", CMD_Version, "Show plugin version");
-		RegisterCommand("unlimited", CMD_Unlimited, "Unlocks max size sliders");
 	}
 }
 

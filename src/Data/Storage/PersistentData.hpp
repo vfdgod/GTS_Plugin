@@ -82,7 +82,7 @@ namespace GTS {
 		uint32_t iThighGrinded = 0;        // We with Nick plan Thigh Grind anim, so it may be used later
 		uint32_t iFingerCrushed = 0;
 		uint32_t iErasedFromExistence = 0; // 狂怒灾厄处决
-		uint32_t iAbsorbed = 0;            // Unused for now, may be useful later
+		uint32_t iAbsorbed = 0;            // Absorbed through size-related effects
 		uint32_t iCrushed = 0;             // Used in most crush sources
 		uint32_t iEaten = 0;               // When fully voring someone
 		uint32_t iKicked = 0;              // Kicked and crushed to death at same time

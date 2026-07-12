@@ -38,8 +38,6 @@ namespace GTS {
     constexpr float Damage_Default_Underfoot = 0.003f; // when we just stand still
 
     constexpr float Damage_Walk_Default = 9.0f; // when we walk around normally
-	[[deprecated("Use Damage_Walk_Default instead.")]]
-	constexpr float Damage_Walk_Defaut = Damage_Walk_Default;
     constexpr float Damage_Jump_Default = 10.6f; // when we jump land
 
     constexpr float Damage_Stomp = 11.0f;

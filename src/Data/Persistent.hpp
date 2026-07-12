@@ -54,9 +54,6 @@ namespace GTS {
 		static inline Serialization::BasicRecord<bool, 'MSGS'> MSGSeenGrowthSpurt = false;
 		static inline Serialization::BasicRecord<bool, 'MSAG'> MSGSeenAspectOfGTS = false;
 
-		// ---- Unlimited Size slider unlocker
-		static inline Serialization::BasicRecord<bool, 'USSD'> UnlockMaxSizeSliders = false;
-
 		static inline Serialization::CompressedStringRecord<'CONF'> ModSettings{""};
 
 		private:

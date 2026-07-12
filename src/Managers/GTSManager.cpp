@@ -431,8 +431,9 @@ void GTSManager::Update() {
 			continue;
 		}
 
-		UpdateGlobalSizeLimit(actor);
-		UpdateMaxScale(actor);
+		auto temp_data = Transient::GetActorData(actor);
+		auto saved_data = Persistent::GetActorData(actor);
+		UpdateMaxScale(actor, saved_data, temp_data);
 
 		const bool isPlayer = actor->IsPlayerRef();
 		const bool isPlayerOrTeammate = isPlayer || IsTeammate(actor);
@@ -461,8 +462,6 @@ void GTSManager::Update() {
 
 		Foot_PerformIdle_Headtracking_Effects_Others(actor); // Just idle zones for pushing away/dealing minimal damage, but this one is for others as well
 
-		auto temp_data = Transient::GetActorData(actor);
-		auto saved_data = Persistent::GetActorData(actor);
 		update_actor(actor, saved_data, temp_data);
 		apply_actor(actor, saved_data, temp_data);
 	}

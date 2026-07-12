@@ -817,7 +817,6 @@ namespace {
 			if (!actor) {
 				continue;
 			}
-			UpdateGlobalSizeLimit(actor);
 			UpdateMaxScale(actor);
 		}
 

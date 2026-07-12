@@ -17,7 +17,6 @@ namespace GTS {
 
         static void CMD_Help();
         static void CMD_Version();
-        static void CMD_Unlimited();
 
         public:
         static void Init();

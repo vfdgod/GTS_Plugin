@@ -36,14 +36,6 @@ namespace GTS {
 	}
 
 
-	//Unused
-	void RemoveCalamityPerk() {
-		auto progressionQuest = Runtime::GetQuest(Runtime::QUST.GTSQuestProxy);
-		if (progressionQuest) {
-			CallVMFunctionOn(progressionQuest, "GTSProxy", "Proxy_RemoveCalamityShout");
-		}
-	}
-
 	//Ported From Papyrus
 	void ApplyTalkToActor() {
 		static Timer ApplyTalkTimer = Timer(1.0f);
