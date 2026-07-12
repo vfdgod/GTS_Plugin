@@ -1,6 +1,7 @@
 #include "Managers/AttackManager.hpp"
 
 #include "Config/Config.hpp"
+#include "Managers/MaxSizeManager.hpp"
 
 using namespace GTS;
 
@@ -10,6 +11,18 @@ namespace {
 	bool IsShrunkBelowNaturalScale(Actor* a_Actor) {
 		const float naturalScale = std::max(get_natural_scale(a_Actor, true), 0.01f);
 		return get_visual_scale(a_Actor) < naturalScale - kShrinkAttackBlockEpsilon;
+	}
+
+	bool ShouldForceFollowerGTActions(Actor* a_Actor) {
+		return Config::AI.bFollowersGTOnly &&
+			SizeLimitRulesActive() &&
+			Config::AI.bEnableActionAI &&
+			a_Actor &&
+			!a_Actor->IsPlayerRef() &&
+			!a_Actor->IsDead() &&
+			IsTeammate(a_Actor) &&
+			IsHumanoid(a_Actor) &&
+			get_visual_scale(a_Actor) >= 1.0f;
 	}
 
 	void SetAttackFlags(Actor* a_Actor, bool a_Disabled) {
@@ -71,7 +84,7 @@ namespace GTS {
 	}
 
 	void AttackManager::SetAttacksDisabled(Actor* a_Actor, bool a_Disabled) {
-		SetAttackFlags(a_Actor, a_Disabled);
+		SetAttackFlags(a_Actor, a_Disabled || ShouldForceFollowerGTActions(a_Actor));
 	}
 
 	void AttackManager::PreventAttacks(Actor* a_Giant, Actor* a_Tiny) {
@@ -82,6 +95,11 @@ namespace GTS {
 		}
 
 		if (a_Giant && !a_Giant->IsPlayerRef() && IsHumanoid(a_Giant)) {
+			// This mode owns both flags completely; the two legacy attack-blocking options are ignored.
+			if (Config::AI.bFollowersGTOnly) {
+				SetAttackFlags(a_Giant, ShouldForceFollowerGTActions(a_Giant));
+				return;
+			}
 
 			//If disabled in settings each call to this should always enable instead.
 			if (!Config::AI.bDisableAttacks) {

@@ -185,6 +185,7 @@ struct SettingsAI_t {
     bool bHostileOnly          = true;
     bool bDisableAttacks       = true;
     bool bAlwaysDisableAttacks = false;
+    bool bFollowersGTOnly      = false;
     bool bSlowMovementDown     = true;
     bool bSlowRotationDown     = true;
     bool bRecordBoneSpeedData  = false;

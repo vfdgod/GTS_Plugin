@@ -304,6 +304,11 @@ namespace GTS {
 
 		if (BeginNewActionTimer.ShouldRun()) {
 			const auto& actors = find_actors();
+			if (AISettings.bFollowersGTOnly) {
+				for (const auto& actor : actors) {
+					AttackManager::PreventAttacks(actor, nullptr);
+				}
+			}
 
 			//Reset attack blocking
 			if (!AISettings.bEnableActionAI) {

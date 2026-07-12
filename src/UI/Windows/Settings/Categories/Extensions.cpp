@@ -810,6 +810,10 @@ namespace GTS {
 			                 "- 游戏缩放（SetScale）\n"
 			                 "- 角色自然体型";
 			PSString TEnable = "关闭后，下面的扩展体型上限规则暂时不生效；规则本身会保留，之后可以用这里或快捷键重新开启。";
+			PSString TFollowersGTOnly = "开启后，当体型上限规则和 GT AI 同时开启时，\n"
+				"视觉体型大于或等于 1.0x 的随从会被完全禁止普通攻击和施法，只保留 GT 动作 AI。\n"
+				"如果当前没有可执行的 GT 动作，随从会暂时不攻击。\n"
+				"此选项开启期间，AI 页的两个“体型较大时禁用普通攻击”选项不再生效。";
 
 			const bool HasPerk = Runtime::HasPerk(PlayerCharacter::GetSingleton(), Runtime::PERK.GTSPerkColossalGrowth);
 			const bool Unlock = Persistent::UnlockMaxSizeSliders.value;
@@ -828,6 +832,7 @@ namespace GTS {
 			if (ImGuiEx::ConditionalHeader("体型上限规则", DisableReason, HasPerk && Unlock && !Config::Balance.bBalanceMode)) {
 				EnsureSizeLimitRulesInitialized();
 				ImGuiEx::CheckBox("启用体型上限规则", &Config::Balance.bSizeLimitRulesEnabled, TEnable);
+				ImGuiEx::CheckBox("随从仅使用 GT 动作", &Config::AI.bFollowersGTOnly, TFollowersGTOnly);
 				ImGuiEx::HelpText("最大体型由什么决定", THelp);
 				ImGuiEx::HelpText(
 					"规则如何工作",

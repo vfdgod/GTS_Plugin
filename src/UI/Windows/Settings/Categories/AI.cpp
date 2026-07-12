@@ -342,8 +342,9 @@ namespace GTS {
                     ImGuiEx::CheckBox("仅敌对目标", &Config::AI.bHostileOnly, T4);
 
                     ImGuiEx::CheckBox("仅战斗中启用 AI",&Config::AI.bCombatOnly, T5);
-                    ImGuiEx::CheckBox("体型较大时禁用普通攻击", &Config::AI.bDisableAttacks, T6);
-                    ImGuiEx::CheckBox("体型较大时总是禁用普通攻击", &Config::AI.bAlwaysDisableAttacks, T7, !Config::AI.bDisableAttacks);
+                    const bool FollowersGTOnly = Config::AI.bFollowersGTOnly;
+                    ImGuiEx::CheckBox("体型较大时禁用普通攻击", &Config::AI.bDisableAttacks, T6, FollowersGTOnly);
+                    ImGuiEx::CheckBox("体型较大时总是禁用普通攻击", &Config::AI.bAlwaysDisableAttacks, T7, FollowersGTOnly || !Config::AI.bDisableAttacks);
 
                     ImGui::EndDisabled();
                 }

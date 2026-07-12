@@ -5,6 +5,7 @@
 namespace GTS {
     bool ActorMatchesSizeLimitRuleTarget(Actor* a_actor, LSizeLimitRuleTarget_t a_target);
     void EnsureSizeLimitRulesInitialized();
+    bool SizeLimitRulesActive();
     void UpdateMaxScale(Actor* a_actor);
     void UpdateGlobalSizeLimit(Actor* a_actor);
 

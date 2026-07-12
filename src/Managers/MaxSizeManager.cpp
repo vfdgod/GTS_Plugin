@@ -495,6 +495,10 @@ namespace GTS {
 		SizeOverride::EnsureInitialized();
 	}
 
+	bool SizeLimitRulesActive() {
+		return IsSizeUnlocked();
+	}
+
 	float GetActionCompatibleSizeLimit() {
 		return SizeOverride::GetActionFitLimit();
 	}
