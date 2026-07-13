@@ -41,7 +41,7 @@ namespace GTS {
 	float Racemenu::GetMorph(RE::Actor* a_actor, const char* a_morphName, const char* a_morphKey) {
 		if (!a_actor || !iBodyMorphIntfc) return 0.0f;
 		std::string Key = a_morphKey ? MorphKey + a_morphKey : MorphKey;
-		return iBodyMorphIntfc->GetMorph(a_actor, a_morphName, a_morphKey);
+		return iBodyMorphIntfc->GetMorph(a_actor, a_morphName, Key.c_str());
 	}
 
 	//Warning this will erase all morphs on a character

@@ -113,7 +113,8 @@ namespace GTS {
 			}
 
 			// Update values based on time passed
-			for (auto& rumbleData : data.tags | std::views::values) {
+			for (auto tagIt = data.tags.begin(); tagIt != data.tags.end();) {
+				auto& rumbleData = tagIt->second;
 				switch (rumbleData.state) {
 					case RumbleState::RampingUp: {
 						// Increasing intensity just let the spring do its thing
@@ -127,7 +128,7 @@ namespace GTS {
 					case RumbleState::Rumbling: {
 						// At max intensity
 						rumbleData.currentIntensity.value = rumbleData.currentIntensity.target;
-						if (Time::WorldTimeElapsed() > rumbleData.startTime + rumbleData.duration) {
+						if (rumbleData.duration > 0.0f && Time::WorldTimeElapsed() > rumbleData.startTime + rumbleData.duration) {
 							rumbleData.state = RumbleState::RampingDown;
 						}
 						break;
@@ -142,11 +143,16 @@ namespace GTS {
 						break;
 					}
 					case RumbleState::Still: {
-						// All finished cleanup
-						this->data.erase(it);
-						return;
+						tagIt = data.tags.erase(tagIt);
+						continue;
 					}
 				}
+				++tagIt;
+			}
+
+			if (data.tags.empty()) {
+				it = this->data.erase(it);
+				continue;
 			}
 
 			// Now collect the data
@@ -157,8 +163,8 @@ namespace GTS {
 
 			std::unordered_map<NiAVObject*, float> cummulativeIntensity;
 			for (const auto& rumbleData : data.tags | std::views::values) {
-				duration_override = rumbleData.shake_duration;
-				ignore_scaling = rumbleData.ignore_scaling;
+				duration_override = std::max(duration_override, rumbleData.shake_duration);
+				ignore_scaling = ignore_scaling || rumbleData.ignore_scaling;
 				auto node = find_node(actor, rumbleData.node);
 				if (node) {
 					cummulativeIntensity.try_emplace(node);

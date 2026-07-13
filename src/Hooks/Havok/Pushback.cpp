@@ -10,7 +10,7 @@ namespace {
 		if (giant->IsPlayerRef() || IsTeammate(giant)) {
 			auto tranData = Transient::GetActorData(giant);
 			if (tranData) {
-				result = tranData->PushForce;
+				result = tranData->PushForce.load(std::memory_order_acquire);
 			} else {
 				float size = get_giantess_scale(giant);
 				if (TinyCalamityActionBoostActive(giant)) {

@@ -63,8 +63,8 @@ if(GTS_BUILD_DISTRIBUTION)
 
 	# Clean output DLLs and PDBs.
 	if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/distribution")
-		file(GLOB_RECURSE OUTPUT_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/distribution/Plugin-*/*.dll")
-		file(GLOB_RECURSE OUTPUT_PDBS "${CMAKE_CURRENT_SOURCE_DIR}/distribution/Plugin-*/*.pdb")
+		file(GLOB_RECURSE OUTPUT_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/distribution/Package-*/*.dll")
+		file(GLOB_RECURSE OUTPUT_PDBS "${CMAKE_CURRENT_SOURCE_DIR}/distribution/Package-*/*.pdb")
 
 		if(OUTPUT_DLLS)
 			set_property(TARGET ${PROJECT_NAME}

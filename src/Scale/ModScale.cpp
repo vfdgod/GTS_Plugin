@@ -164,19 +164,20 @@ namespace GTS {
 		return 1.0f;
 	}
 
+	void ClearInitialScales() {
+		std::lock_guard lock(scalesMutex);
+		GetInitialScales().clear();
+	}
+
 	void RefreshInitialScales(Actor* actor) {
 		if (actor) {
 			std::string name = std::format("UpdateRace_{}", actor->formID);
 			ActorHandle gianthandle = actor->CreateRefHandle();
-			TaskManager::RunOnce(name, [=](auto& progressData) { // Reset it one frame later, called by SwitchRaceHook only, inside Hooks/RaceMenu.cpp 
+			TaskManager::RunOnce(name, [=](auto& progressData) { // Refresh one frame later after Hooks/Actor/Race.cpp finishes switching the race.
 				if (gianthandle) {
 					Actor* giantref = gianthandle.get().get();
 					if (giantref) {
-						InitialScales data;
-						if (GetActorInitialScales(giantref, data)) {
-							data.model = giantref->GetScale();
-							SetActorInitialScales(giantref, data);
-						}
+						SetActorInitialScales(giantref, InitialScales(giantref));
 					}
 				}
 			});

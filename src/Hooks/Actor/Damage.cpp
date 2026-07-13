@@ -302,7 +302,7 @@ namespace GTS {
 			float pushResult = 1.0f / (difference*difference*difference);
 			float result = std::clamp(pushResult, 0.01f, 1.0f);
 
-            tranData->PushForce = result;
+			tranData->PushForce.store(result, std::memory_order_release);
         } 
 	}
 

@@ -236,8 +236,8 @@ namespace GTS {
 		RegisterMagic<GrowthPotion>(Runtime::MGEF.GTSPotionEffectGrowthExtreme);
 		RegisterMagic<GrowthPotion>(Runtime::MGEF.GTSAlchEffectGrowth);
 
-		RegisterMagic<ShrinkPotion>(Runtime::MGEF.GTSPoisonEffectShrinking);
-		RegisterMagic<Shrink_Poison>(Runtime::MGEF.GTSPotionEffectSizeDrain);
+		RegisterMagic<ShrinkPotion>(Runtime::MGEF.GTSPotionEffectSizeDrain);
+		RegisterMagic<Shrink_Poison>(Runtime::MGEF.GTSPoisonEffectShrinking);
 
 		RegisterMagic<ExperiencePotion>(Runtime::MGEF.GTSPotionEffectSizeExperienceBasic);
 		RegisterMagic<SizeHunger>(Runtime::MGEF.GTSPotionEffectSizeHunger);

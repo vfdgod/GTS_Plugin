@@ -58,8 +58,9 @@ namespace {
 	float Animation_GetSpeedCorrection(Actor* actor) { // Fixes Hug animation de-sync by copying Gts anim speed to Tiny
 		auto transient = Transient::GetActorData(actor);
 		if (transient) {
-			if (transient->HugAnimationSpeed < 1.0f) {
-				return transient->HugAnimationSpeed;
+			const float hugAnimationSpeed = transient->HugAnimationSpeed.load(std::memory_order_acquire);
+			if (hugAnimationSpeed < 1.0f) {
+				return hugAnimationSpeed;
 			}
 		} 
 		return AnimationManager::GetAnimSpeed(actor);

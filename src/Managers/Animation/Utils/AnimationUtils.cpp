@@ -118,12 +118,11 @@ namespace GTS {
 	void Anims_FixAnimationDesync(Actor* giant, Actor* tiny, bool reset) {
 		auto transient = Transient::GetActorData(tiny);
 		if (transient) {
-			float& animspeed = transient->HugAnimationSpeed;
 			if (!reset) {
-				animspeed = AnimationManager::GetAnimSpeed(giant); 
+				transient->HugAnimationSpeed.store(AnimationManager::GetAnimSpeed(giant), std::memory_order_release);
 				// Make DLL use animspeed of GTS on Tiny
 			} else {
-				animspeed = 1.0f; // 1.0 makes dll use GetAnimSpeed of tiny
+				transient->HugAnimationSpeed.store(1.0f, std::memory_order_release); // 1.0 makes dll use GetAnimSpeed of tiny
 			}
 			// Fixes hug and boob attack states anim de-sync
 		}

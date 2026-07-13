@@ -8,10 +8,10 @@ namespace GTS {
 	// get_natural_scale is much faster and safer as it uses the cache
 	float Get_Other_Scale(Actor* actor);
 
-	// Inital scale is loaded ONCE per game run
-	// not once per save. We assume that any edits happen
-	// as esp/nif edits
+	// Initial scale is cached for the currently loaded game and cleared between saves.
+	// This preserves ESP/NIF scale edits without leaking runtime data into another save.
 	float GetInitialScale(Actor* actor);
+	void ClearInitialScales();
 	// Should be called on save load and on swapping the scale mode
 	void ResetToInitScale(Actor* actor);
 

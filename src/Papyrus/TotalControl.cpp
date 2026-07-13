@@ -10,6 +10,10 @@ namespace {
 	constexpr std::string_view PapyrusClass = "GTSControl";
 
 	void GrowTeammate(StaticFunctionTag*, float power) {
+		const float powerMult = std::max(power, 0.0f);
+		if (powerMult <= 0.0f) {
+			return;
+		}
 		auto casterRef = PlayerCharacter::GetSingleton();
 		if (casterRef) {
 			if (Runtime::HasPerkTeam(casterRef, Runtime::PERK.GTSPerkGrowthDesireAug)) {
@@ -49,8 +53,8 @@ namespace {
 								bonus = target_scale * 0.25f + 0.75f;
 							}
 
-							DamageAV(caster, ActorValue::kMagicka, 0.45f * (target_scale * 0.25f + 0.75f) * magicka * bonus * timeDelta * power);
-							Grow(target, 0.0030f * magicka * bonus, 0.0f);
+							DamageAV(caster, ActorValue::kMagicka, 0.45f * (target_scale * 0.25f + 0.75f) * magicka * bonus * timeDelta * powerMult);
+							Grow(target, 0.0030f * magicka * bonus * powerMult, 0.0f);
 							Rumbling::Once("GrowOtherButton", target, 1.0f, 0.05f);
 
 							return true;
@@ -63,6 +67,10 @@ namespace {
 	}
 
 	void ShrinkTeammate(StaticFunctionTag*, float power) {
+		const float powerMult = std::max(power, 0.0f);
+		if (powerMult <= 0.0f) {
+			return;
+		}
 		auto casterRef = PlayerCharacter::GetSingleton();
 		if (casterRef) {
 			if (Runtime::HasPerkTeam(casterRef, Runtime::PERK.GTSPerkGrowthDesireAug)) {
@@ -104,8 +112,8 @@ namespace {
 							}
 
 							if (target_scale > get_natural_scale(target, true)) {
-								DamageAV(caster, ActorValue::kMagicka, 0.25f * (target_scale * 0.25f + 0.75f) * magicka * bonus * TimeScale() * power);
-								ShrinkActor(target, 0.0030f * magicka * bonus, 0.0f);
+								DamageAV(caster, ActorValue::kMagicka, 0.25f * (target_scale * 0.25f + 0.75f) * magicka * bonus * TimeScale() * powerMult);
+								ShrinkActor(target, 0.0030f * magicka * bonus * powerMult, 0.0f);
 								Rumbling::Once("ShrinkOtherButton", target, 1.0f, 0.05f);
 							}
 							return true;
@@ -117,6 +125,10 @@ namespace {
 	}
 
 	void GrowPlayer(StaticFunctionTag*, float power) {
+		const float powerMult = std::max(power, 0.0f);
+		if (powerMult <= 0.0f) {
+			return;
+		}
 
 		auto casterRef = PlayerCharacter::GetSingleton();
 		if (casterRef) {
@@ -153,9 +165,9 @@ namespace {
 					}
 
 					float stamina = std::clamp(GetStaminaPercentage(caster), 0.05f, 1.0f);
-					DamageAV(caster, ActorValue::kStamina, 0.45f * (caster_scale * 0.5f + 0.5f) * stamina * TimeScale());
+					DamageAV(caster, ActorValue::kStamina, 0.45f * (caster_scale * 0.5f + 0.5f) * stamina * TimeScale() * powerMult);
 
-					Grow(caster, 0.0030f * stamina, 0.0f);
+					Grow(caster, 0.0030f * stamina * powerMult, 0.0f);
 
 					Rumbling::Once("GrowButton", caster, 1.0f, 0.05f);
 
@@ -167,6 +179,10 @@ namespace {
 	
 
 	void ShrinkPlayer(StaticFunctionTag*, float power) {
+		const float powerMult = std::max(power, 0.0f);
+		if (powerMult <= 0.0f) {
+			return;
+		}
 
 		auto casterRef = PlayerCharacter::GetSingleton();
 		if (casterRef) {
@@ -204,8 +220,8 @@ namespace {
 					}
 
 					if (target_scale > Minimum_Actor_Scale) {
-						DamageAV(caster, ActorValue::kStamina, 0.25f * (caster_scale * 0.5f + 0.5f) * stamina * TimeScale());
-						ShrinkActor(caster, 0.0020f * stamina, 0.0f);
+						DamageAV(caster, ActorValue::kStamina, 0.25f * (caster_scale * 0.5f + 0.5f) * stamina * TimeScale() * powerMult);
+						ShrinkActor(caster, 0.0020f * stamina * powerMult, 0.0f);
 						Rumbling::Once("ShrinkButton", caster, 0.60f, 0.05f);
 					} else {
 						set_target_scale(caster, Minimum_Actor_Scale);

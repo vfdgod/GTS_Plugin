@@ -25,7 +25,7 @@ namespace GTS {
 		if (std::isinf(target)) {
 			return;
 		}
-		if (fabs(target - value) < 1e-4 && velocity < 1e-4) {
+		if (fabs(target - value) < 1e-4 && fabs(velocity) < 1e-4) {
 			return;
 		}
 		float y = halflife_to_damping(halflife) / 2.0f;

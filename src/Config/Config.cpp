@@ -54,12 +54,15 @@ namespace GTS {
         }
 
         if (IsSharedSettingsEnabled(TomlData)) {
+            const auto saveLocalToml = TomlData;
             if (LoadSharedToml()) {
                 Advanced.bShareSettingsGlobally = true;
                 logger::info("Loaded shared settings instead of save-local settings");
                 return true;
             }
             logger::warn("Shared settings requested but unavailable, falling back to save-local settings");
+            ResetToDefaults();
+            TomlData = saveLocalToml;
         }
 
         return DeserializeStructsFromTOML();

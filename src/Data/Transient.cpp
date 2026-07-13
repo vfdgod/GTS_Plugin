@@ -10,11 +10,14 @@ namespace GTS {
 		std::unique_lock lock(_Lock);
 		constexpr auto noAIAcquireFlag = static_cast<std::uint32_t>(Actor::RecordFlags::kNoAIAcquire);
 		for (const auto& [formID, data] : TempActorDataMap) {
-			if (data.FollowerNoAIAcquireAdded) {
+			if (data && data->FollowerNoAIAcquireAdded) {
 				if (auto actor = TESForm::LookupByID<Actor>(formID)) {
 					actor->formFlags &= ~noAIAcquireFlag;
 				}
 			}
+		}
+		for (auto& [formID, data] : TempActorDataMap) {
+			RetiredActorData.emplace_back(std::move(data));
 		}
 		TempActorDataMap.clear();
 		logger::info("Transient was reset");
@@ -24,11 +27,14 @@ namespace GTS {
 		std::unique_lock lock(_Lock);
 		if (actor) {
 			auto key = actor->formID;
-			if (auto it = TempActorDataMap.find(key); it != TempActorDataMap.end() && it->second.FollowerNoAIAcquireAdded) {
-				constexpr auto noAIAcquireFlag = static_cast<std::uint32_t>(Actor::RecordFlags::kNoAIAcquire);
-				actor->formFlags &= ~noAIAcquireFlag;
+			if (auto it = TempActorDataMap.find(key); it != TempActorDataMap.end()) {
+				if (it->second && it->second->FollowerNoAIAcquireAdded) {
+					constexpr auto noAIAcquireFlag = static_cast<std::uint32_t>(Actor::RecordFlags::kNoAIAcquire);
+					actor->formFlags &= ~noAIAcquireFlag;
+				}
+				RetiredActorData.emplace_back(std::move(it->second));
+				TempActorDataMap.erase(it);
 			}
-			TempActorDataMap.erase(key);
 		}
 	}
 
@@ -47,15 +53,17 @@ namespace GTS {
 		// This is hit from many frame-sensitive systems; keep the fast hit path
 		// to a single lookup and only construct transient data on a validated miss.
 		if (auto it = TempActorDataMap.find(actorKey); it != TempActorDataMap.end()) {
-			return &(it->second);
+			return it->second.get();
 		}
 
 		if (get_scale(actor) < 0.0f || !actor->Is3DLoaded()) {
 			return nullptr;
 		}
 
-		auto [iter, inserted] = TempActorDataMap.try_emplace(actorKey, actor);
-		return &(iter->second);
+		auto data = std::make_unique<TransientActorData>(actor);
+		auto* result = data.get();
+		TempActorDataMap.emplace(actorKey, std::move(data));
+		return result;
 	}
 
 	void Transient::EraseUnloadedData() {
@@ -75,15 +83,21 @@ namespace GTS {
 		}
 
 		constexpr auto noAIAcquireFlag = static_cast<std::uint32_t>(Actor::RecordFlags::kNoAIAcquire);
-		std::erase_if(TempActorDataMap, [&](const auto& entry) {
-			const bool shouldErase = !allowedFormIDs.contains(entry.first);
-			if (shouldErase && entry.second.FollowerNoAIAcquireAdded) {
-				if (auto actor = TESForm::LookupByID<Actor>(entry.first)) {
-					actor->formFlags &= ~noAIAcquireFlag;
+		for (auto it = TempActorDataMap.begin(); it != TempActorDataMap.end();) {
+			const bool shouldErase = !allowedFormIDs.contains(it->first);
+			if (shouldErase) {
+				if (it->second && it->second->FollowerNoAIAcquireAdded) {
+					if (auto actor = TESForm::LookupByID<Actor>(it->first)) {
+						actor->formFlags &= ~noAIAcquireFlag;
+					}
 				}
+				RetiredActorData.emplace_back(std::move(it->second));
+				it = TempActorDataMap.erase(it);
 			}
-			return shouldErase;
-		});
+			else {
+				++it;
+			}
+		}
 
 		logger::critical("All Unloaded actors have beeen purged from transient.");
 	}

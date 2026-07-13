@@ -10,13 +10,13 @@ namespace GTS {
 		float CarryWeightBoost = 0.0f;
 		float HealthBoost = 0.0f;
 		float FallTimer = 1.0f;
-		float HugAnimationSpeed = 1.0f;
+		std::atomic<float> HugAnimationSpeed {1.0f};
 		float ThrowSpeed = 0.0f;
 		float PotionMaxSize = 0.0f;
 		float ButtCrushMaxSize = 0.0f;
 		float ButtCrushStartScale = 0.0f;
 		float SizeVulnerability = 0.0f;
-		float PushForce = 1.0f;
+		std::atomic<float> PushForce {1.0f};
 		float OtherScales = 1.0f;
 		float VoreRecordedScale = 1.0f;
 		float WorldFOVDefault = 0.0f;
@@ -28,6 +28,7 @@ namespace GTS {
 		float ShrinkTicks = 0.0f;
 		float ShrinkTicksCalamity = 0.0f;
 		float PerkBonusSpeed = 1.0f;
+		std::array<float, 4> MovementRunSpeeds = {};
 		float PerkLifeForceStolen = 0.0f;
 		float ClothRipLastScale = -1.0f;
 		float ClothRipOffset = -1.0f;
@@ -85,6 +86,7 @@ namespace GTS {
 		bool ShrinkAttackBlockActive = false;
 		bool FollowerNoAIAcquireAdded = false;
 		bool FollowerGTOnlyActive = false;
+		bool MovementRunSpeedsInitialized = false;
 
 		bool AutoAim_TargetLeft = false;
 
@@ -105,7 +107,7 @@ namespace GTS {
 
 		ActorHandle IsInControl{};
 
-		ObjectRefHandle DisableColissionWith{};
+		std::atomic<FormID> DisableCollisionWith {0};
 		TESObjectREFR* ThrowOffender = nullptr;
 
 		AttachToNode AttachmentNode = AttachToNode::None;

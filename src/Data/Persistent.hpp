@@ -25,6 +25,7 @@ namespace GTS {
 		static PersistentKillCountData* GetKillCountData(Actor& actor);
 		static PersistentKillCountData* GetKillCountData(Actor* actor);
 
+		// Previously returned addresses remain allocated across rehash, purge, reset and save changes.
 		static PersistentActorData* GetActorData(Actor& actor);
 		static PersistentActorData* GetActorData(Actor* actor);
 

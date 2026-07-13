@@ -1,7 +1,23 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
+if errorlevel 1 (
+    echo ERROR: Failed to switch to the project directory
+    pause
+    exit /b 1
+)
 
 echo Creating Package folder structure...
+set "PACKAGE_ROOT=%~dp0Package"
+if exist "!PACKAGE_ROOT!" (
+    echo Removing old Package folder...
+    rmdir /S /Q "!PACKAGE_ROOT!"
+    if errorlevel 1 (
+        echo ERROR: Failed to remove old Package folder
+        pause
+        exit /b 1
+    )
+)
 if not exist "Package" mkdir "Package"
 if not exist "Package\SKSE\Plugins" mkdir "Package\SKSE\Plugins"
 
@@ -63,8 +79,8 @@ for /f "usebackq skip=2 tokens=*" %%a in (`reg query "HKLM\SOFTWARE\WOW6432Node\
 
 if "!SKYRIM_PATH!"=="" (
     echo ERROR: Skyrim Special Edition registry key not found!
-    echo Skipping Papyrus compilation...
-    goto :SKIP_COMPILE
+    pause
+    exit /b 1
 )
 
 echo Found Skyrim at: !SKYRIM_PATH!
@@ -72,15 +88,15 @@ echo Found Skyrim at: !SKYRIM_PATH!
 set "COMPILER=!SKYRIM_PATH!\Papyrus Compiler\PapyrusCompiler.exe"
 if not exist "!COMPILER!" (
     echo ERROR: PapyrusCompiler.exe not found at: !COMPILER!
-    echo Skipping Papyrus compilation...
-    goto :SKIP_COMPILE
+    pause
+    exit /b 1
 )
 
 set "PAPYRUS_SOURCE=Distribution\PapyrusSource"
 if not exist "!PAPYRUS_SOURCE!" (
     echo ERROR: !PAPYRUS_SOURCE! folder not found!
-    echo Skipping Papyrus compilation...
-    goto :SKIP_COMPILE
+    pause
+    exit /b 1
 )
 
 set "OUTPUT_PATH=%~dp0Package\Scripts"
@@ -99,21 +115,28 @@ if exist "!SKYRIM_PATH!\Data\Scripts\Source" (
     echo Using Skyrim scripts from: Data\Scripts
 ) else (
     echo ERROR: Could not find Skyrim scripts source folder!
-    echo Skipping Papyrus compilation...
-    goto :SKIP_COMPILE
+    pause
+    exit /b 1
 )
 
 echo.
 echo Compiling Papyrus scripts...
+set "PAPYRUS_COMPILE_FAILED="
 for %%f in ("!PAPYRUS_SOURCE!\*.psc") do (
     echo Compiling: %%~nxf
     "!COMPILER!" "%%f" -f="TESV_Papyrus_Flags.flg" -i="!SKYRIM_SCRIPTS!;!INPUT_PATH!" -o="!OUTPUT_PATH!"
     if errorlevel 1 (
-        echo WARNING: Failed to compile %%~nxf
+        echo ERROR: Failed to compile %%~nxf
+        set "PAPYRUS_COMPILE_FAILED=1"
     )
 )
 
-:SKIP_COMPILE
+if defined PAPYRUS_COMPILE_FAILED (
+    echo ERROR: One or more Papyrus scripts failed to compile
+    pause
+    exit /b 1
+)
+
 echo.
 echo Copying Papyrus source files...
 if exist "!PAPYRUS_SOURCE!" (
@@ -124,7 +147,9 @@ if exist "!PAPYRUS_SOURCE!" (
         exit /b 1
     )
 ) else (
-    echo WARNING: !PAPYRUS_SOURCE! folder not found!
+    echo ERROR: !PAPYRUS_SOURCE! folder not found!
+    pause
+    exit /b 1
 )
 
 echo.
@@ -132,3 +157,4 @@ echo ========================================
 echo Package creation complete!
 echo ========================================
 pause
+exit /b 0

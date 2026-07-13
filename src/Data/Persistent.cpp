@@ -11,8 +11,10 @@ namespace GTS {
 	}
 
 	void Persistent::Reset() {
-
-		ClearData();
+		{
+			std::unique_lock lock(_Lock);
+			ClearData();
+		}
 
 		// Ensure we reset them back to inital scales
 		// if they are loaded into game memory
@@ -22,6 +24,7 @@ namespace GTS {
 		for (const auto& actor : find_actors()) {
 			ResetToInitScale(actor);
 		}
+		ClearInitialScales();
 
 		logger::info("Persistent: Reset Event");
 
@@ -41,9 +44,7 @@ namespace GTS {
 
 		{
 			std::unique_lock lock(_Lock);
-			auto it = this->ActorMap.value.find(key);
-			if (it != this->ActorMap.value.end()) {
-				it->second = {};
+			if (this->ActorMap.Reset(key)) {
 				shouldResetScale = true;
 			}
 		}
@@ -89,11 +90,8 @@ namespace GTS {
 
 	void Persistent::OnRevert(SKSE::SerializationInterface*) {
 #ifndef GTS_DISABLE_PLUGIN
-		{
-			std::unique_lock lock(_Lock);
-			logger::info("Persistent::OnRevert");
-			GetSingleton().Reset();
-		}
+		logger::info("Persistent::OnRevert");
+		GetSingleton().Reset();
 		EventDispatcher::DoSerdeRevert();
 #endif
 	}
@@ -196,16 +194,15 @@ namespace GTS {
 
 		// This accessor sits on the per-frame actor update path, so keep the hit
 		// path to a single lookup and only allocate on a validated miss.
-		if (auto it = ActorMap.value.find(key); it != ActorMap.value.end()) {
-			return &(it->second);
+		if (auto* data = ActorMap.Find(key)) {
+			return data;
 		}
 
 		if (!actor.Is3DLoaded() || get_scale(&actor) < 0.0f) {
 			return nullptr;
 		}
 
-		auto [it, inserted] = ActorMap.value.try_emplace(key);
-		return &(it->second);
+		return ActorMap.TryEmplace(key);
 	}
 
 	PersistentKillCountData* Persistent::GetKillCountData(Actor* actor) {
@@ -218,16 +215,15 @@ namespace GTS {
 	PersistentKillCountData* Persistent::GetKillCountData(Actor& actor) {
 		std::unique_lock lock(_Lock);
 		auto key = actor.formID;
-		if (auto it = KillCountMap.value.find(key); it != KillCountMap.value.end()) {
-			return &it->second;
+		if (auto* data = KillCountMap.Find(key)) {
+			return data;
 		}
 
 		if (!actor.Is3DLoaded()) {
 			return nullptr;
 		}
 
-		auto [it, inserted] = KillCountMap.value.try_emplace(key);
-		return &it->second;
+		return KillCountMap.TryEmplace(key);
 	}
 
 	//---------------------------
@@ -236,8 +232,8 @@ namespace GTS {
 
 	void Persistent::ClearData() {
 
-		ActorMap.value.clear();
-		KillCountMap.value.clear();
+		ActorMap.Clear();
+		KillCountMap.Clear();
 
 		TrackedCameraState       = 0;
 		EnableCrawlPlayer        = false;
@@ -272,13 +268,13 @@ namespace GTS {
 		}
 
 		// Iterate through ActorDataMap and remove entries whose key is not in allowedFormIDs.
-		std::erase_if(ActorMap.value,[&](const auto& entry) {
-			return !allowedFormIDs.contains(entry.first);
+		ActorMap.EraseIf([&](FormID formID) {
+			return !allowedFormIDs.contains(formID);
 		});
 
 		// Iterate through KillCountMap and remove entries whose key is not in allowedFormIDs.
-		std::erase_if(KillCountMap.value,[&](const auto& entry) {
-			return !allowedFormIDs.contains(entry.first);
+		KillCountMap.EraseIf([&](FormID formID) {
+			return !allowedFormIDs.contains(formID);
 		});
 
 		logger::critical("All Unloaded actors have beeen purged from persistent.");

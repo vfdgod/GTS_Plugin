@@ -10,14 +10,32 @@
 
 namespace {
 	
-	void AdjustData(RE::Actor* a_actor, RE::Movement::TypeData* a_DataToEdit) {
+	void AdjustData(RE::Actor* a_actor, RE::Movement::TypeData* a_DataToEdit, bool a_refreshBaseline) {
 		if (!a_actor || !a_DataToEdit) {
 			return;
 		}
 
 		RE::ActorState* state = a_actor->AsActorState();
-		if (!state || state->IsSprinting()) {
+		if (!state) {
 			return;
+		}
+		auto transient = GTS::Transient::GetActorData(a_actor);
+		if (!transient) {
+			return;
+		}
+
+		constexpr std::array directions {
+			RE::Movement::SPEED_DIRECTION::kForward,
+			RE::Movement::SPEED_DIRECTION::kBack,
+			RE::Movement::SPEED_DIRECTION::kLeft,
+			RE::Movement::SPEED_DIRECTION::kRight,
+		};
+
+		if (a_refreshBaseline || !transient->MovementRunSpeedsInitialized) {
+			for (std::size_t i = 0; i < directions.size(); ++i) {
+				transient->MovementRunSpeeds[i] = a_DataToEdit->defaultData.speeds[directions[i]][RE::Movement::MaxSpeeds::kRun];
+			}
+			transient->MovementRunSpeedsInitialized = true;
 		}
 
 		const float scale = GTS::get_visual_scale(a_actor);
@@ -27,7 +45,7 @@ namespace {
 
 		// Interp factor: 0..1
 		float t = 0.0f;
-		if (scale >= START_CLAMP_SCALE) {
+		if (!state->IsSprinting() && scale >= START_CLAMP_SCALE) {
 			if (FULL_CLAMP_SCALE > START_CLAMP_SCALE) {
 				t = (scale - START_CLAMP_SCALE) / (FULL_CLAMP_SCALE - START_CLAMP_SCALE);
 			}
@@ -43,16 +61,15 @@ namespace {
 		// Never allow full walk if maxLerp < 1
 		t = std::min(t, maxLerp);
 
-		auto lerpRunTowardWalk = [&](RE::Movement::SPEED_DIRECTION dir) {
+		auto lerpRunTowardWalk = [&](RE::Movement::SPEED_DIRECTION dir, std::size_t baselineIndex) {
 			float& run = a_DataToEdit->defaultData.speeds[dir][RE::Movement::MaxSpeeds::kRun];
 			float  walk = a_DataToEdit->defaultData.speeds[dir][RE::Movement::MaxSpeeds::kWalk];
-			run = std::lerp(run, walk, t); // at t=1, run becomes walk
+			run = std::lerp(transient->MovementRunSpeeds[baselineIndex], walk, t); // at t=1, run becomes walk
 		};
 
-		lerpRunTowardWalk(RE::Movement::SPEED_DIRECTION::kForward);
-		lerpRunTowardWalk(RE::Movement::SPEED_DIRECTION::kBack);
-		lerpRunTowardWalk(RE::Movement::SPEED_DIRECTION::kLeft);
-		lerpRunTowardWalk(RE::Movement::SPEED_DIRECTION::kRight);
+		for (std::size_t i = 0; i < directions.size(); ++i) {
+			lerpRunTowardWalk(directions[i], i);
+		}
 	}
 }
 
@@ -200,15 +217,13 @@ namespace Hooks {
 	struct MovementTypeData_Copy_1 {
 
 		static bool thunk(RE::AIProcess* a_process_src, RE::Movement::TypeData* a_typeData_dst) {
-
-			if (RE::HighProcessData* hi = a_process_src->high) {
-				if (RE::Actor* actor = a_process_src->GetUserData()) {
-					if (!actor->IsPlayerRef()) {
-						AdjustData(actor, reinterpret_cast<RE::Movement::TypeData*>(reinterpret_cast<std::byte*>(hi) + 0xF0));
-					}
+			const bool result = func(a_process_src, a_typeData_dst);
+			if (RE::Actor* actor = a_process_src->GetUserData()) {
+				if (!actor->IsPlayerRef()) {
+					AdjustData(actor, a_typeData_dst, false);
 				}
 			}
-			return func(a_process_src, a_typeData_dst);
+			return result;
 		}
 
 		FUNCTYPE_DETOUR func;
@@ -220,13 +235,15 @@ namespace Hooks {
 	struct MovementTypeData_Copy_2 {
 
 		static void thunk(RE::AIProcess* a_process_dst, RE::Movement::TypeData* a_typeData_src) {
-
-			if (RE::Actor* actor = a_process_dst->GetUserData()) {
-				if (!actor->IsPlayerRef()) {
-					AdjustData(actor, a_typeData_src);
+			if (a_typeData_src) {
+				auto adjustedData = *a_typeData_src;
+				if (RE::Actor* actor = a_process_dst->GetUserData()) {
+					if (!actor->IsPlayerRef()) {
+						AdjustData(actor, &adjustedData, true);
+					}
 				}
+				return func(a_process_dst, &adjustedData);
 			}
-
 			return func(a_process_dst, a_typeData_src);
 		}
 

@@ -9,6 +9,7 @@
 #include "Config/Settings/SettingsCollision.hpp"
 #include "Config/Settings/SettingsGameplay.hpp"
 #include "Config/Settings/SettingsGeneral.hpp"
+#include "Config/Settings/SettingsHidden.hpp"
 #include "Config/Settings/SettingsUI.hpp"
 
 #include "Config/Util/WindowSettingsRegistry.hpp"
@@ -112,6 +113,7 @@ namespace GTS {
         template<typename Config>
         static void ResetAllStructsToDefaults(Config& a_conf) {
             // Reset static settings
+            a_conf.Hidden    = SettingsHidden_t{};
             a_conf.Advanced  = SettingsAdvanced_t{};
             a_conf.General   = SettingsGeneral_t{};
             a_conf.AI        = SettingsAI_t{};

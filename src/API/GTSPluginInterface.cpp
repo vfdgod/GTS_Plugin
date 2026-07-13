@@ -57,7 +57,7 @@ namespace GTS {
 	APIResult GTSPluginIntfc::ModTargetScale(RE::Actor* a_actor, float a_modAmount) noexcept {
 		
 		if (a_actor && a_actor->Is3DLoaded()) {
-			set_target_scale(a_actor, a_modAmount);
+			mod_target_scale(a_actor, a_modAmount);
 			return APIResult::kOk;
 		}
 		return APIResult::kFail;

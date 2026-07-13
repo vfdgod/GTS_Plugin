@@ -40,7 +40,7 @@ namespace GTS {
 		};
 	
 		int sides = 6;
-		float degrees = 380.0f / sides;
+		float degrees = 360.0f / sides;
 		float rads = degrees * std::numbers::pi_v<float> / 180.0f;
 		constexpr float BASE_DIST = 18.0f;
 		constexpr float LEVEL_SEP = 12.0f;

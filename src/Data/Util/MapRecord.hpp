@@ -6,11 +6,60 @@ namespace Serialization {
 
     template <typename Value, const uint32_t uid, const uint32_t ver = 1>
     struct MapRecord {
-        std::unordered_map<RE::FormID, Value> value;
         static constexpr auto ID = std::byteswap(uid);
 
         MapRecord() = default;
-        MapRecord(const std::unordered_map<RE::FormID, Value>& val) : value(val) {}
+        MapRecord(const std::unordered_map<RE::FormID, Value>& val) {
+            for (const auto& [key, data] : val) {
+                value.emplace(key, std::make_unique<Value>(data));
+            }
+        }
+
+        Value* Find(RE::FormID key) {
+            if (auto it = value.find(key); it != value.end()) {
+                return it->second.get();
+            }
+            return nullptr;
+        }
+
+        Value* TryEmplace(RE::FormID key) {
+            if (auto* data = Find(key)) {
+                return data;
+            }
+            auto data = std::make_unique<Value>();
+            auto* result = data.get();
+            value.emplace(key, std::move(data));
+            return result;
+        }
+
+        bool Reset(RE::FormID key) {
+            if (auto it = value.find(key); it != value.end()) {
+                retired.emplace_back(std::move(it->second));
+                it->second = std::make_unique<Value>();
+                return true;
+            }
+            return false;
+        }
+
+        void Clear() {
+            for (auto& [key, data] : value) {
+                retired.emplace_back(std::move(data));
+            }
+            value.clear();
+        }
+
+        template <typename Predicate>
+        void EraseIf(Predicate&& shouldErase) {
+            for (auto it = value.begin(); it != value.end();) {
+                if (shouldErase(it->first)) {
+                    retired.emplace_back(std::move(it->second));
+                    it = value.erase(it);
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
 
         void Load(SKSE::SerializationInterface* serializationInterface, std::uint32_t type, std::uint32_t version, uint32_t size) {
             if (type == ID) {
@@ -21,20 +70,21 @@ namespace Serialization {
                     if (serializationInterface->ReadRecordData(buffer.data(), size)) {
                         try {
                             uint32_t dataVersion = 0;
+                            std::unordered_map<RE::FormID, Value> loadedMap;
                             MapSerializer<RE::FormID, Value>::Deserialize(
-                                value,
+                                loadedMap,
                                 std::span(buffer.data(), size),
                                 dataVersion
                             );
 
-                            logger::debug("{}: Map Read OK! Entry count: {}", Uint32ToStr(ID), value.size());
+                            logger::debug("{}: Map Read OK! Entry count: {}", Uint32ToStr(ID), loadedMap.size());
 
                             // Resolve FormIDs after loading
                             std::unordered_map<RE::FormID, Value> resolvedMap;
 
                             auto nam = Uint32ToStr(ID);
 
-                            for (auto& [oldFormID, data] : value) {
+                            for (auto& [oldFormID, data] : loadedMap) {
                                 RE::FormID newFormID;
                                 if (serializationInterface->ResolveFormID(oldFormID, newFormID)) {
                                     logger::trace("{} data loaded for FormID {:08X}", nam, oldFormID);
@@ -49,7 +99,10 @@ namespace Serialization {
                                     logger::warn("{} FormID {:08X} could not be resolved. Not adding to map.", nam, oldFormID);
                                 }
                             }
-                            value = std::move(resolvedMap);
+                            Clear();
+                            for (auto& [formID, data] : resolvedMap) {
+                                value.emplace(formID, std::make_unique<Value>(std::move(data)));
+                            }
                             return;
                         }
                         catch (const std::exception& e) {
@@ -72,11 +125,19 @@ namespace Serialization {
             if (serializationInterface->OpenRecord(ID, ver)) {
                 try {
                     auto nam = Uint32ToStr(ID);
-                    auto buffer = MapSerializer<RE::FormID, Value>::Serialize(value, ver);
+                    std::unordered_map<RE::FormID, Value> snapshot;
+                    snapshot.reserve(value.size());
+                    for (const auto& [formID, data] : value) {
+                        if (data) {
+                            snapshot.emplace(formID, *data);
+                        }
+                    }
+
+                    auto buffer = MapSerializer<RE::FormID, Value>::Serialize(snapshot, ver);
                     if (serializationInterface->WriteRecordData(buffer.data(), static_cast<uint32_t>(buffer.size()))) {
                         logger::debug("{}: Map Save OK!", Uint32ToStr(ID));
 
-                        for (auto const& [ActorFormID, Data] : value) {
+                        for (const auto& [ActorFormID, Data] : value) {
                             logger::trace("{} data serialized for Actor FormID {:08X}", nam, ActorFormID);
                         }
 
@@ -89,5 +150,12 @@ namespace Serialization {
             }
             logger::error("{}: Map could not be saved", Uint32ToStr(ID));
         }
+
+        private:
+        std::unordered_map<RE::FormID, std::unique_ptr<Value>> value;
+
+        // Keep retired allocations alive so callers that obtained a pointer before
+        // a reset or purge can finish without observing freed storage.
+        std::vector<std::unique_ptr<Value>> retired;
     };
 }

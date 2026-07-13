@@ -84,21 +84,17 @@ namespace {
 
 			auto tranDataA = Transient::GetActorData(actor_a);
 			if (tranDataA) {
-				if (tranDataA->DisableColissionWith) {
-					auto disabledRef = tranDataA->DisableColissionWith.get();
-					if (disabledRef.get() == otherActor) {
-						return true;
-					}
+				const FormID disabledFormID = tranDataA->DisableCollisionWith.load(std::memory_order_acquire);
+				if (disabledFormID != 0 && disabledFormID == otherActor->formID) {
+					return true;
 				}
 			}
 
 			auto tranDataB = Transient::GetActorData(actor_b);
 			if (tranDataB) {
-				if (tranDataB->DisableColissionWith) {
-					auto disabledRef = tranDataB->DisableColissionWith.get();
-					if (disabledRef.get() == actor) {
-						return true;
-					}
+				const FormID disabledFormID = tranDataB->DisableCollisionWith.load(std::memory_order_acquire);
+				if (disabledFormID != 0 && disabledFormID == actor->formID) {
+					return true;
 				}
 			}
 

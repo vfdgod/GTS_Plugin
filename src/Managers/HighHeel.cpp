@@ -155,10 +155,6 @@ namespace GTS {
 					// Don't make halflife 0
 				}
 
-				if (!Config::General.bEnableHighHeels) {
-					return;
-				}
-
 				GTS::HighHeelManager::UpdateHHOffset(actor);
 
 				// With model scale do it in unscaled coords
