@@ -444,8 +444,8 @@ void GTSManager::Update() {
 
 			Foot_PerformIdleEffects_Main(actor); // Just idle zones for pushing away/dealing minimal damage
 			UpdateBoneMovementData(actor);       // Records movement force of Player/Follower Legs/Hands
+			TinyCalamity_SeekActors(actor, actorList);
 			if (isPlayer) {
-				TinyCalamity_SeekActors(actor, actorList); // Active only on Player
 				SpawnActionIcon(actor, actorList);         // Icons for interactions with others, Player only
 			}
 			ScareActors(actor);

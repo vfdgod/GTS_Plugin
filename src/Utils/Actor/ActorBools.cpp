@@ -1,53 +1,72 @@
 #include "Utils/Actions/VoreUtils.hpp"
 #include "Utils/Actor/ActorBools.hpp"
 #include "Config/Config.hpp"
+#include "Data/Persistent.hpp"
 
 namespace GTS {
 
 namespace {
+	using FollowerSimulationToggle = bool PersistentActorData::*;
 
 	bool HasTinyCalamityEffect(Actor* giant) {
 		return giant && Runtime::HasMagicEffect(giant, Runtime::MGEF.GTSEffectTinyCalamity);
 	}
 
-	bool IsPlayerTinyCalamityToggleEnabled(Actor* giant, bool enabled) {
-		return enabled && giant && giant->IsPlayerRef();
+	bool IsSimulationToggleEnabled(Actor* giant, bool playerToggle, FollowerSimulationToggle followerToggle) {
+		if (!giant) {
+			return false;
+		}
+		if (giant->IsPlayerRef()) {
+			return playerToggle;
+		}
+		if (!followerToggle || !IsTeammate(giant)) {
+			return false;
+		}
+
+		const auto data = Persistent::GetActorData(giant);
+		return data && (data->*followerToggle);
 	}
 
-	bool IsPlayerSimulatingTinyCalamity(Actor* giant) {
-		return giant && giant->IsPlayerRef() && Config::Advanced.bPlayerTinyCalamityActive && !HasTinyCalamityEffect(giant);
+	bool IsActorSimulatingTinyCalamity(Actor* giant) {
+		return giant &&
+			!HasTinyCalamityEffect(giant) &&
+			IsSimulationToggleEnabled(
+				giant,
+				Config::Advanced.bPlayerTinyCalamityActive,
+				&PersistentActorData::bTinyCalamitySimulationActive
+			);
 	}
 
-	bool IsTinyCalamityFeatureEnabled(Actor* giant, bool playerToggle) {
+	bool IsTinyCalamityFeatureEnabled(Actor* giant, bool playerToggle, FollowerSimulationToggle followerToggle) {
 		if (!giant) {
 			return false;
 		}
 		if (HasTinyCalamityEffect(giant)) {
 			return true;
 		}
-		return IsPlayerSimulatingTinyCalamity(giant) && playerToggle;
+		return IsActorSimulatingTinyCalamity(giant) && IsSimulationToggleEnabled(giant, playerToggle, followerToggle);
 	}
 
 	template <class PerkEntry>
-	bool HasPerkOrPlayerToggle(Actor* giant, const PerkEntry& perk, bool playerToggle) {
+	bool HasPerkOrSimulationToggle(Actor* giant, const PerkEntry& perk, bool playerToggle, FollowerSimulationToggle followerToggle) {
 		if (!giant) {
 			return false;
 		}
 		if (HasTinyCalamityEffect(giant)) {
 			return Runtime::HasPerk(giant, perk);
 		}
-		return IsPlayerSimulatingTinyCalamity(giant) && IsPlayerTinyCalamityToggleEnabled(giant, playerToggle);
+		return IsActorSimulatingTinyCalamity(giant) && IsSimulationToggleEnabled(giant, playerToggle, followerToggle);
 	}
 
 	template <class PerkEntry>
-	bool HasTeamPerkOrPlayerToggle(Actor* giant, const PerkEntry& perk, bool playerToggle) {
+	bool HasTeamPerkOrSimulationToggle(Actor* giant, const PerkEntry& perk, bool playerToggle, FollowerSimulationToggle followerToggle) {
 		if (!giant) {
 			return false;
 		}
 		if (HasTinyCalamityEffect(giant)) {
 			return Runtime::HasPerkTeam(giant, perk);
 		}
-		return IsPlayerSimulatingTinyCalamity(giant) && IsPlayerTinyCalamityToggleEnabled(giant, playerToggle);
+		return IsActorSimulatingTinyCalamity(giant) && IsSimulationToggleEnabled(giant, playerToggle, followerToggle);
 	}
 
 }
@@ -434,43 +453,96 @@ namespace {
 	}
 
 	bool TinyCalamityActive(Actor* giant) {
-		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityActive);
+		return IsTinyCalamityFeatureEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityActive,
+			&PersistentActorData::bTinyCalamitySimulationActive
+		);
 	}
 
 	bool TinyCalamitySprintBoostActive(Actor* giant) {
-		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamitySprintBoost);
+		return IsTinyCalamityFeatureEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamitySprintBoost,
+			&PersistentActorData::bTinyCalamitySimulationSprintBoost
+		);
 	}
 
 	bool TinyCalamityActionBoostActive(Actor* giant) {
-		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityActionBoost);
+		return IsTinyCalamityFeatureEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityActionBoost,
+			&PersistentActorData::bTinyCalamitySimulationActionBoost
+		);
+	}
+
+	bool TinyCalamityIgnoreNaturalFootIdle(Actor* giant) {
+		return IsSimulationToggleEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityActionBoostIgnoreNaturalFootIdle,
+			&PersistentActorData::bTinyCalamitySimulationIgnoreNaturalFootIdle
+		);
 	}
 
 	bool TinyCalamityShrinkBoostActive(Actor* giant) {
-		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityShrinkBoost);
+		return IsTinyCalamityFeatureEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityShrinkBoost,
+			&PersistentActorData::bTinyCalamitySimulationShrinkBoost
+		);
 	}
 
 	bool TinyCalamityAttributeBoostActive(Actor* giant) {
-		return IsTinyCalamityFeatureEnabled(giant, Config::Advanced.bPlayerTinyCalamityAttributeBoost);
+		return IsTinyCalamityFeatureEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityAttributeBoost,
+			&PersistentActorData::bTinyCalamitySimulationAttributeBoost
+		);
 	}
 
 	bool TinyCalamityHasRefresh(Actor* giant) {
-		return HasPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamityRefresh, Config::Advanced.bPlayerTinyCalamityRefresh);
+		return HasPerkOrSimulationToggle(
+			giant,
+			Runtime::PERK.GTSPerkTinyCalamityRefresh,
+			Config::Advanced.bPlayerTinyCalamityRefresh,
+			&PersistentActorData::bTinyCalamitySimulationRefresh
+		);
 	}
 
 	bool TinyCalamityHasAug(Actor* giant) {
-		return HasPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamityAug, Config::Advanced.bPlayerTinyCalamityAug);
+		return HasPerkOrSimulationToggle(
+			giant,
+			Runtime::PERK.GTSPerkTinyCalamityAug,
+			Config::Advanced.bPlayerTinyCalamityAug,
+			&PersistentActorData::bTinyCalamitySimulationAug
+		);
 	}
 
 	bool TinyCalamityHasSizeSteal(Actor* giant) {
-		return HasTeamPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamitySizeSteal, Config::Advanced.bPlayerTinyCalamitySizeSteal);
+		return HasTeamPerkOrSimulationToggle(
+			giant,
+			Runtime::PERK.GTSPerkTinyCalamitySizeSteal,
+			Config::Advanced.bPlayerTinyCalamitySizeSteal,
+			&PersistentActorData::bTinyCalamitySimulationSizeSteal
+		);
 	}
 
 	bool TinyCalamityHasRage(Actor* giant) {
-		return HasTeamPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkTinyCalamityRage, Config::Advanced.bPlayerTinyCalamityRage);
+		return HasTeamPerkOrSimulationToggle(
+			giant,
+			Runtime::PERK.GTSPerkTinyCalamityRage,
+			Config::Advanced.bPlayerTinyCalamityRage,
+			&PersistentActorData::bTinyCalamitySimulationRage
+		);
 	}
 
 	bool TinyCalamityHasShrinkingGaze(Actor* giant) {
-		return HasPerkOrPlayerToggle(giant, Runtime::PERK.GTSPerkShrinkingGaze, Config::Advanced.bPlayerTinyCalamityShrinkingGaze);
+		return HasPerkOrSimulationToggle(
+			giant,
+			Runtime::PERK.GTSPerkShrinkingGaze,
+			Config::Advanced.bPlayerTinyCalamityShrinkingGaze,
+			&PersistentActorData::bTinyCalamitySimulationShrinkingGaze
+		);
 	}
 
 	void LogTinyCalamityDiagnostics(Actor* giant, const char* context) {
@@ -484,10 +556,22 @@ namespace {
 		const bool has_effect = HasTinyCalamityEffect(giant);
 		const bool has_calamity_perk = Runtime::HasPerk(giant, Runtime::PERK.GTSPerkTinyCalamity);
 		const bool has_rage_perk = Runtime::HasPerkTeam(giant, Runtime::PERK.GTSPerkTinyCalamityRage);
-		const bool sim_config_active = is_player && Config::Advanced.bPlayerTinyCalamityActive;
-		const bool sim_mode = IsPlayerSimulatingTinyCalamity(giant);
-		const bool sim_action_boost = is_player && Config::Advanced.bPlayerTinyCalamityActionBoost;
-		const bool sim_rage = is_player && Config::Advanced.bPlayerTinyCalamityRage;
+		const bool sim_config_active = IsSimulationToggleEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityActive,
+			&PersistentActorData::bTinyCalamitySimulationActive
+		);
+		const bool sim_mode = IsActorSimulatingTinyCalamity(giant);
+		const bool sim_action_boost = IsSimulationToggleEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityActionBoost,
+			&PersistentActorData::bTinyCalamitySimulationActionBoost
+		);
+		const bool sim_rage = IsSimulationToggleEnabled(
+			giant,
+			Config::Advanced.bPlayerTinyCalamityRage,
+			&PersistentActorData::bTinyCalamitySimulationRage
+		);
 		const bool active = TinyCalamityActive(giant);
 		const bool action_boost = TinyCalamityActionBoostActive(giant);
 		const bool rage = TinyCalamityHasRage(giant);

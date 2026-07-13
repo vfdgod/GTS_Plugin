@@ -14,6 +14,7 @@
 
 #include "Config/Config.hpp"
 #include "Config/Keybinds.hpp"
+#include "Data/Persistent.hpp"
 #include "Managers/Animation/Utils/CooldownManager.hpp"
 #include "Managers/MaxSizeManager.hpp"
 #include "UI/GTSMenu.hpp"
@@ -25,6 +26,7 @@ namespace GTS {
 	namespace {
 		constexpr float SizeRuleFixedLimitMin = 0.05f;
 		constexpr float SizeRuleFixedLimitMax = 255.0f;
+		constexpr float ActionFitExtraShrinkMax = 0.95f;
 
 		PSString TKeyDisabled = "禁用此输入事件。\n"
 			"禁用的事件会被游戏完全忽略，永远不会触发。";
@@ -551,8 +553,10 @@ namespace GTS {
 			PSString T8 = "模拟生命窃取：微型灾厄缩小时获得治疗，并提升额外缩小强度；真实龙吼开始时也会获得更长持续时间。";
 			PSString T9 = "模拟狂怒灾厄：微型灾厄激活时，可对低生命值目标触发处决动画。";
 			PSString T10 = "模拟缩小凝视：微型灾厄激活时，玩家准星凝视敌人会持续缩小目标。";
+			PSString T11 = "模拟缩小凝视：微型灾厄激活时，追随者会持续凝视并缩小当前敌对战斗目标。";
 
 			if (ImGui::CollapsingHeader("微型灾厄", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGui::SeparatorText("玩家模拟");
 				ImGuiEx::CheckBox("模拟微型灾厄激活", &Config::Advanced.bPlayerTinyCalamityActive, T0);
 				ImGuiEx::CheckBox("冲刺碰撞", &Config::Advanced.bPlayerTinyCalamitySprintBoost, T1);
 				ImGui::SameLine();
@@ -569,6 +573,95 @@ namespace GTS {
 				ImGui::SameLine();
 				ImGuiEx::CheckBox("狂怒灾厄", &Config::Advanced.bPlayerTinyCalamityRage, T9, !Config::Advanced.bPlayerTinyCalamityActive);
 				ImGuiEx::CheckBox("缩小凝视", &Config::Advanced.bPlayerTinyCalamityShrinkingGaze, T10, !Config::Advanced.bPlayerTinyCalamityActive);
+
+				ImGui::SeparatorText("分享给追随者");
+				ImGuiEx::HelpText(
+					"使用方式",
+					"先选择当前已加载的追随者，再勾选要给该追随者模拟的功能。\n"
+					"每名追随者独立保存，不会改动玩家自己的模拟配置。"
+				);
+
+				const auto& followers = GTSMenu::WindowManager->GetCachedTeamMateList();
+				Actor* selectedFollower = nullptr;
+				for (auto follower : followers) {
+					if (follower && follower->formID == m_tinyCalamityFollower) {
+						selectedFollower = follower;
+						break;
+					}
+				}
+				if (!selectedFollower && !followers.empty()) {
+					selectedFollower = followers.front();
+					m_tinyCalamityFollower = selectedFollower ? selectedFollower->formID : 0;
+				}
+
+				if (selectedFollower) {
+					const std::string selectedLabel = fmt::format(
+						"{} [{:08X}]",
+						selectedFollower->GetDisplayFullName(),
+						selectedFollower->formID
+					);
+					if (ImGui::BeginCombo("选择追随者", selectedLabel.c_str())) {
+						for (auto follower : followers) {
+							if (!follower) {
+								continue;
+							}
+							const bool selected = follower->formID == m_tinyCalamityFollower;
+							const std::string label = fmt::format("{} [{:08X}]", follower->GetDisplayFullName(), follower->formID);
+							if (ImGui::Selectable(label.c_str(), selected)) {
+								m_tinyCalamityFollower = follower->formID;
+								selectedFollower = follower;
+							}
+							if (selected) {
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
+
+					if (auto followerData = Persistent::GetActorData(selectedFollower)) {
+						ImGui::PushID(selectedFollower);
+						ImGuiEx::CheckBox("模拟微型灾厄激活", &followerData->bTinyCalamitySimulationActive, T0);
+						ImGuiEx::CheckBox("冲刺碰撞", &followerData->bTinyCalamitySimulationSprintBoost, T1, !followerData->bTinyCalamitySimulationActive);
+						ImGui::SameLine();
+						ImGuiEx::CheckBox("动作强化", &followerData->bTinyCalamitySimulationActionBoost, T2, !followerData->bTinyCalamitySimulationActive);
+						ImGui::SameLine();
+						ImGuiEx::CheckBox(
+							"忽略自然体型",
+							&followerData->bTinyCalamitySimulationIgnoreNaturalFootIdle,
+							T3,
+							!followerData->bTinyCalamitySimulationActive || !followerData->bTinyCalamitySimulationActionBoost
+						);
+						ImGuiEx::CheckBox("缩小强化", &followerData->bTinyCalamitySimulationShrinkBoost, T4, !followerData->bTinyCalamitySimulationActive);
+						ImGui::SameLine();
+						ImGuiEx::CheckBox("属性加成", &followerData->bTinyCalamitySimulationAttributeBoost, T5, !followerData->bTinyCalamitySimulationActive);
+						ImGuiEx::CheckBox("永恒灾厄", &followerData->bTinyCalamitySimulationRefresh, T6, !followerData->bTinyCalamitySimulationActive);
+						ImGui::SameLine();
+						ImGuiEx::CheckBox("迫近灾难", &followerData->bTinyCalamitySimulationAug, T7, !followerData->bTinyCalamitySimulationActive);
+						ImGuiEx::CheckBox("生命窃取", &followerData->bTinyCalamitySimulationSizeSteal, T8, !followerData->bTinyCalamitySimulationActive);
+						ImGui::SameLine();
+						ImGuiEx::CheckBox("狂怒灾厄", &followerData->bTinyCalamitySimulationRage, T9, !followerData->bTinyCalamitySimulationActive);
+						ImGuiEx::CheckBox("缩小凝视", &followerData->bTinyCalamitySimulationShrinkingGaze, T11, !followerData->bTinyCalamitySimulationActive);
+
+						if (ImGuiEx::Button("清空该追随者模拟")) {
+							followerData->bTinyCalamitySimulationActive = false;
+							followerData->bTinyCalamitySimulationSprintBoost = false;
+							followerData->bTinyCalamitySimulationActionBoost = false;
+							followerData->bTinyCalamitySimulationIgnoreNaturalFootIdle = true;
+							followerData->bTinyCalamitySimulationShrinkBoost = false;
+							followerData->bTinyCalamitySimulationAttributeBoost = false;
+							followerData->bTinyCalamitySimulationRefresh = false;
+							followerData->bTinyCalamitySimulationAug = false;
+							followerData->bTinyCalamitySimulationSizeSteal = false;
+							followerData->bTinyCalamitySimulationRage = false;
+							followerData->bTinyCalamitySimulationShrinkingGaze = false;
+						}
+						ImGui::PopID();
+					}
+				}
+				else {
+					m_tinyCalamityFollower = 0;
+					ImGui::TextDisabled("当前没有已加载的追随者，靠近追随者后再打开此页面。");
+				}
 
 				if (ImGuiEx::Button("清空技能冷却")) {
 					CooldownManager::GetSingleton().Reset();
@@ -811,9 +904,13 @@ namespace GTS {
 			                 "- 角色自然体型";
 			PSString TEnable = "关闭后，下面的扩展体型上限规则暂时不生效；规则本身会保留，之后可以用这里或快捷键重新开启。";
 			PSString TFollowersGTOnly = "开启后，当体型上限规则和 GT AI 同时开启时，\n"
-				"视觉体型大于或等于 1.0x 的随从会被完全禁止普通攻击和施法，只保留 GT 动作 AI。\n"
-				"如果当前没有可执行的 GT 动作，随从会暂时不攻击。\n"
+				"战斗中的人形随从会被禁止普通攻击和施法，只保留 GT 动作 AI。\n"
+				"程序还会阻止其 AI 获取或装备武器，并主动要求收起当前武器。\n"
+				"如果当前没有可执行的 GT 动作，随从会暂时不攻击，但仍可跟随、寻路和站位。\n"
 				"此选项开启期间，AI 页的两个“体型较大时禁用普通攻击”选项不再生效。";
+			PSString TActionFitExtraShrink = "在动作适应计算出的基础上限上，再减去这里设置的绝对体型值。\n"
+				"例如原本需要缩小到 0.34x，设置 0.10x 后，最终上限就是 0.24x。\n"
+				"最终结果最低会保留为 0.05x，避免出现 0 或负数。";
 
 			std::string DisableReason = "";
 			if (Config::Balance.bBalanceMode) {
@@ -822,8 +919,21 @@ namespace GTS {
 
 			if (ImGuiEx::ConditionalHeader("体型上限规则", DisableReason, !Config::Balance.bBalanceMode)) {
 				EnsureSizeLimitRulesInitialized();
+				Config::Balance.fActionFitExtraShrink = std::clamp(
+					Config::Balance.fActionFitExtraShrink,
+					0.0f,
+					ActionFitExtraShrinkMax
+				);
 				ImGuiEx::CheckBox("启用体型上限规则", &Config::Balance.bSizeLimitRulesEnabled, TEnable);
 				ImGuiEx::CheckBox("随从仅使用 GT 动作", &Config::AI.bFollowersGTOnly, TFollowersGTOnly);
+				float actionFitExtraShrink = Config::Balance.fActionFitExtraShrink;
+				ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8.0f);
+				if (ImGui::InputFloat("动作适应额外缩小", &actionFitExtraShrink, 0.01f, 0.10f, "%.2fx", ImGuiInputTextFlags_AutoSelectAll)) {
+					Config::Balance.fActionFitExtraShrink = std::clamp(actionFitExtraShrink, 0.0f, ActionFitExtraShrinkMax);
+				}
+				ImGuiEx::Tooltip(TActionFitExtraShrink);
+				ImGui::SameLine();
+				ImGui::TextDisabled("当前最终结果：%.2fx", GetActionCompatibleSizeLimit());
 				ImGuiEx::HelpText("最大体型由什么决定", THelp);
 				ImGuiEx::HelpText(
 					"规则如何工作",
@@ -947,7 +1057,7 @@ namespace GTS {
 						ImGui::TextDisabled("固定值是绝对体型，不是相对自然体型的倍率。");
 					}
 					else if (mode == LSizeLimitRuleMode_t::kActionFit) {
-						ImGui::TextDisabled("当前动作适应结果：%.2fx", GetActionCompatibleSizeLimit());
+						ImGui::TextDisabled("当前动作适应结果：%.2fx（已包含额外缩小）", GetActionCompatibleSizeLimit());
 					}
 					else if (mode == LSizeLimitRuleMode_t::kNaturalCeiling) {
 						ImGui::TextDisabled("只封顶，不会把已经缩小的目标拉回去。");

@@ -112,6 +112,7 @@ struct SettingsBalance_t {
     float fMaxOrdinaryNPCSize = 0.0f;
     bool bSizeLimitRulesEnabled = true;
     bool bSizeLimitRulesInitialized = false;
+    float fActionFitExtraShrink = 0.0f;
     std::vector<SizeLimitRule_t> SizeLimitRules = {};
 
     // Movement Speed Config

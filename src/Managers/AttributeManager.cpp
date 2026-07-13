@@ -203,13 +203,14 @@ namespace {
 			ManagePerkBonuses(actor);
 			ManageShrinkResourceSteal(actor);
 			ManageShrinkAttackBlock(actor);
-			if (actor->IsPlayerRef()) {
+			AttackManager::UpdateFollowerCombatAIRestrictions(actor);
+			if (actor->IsPlayerRef() || IsTeammate(actor)) {
 				TinyCalamity_BonusSpeed(actor); // Manages SMT bonuses
+				if (!TinyCalamitySprintBoostActive(actor)) {
+					AttributeManager::OverrideSMTBonus(actor, 0.0f);
+				}
 				if (TinyCalamityActive(actor) && TinyCalamityHasShrinkingGaze(actor)) {
 					StartShrinkingGaze(actor);
-				}
-				if (!TinyCalamitySprintBoostActive(actor)) {
-					AttributeManager::OverrideSMTBonus(0.0f);
 				}
 			}
 		}
@@ -238,8 +239,8 @@ namespace GTS {
 		}
 	}
 
-	void AttributeManager::OverrideSMTBonus(float Value) {
-		auto ActorAttributes = Persistent::GetActorData(PlayerCharacter::GetSingleton());
+	void AttributeManager::OverrideSMTBonus(Actor* actor, float Value) {
+		auto ActorAttributes = Persistent::GetActorData(actor);
 		if (ActorAttributes) {
 			ActorAttributes->fSMTRunSpeed = Value;
 		}
@@ -271,10 +272,10 @@ namespace GTS {
 			case ActorValue::kHealth: {
 				float might = 1.0f + Potion_GetMightBonus(actor);
 
+				if (TinyCalamityAttributeBoostActive(actor)) {
+					scale += 1.0f;
+				}
 				if (actor->IsPlayerRef()) {
-					if (TinyCalamityAttributeBoostActive(actor)) {
-						scale += 1.0f;
-					}
 					if (actor->AsActorState()->IsSprinting() && Runtime::HasPerk(actor, Runtime::PERK.GTSPerkSprintDamageMult1)) {
 						scale *= 1.30f;
 					}
@@ -292,7 +293,7 @@ namespace GTS {
 
 				float might = 1.0f + Potion_GetMightBonus(actor);
 
-				if (actor->IsPlayerRef() && TinyCalamityAttributeBoostActive(actor)) {
+				if (TinyCalamityAttributeBoostActive(actor)) {
 					scale += 3.0f;
 				}
 				if (scale > 1.0f) {
@@ -316,7 +317,7 @@ namespace GTS {
 			}
 
 			case ActorValue::kAttackDamageMult: {
-				if (actor->IsPlayerRef() && TinyCalamityAttributeBoostActive(actor)) {
+				if (TinyCalamityAttributeBoostActive(actor)) {
 					scale += 1.0f;
 				}
 				const float BonusDamageMult = Config::Balance.fStatBonusDamageMult;

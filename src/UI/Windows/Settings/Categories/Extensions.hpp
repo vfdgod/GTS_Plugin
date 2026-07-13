@@ -18,6 +18,7 @@ namespace GTS {
 
 		std::string m_rebindingEvent = {};
 		std::vector<std::string> m_tempKeys = {};
+		RE::FormID m_tinyCalamityFollower = 0;
 	};
 
 }

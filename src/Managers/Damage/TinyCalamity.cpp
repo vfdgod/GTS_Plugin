@@ -57,9 +57,9 @@ namespace {
 
 	void RefreshDuration(Actor* giant) {
 		if (TinyCalamityHasAug(giant)) {
-			AttributeManager::OverrideSMTBonus(0.75f); // Reduce speed after crush
+			AttributeManager::OverrideSMTBonus(giant, 0.75f); // Reduce speed after crush
 		} else {
-			AttributeManager::OverrideSMTBonus(0.35f); // Reduce more speed after crush
+			AttributeManager::OverrideSMTBonus(giant, 0.35f); // Reduce more speed after crush
 		}
 	}
 
@@ -123,6 +123,12 @@ namespace GTS {
             }
             for (auto tiny: preys) {
                 if (tiny) {
+                    if (!giant->IsPlayerRef()) {
+                        const bool hostile = IsHostile(giant, tiny) || IsHostile(tiny, giant);
+                        if (!hostile || IsEssential(giant, tiny)) {
+                            continue;
+                        }
+                    }
                     if (IsHuman(tiny)) {
                         float health = GetHealthPercentage(tiny);
 
@@ -348,54 +354,52 @@ namespace GTS {
         RefreshDuration(giant);
     }
 
-    void TinyCalamity_SeekActors(Actor* giant, const std::vector<Actor*>& actors) {
-       GTS_PROFILE_SCOPE("TinyCalamity: SeekActors");
-        if (giant->IsPlayerRef()) {
-            if (giant->AsActorState()->IsSprinting() && TinyCalamitySprintBoostActive(giant)) {
-                auto node = find_node(giant, "NPC Pelvis [Pelv]");
-                if (!node) {
-                    return;
-                }
-                NiPoint3 NodePosition = node->world.translate;
+	void TinyCalamity_SeekActors(Actor* giant, const std::vector<Actor*>& actors) {
+		GTS_PROFILE_SCOPE("TinyCalamity: SeekActors");
+		if (giant->AsActorState()->IsSprinting() && TinyCalamitySprintBoostActive(giant)) {
+			auto node = find_node(giant, "NPC Pelvis [Pelv]");
+			if (!node) {
+				return;
+			}
+			NiPoint3 NodePosition = node->world.translate;
 
-                float giantScale = get_visual_scale(giant);
+			float giantScale = get_visual_scale(giant);
 
-                constexpr float BASE_DISTANCE = 48.0f;
-                float CheckDistance = BASE_DISTANCE*giantScale;
-                float searchDistance = BASE_DISTANCE * giantScale * 3;
+			constexpr float BASE_DISTANCE = 48.0f;
+			float CheckDistance = BASE_DISTANCE * giantScale;
+			float searchDistance = BASE_DISTANCE * giantScale * 3;
 
-                if (DebugDraw::CanDraw(giant, DebugDraw::DrawTarget::kPlayerAndFollowers)) {
-                    DebugDraw::DrawSphere(glm::vec3(NodePosition.x, NodePosition.y, NodePosition.z), CheckDistance, 100, {0.0f, 1.0f, 1.0f, 1.0f});
-                }
+			if (DebugDraw::CanDraw(giant, DebugDraw::DrawTarget::kPlayerAndFollowers)) {
+				DebugDraw::DrawSphere(glm::vec3(NodePosition.x, NodePosition.y, NodePosition.z), CheckDistance, 100, {0.0f, 1.0f, 1.0f, 1.0f});
+			}
 
-                NiPoint3 giantLocation = giant->GetPosition();
-                for (auto otherActor : actors) {
-                    if (otherActor != giant) {
-                        NiPoint3 actorLocation = otherActor->GetPosition();
-                        if ((actorLocation - giantLocation).Length() < searchDistance) {
-                            int nodeCollisions = 0;
+			NiPoint3 giantLocation = giant->GetPosition();
+			for (auto otherActor : actors) {
+				if (otherActor != giant) {
+					NiPoint3 actorLocation = otherActor->GetPosition();
+					if ((actorLocation - giantLocation).Length() < searchDistance) {
+						int nodeCollisions = 0;
 
-                            auto model = otherActor->GetCurrent3D();
+						auto model = otherActor->GetCurrent3D();
 
-                            if (model) {
-                                VisitNodes(model, [&nodeCollisions, NodePosition, CheckDistance](NiAVObject& a_obj) {
-                                    float distance = (NodePosition - a_obj.world.translate).Length();
-                                    if (distance < CheckDistance) {
-                                        nodeCollisions += 1;
-                                        return false;
-                                    }
-                                    return true;
-                                });
-                            }
-                            if (nodeCollisions > 0) {
-                                TinyCalamity_CrushCheck(giant, otherActor);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+						if (model) {
+							VisitNodes(model, [&nodeCollisions, NodePosition, CheckDistance](NiAVObject& a_obj) {
+								float distance = (NodePosition - a_obj.world.translate).Length();
+								if (distance < CheckDistance) {
+									nodeCollisions += 1;
+									return false;
+								}
+								return true;
+							});
+						}
+						if (nodeCollisions > 0) {
+							TinyCalamity_CrushCheck(giant, otherActor);
+						}
+					}
+				}
+			}
+		}
+	}
 
     void TinyCalamity_CrushCheck(Actor* giant, Actor* tiny) {
 		GTS_PROFILE_SCOPE("TinyCalamity: CrushCheck");

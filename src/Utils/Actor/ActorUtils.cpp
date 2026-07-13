@@ -177,7 +177,7 @@ namespace GTS {
 
 	void DecreaseShoutCooldown(Actor* a_target) {
 		AIProcess* process = a_target->GetActorRuntimeData().currentProcess;
-		if (a_target->IsPlayerRef() && process && TinyCalamityHasRefresh(a_target)) {
+		if (process && TinyCalamityHasRefresh(a_target)) {
 			HighProcessData* high = process->high;
 			float by = 0.90f;
 			if (high) {

@@ -196,7 +196,7 @@ namespace {
 	}
 
 	bool ShouldIgnoreNaturalScaleFootIdle(Actor* giant, Actor* tiny, DamageSource cause) {
-		if (!Config::Advanced.bPlayerTinyCalamityActionBoostIgnoreNaturalFootIdle) {
+		if (!TinyCalamityIgnoreNaturalFootIdle(giant)) {
 			return false;
 		}
 		if (!TinyCalamityActionBoostActive(giant) || !IsFootIdleDamageSource(cause)) {

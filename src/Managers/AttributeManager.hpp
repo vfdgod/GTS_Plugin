@@ -10,7 +10,7 @@ namespace GTS {
 		virtual std::string DebugName() override;
 		virtual void Update() override;
 
-		static void OverrideSMTBonus(float Value);
+		static void OverrideSMTBonus(Actor* actor, float Value);
 		static float GetAttributeBonus(Actor* actor, ActorValue av);
 		static float AlterCarryWeightAV(Actor* actor, ActorValue av, float originalValue);
 		static float AlterGetBaseAv(Actor* actor, ActorValue av, float originalValue);

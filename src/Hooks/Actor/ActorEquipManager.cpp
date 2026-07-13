@@ -1,4 +1,5 @@
 #include "Hooks/Actor/ActorEquipManager.hpp"
+#include "Managers/AttackManager.hpp"
 #include "Managers/RipClothManager.hpp"
 #include "Hooks/Util/HookUtil.hpp"
 
@@ -13,6 +14,11 @@ namespace Hooks {
 			{
 				GTS_PROFILE_ENTRYPOINT("ActorEquipManager::EquipObject");
 				if (GTS::ClothManager::ShouldPreventReEquip(a_actor, a_object)) {
+					allow = false;
+				}
+				if (GTS::AttackManager::ShouldForceFollowerGTActions(a_actor) &&
+					a_object &&
+					a_object->GetFormType() == RE::FormType::Weapon) {
 					allow = false;
 				}
 			}

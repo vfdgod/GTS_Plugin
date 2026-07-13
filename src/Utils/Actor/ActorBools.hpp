@@ -37,6 +37,7 @@ namespace GTS {
 	bool TinyCalamityActive(Actor* giant);
 	bool TinyCalamitySprintBoostActive(Actor* giant);
 	bool TinyCalamityActionBoostActive(Actor* giant);
+	bool TinyCalamityIgnoreNaturalFootIdle(Actor* giant);
 	bool TinyCalamityShrinkBoostActive(Actor* giant);
 	bool TinyCalamityAttributeBoostActive(Actor* giant);
 	bool TinyCalamityHasRefresh(Actor* giant);

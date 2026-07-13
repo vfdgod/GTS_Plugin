@@ -16,6 +16,7 @@
 #include "Managers/Animation/Grab.hpp"
 #include "Managers/Animation/HugShrink.hpp"
 #include "Managers/Animation/Controllers/VoreController.hpp"
+#include "Managers/Damage/TinyCalamity.hpp"
 
 using namespace GTS;
 
@@ -343,6 +344,12 @@ namespace GTS {
 	bool AIManager::TryStartAction(Actor* a_Performer, const std::vector<Actor*>& a_PotentialPrey) const {
 
 		if (!a_Performer) return false;
+		if (!a_Performer->IsPlayerRef() &&
+			TinyCalamityActive(a_Performer) &&
+			TinyCalamityHasRage(a_Performer) &&
+			TinyCalamity_WrathfulCalamity(a_Performer)) {
+			return true;
+		}
 
 		//Actor* container from each filter result.
 		std::vector<Actor*> CanVore = {};

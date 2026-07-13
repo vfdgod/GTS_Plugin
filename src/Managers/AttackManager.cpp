@@ -13,18 +13,6 @@ namespace {
 		return get_visual_scale(a_Actor) < naturalScale - kShrinkAttackBlockEpsilon;
 	}
 
-	bool ShouldForceFollowerGTActions(Actor* a_Actor) {
-		return Config::AI.bFollowersGTOnly &&
-			SizeLimitRulesActive() &&
-			Config::AI.bEnableActionAI &&
-			a_Actor &&
-			!a_Actor->IsPlayerRef() &&
-			!a_Actor->IsDead() &&
-			IsTeammate(a_Actor) &&
-			IsHumanoid(a_Actor) &&
-			get_visual_scale(a_Actor) >= 1.0f;
-	}
-
 	void SetAttackFlags(Actor* a_Actor, bool a_Disabled) {
 		if (!a_Actor) {
 			return;
@@ -83,8 +71,66 @@ namespace GTS {
 			IsShrunkBelowNaturalScale(a_Actor);
 	}
 
+	bool AttackManager::ShouldForceFollowerGTActions(Actor* a_Actor) {
+		if (!Config::AI.bFollowersGTOnly ||
+			!SizeLimitRulesActive() ||
+			!Config::AI.bEnableActionAI ||
+			!a_Actor ||
+			a_Actor->IsPlayerRef() ||
+			a_Actor->IsDead() ||
+			!IsTeammate(a_Actor) ||
+			!IsHumanoid(a_Actor) ||
+			get_visual_scale(a_Actor) < 1.0f) {
+			return false;
+		}
+
+		return a_Actor->IsInCombat() || a_Actor->GetActorRuntimeData().currentCombatTarget.get().get() != nullptr;
+	}
+
 	void AttackManager::SetAttacksDisabled(Actor* a_Actor, bool a_Disabled) {
-		SetAttackFlags(a_Actor, a_Disabled || ShouldForceFollowerGTActions(a_Actor));
+		SetAttackFlags(
+			a_Actor,
+			a_Disabled ||
+				AttackManager::ShouldBlockShrunkAttacks(a_Actor) ||
+				AttackManager::ShouldForceFollowerGTActions(a_Actor)
+		);
+	}
+
+	void AttackManager::UpdateFollowerCombatAIRestrictions(Actor* a_Actor) {
+		if (!a_Actor || a_Actor->IsPlayerRef()) {
+			return;
+		}
+
+		auto transient = Transient::GetActorData(a_Actor);
+		if (!transient) {
+			return;
+		}
+
+		const bool shouldRestrict = ShouldForceFollowerGTActions(a_Actor);
+		constexpr auto noAIAcquireFlag = static_cast<std::uint32_t>(Actor::RecordFlags::kNoAIAcquire);
+
+		if (shouldRestrict) {
+			SetAttackFlags(a_Actor, true);
+			if ((a_Actor->formFlags & noAIAcquireFlag) == 0) {
+				a_Actor->formFlags |= noAIAcquireFlag;
+				transient->FollowerNoAIAcquireAdded = true;
+			}
+
+			if (auto state = a_Actor->AsActorState(); state && state->actorState2.weaponState != WEAPON_STATE::kSheathed) {
+				state->actorState2.weaponState = WEAPON_STATE::kWantToSheathe;
+			}
+			transient->FollowerGTOnlyActive = true;
+			return;
+		}
+
+		if (transient->FollowerNoAIAcquireAdded) {
+			a_Actor->formFlags &= ~noAIAcquireFlag;
+			transient->FollowerNoAIAcquireAdded = false;
+		}
+		if (transient->FollowerGTOnlyActive) {
+			SetAttacksDisabled(a_Actor, false);
+			transient->FollowerGTOnlyActive = false;
+		}
 	}
 
 	void AttackManager::PreventAttacks(Actor* a_Giant, Actor* a_Tiny) {
@@ -97,7 +143,7 @@ namespace GTS {
 		if (a_Giant && !a_Giant->IsPlayerRef() && IsHumanoid(a_Giant)) {
 			// This mode owns both flags completely; the two legacy attack-blocking options are ignored.
 			if (Config::AI.bFollowersGTOnly) {
-				SetAttackFlags(a_Giant, ShouldForceFollowerGTActions(a_Giant));
+				SetAttacksDisabled(a_Giant, false);
 				return;
 			}
 

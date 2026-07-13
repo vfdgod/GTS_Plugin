@@ -32,6 +32,20 @@ namespace GTS {
 		float fHalfLife = 1.0f;
 		float fAnimSpeed = 1.0f;
 
+		// 每名追随者独立保存的微型灾厄模拟设置。
+		// TLV 序列化会忽略旧 co-save 中不存在的字段，因此可向后兼容。
+		bool bTinyCalamitySimulationActive = false;
+		bool bTinyCalamitySimulationSprintBoost = false;
+		bool bTinyCalamitySimulationActionBoost = false;
+		bool bTinyCalamitySimulationIgnoreNaturalFootIdle = true;
+		bool bTinyCalamitySimulationShrinkBoost = false;
+		bool bTinyCalamitySimulationAttributeBoost = false;
+		bool bTinyCalamitySimulationRefresh = false;
+		bool bTinyCalamitySimulationAug = false;
+		bool bTinyCalamitySimulationSizeSteal = false;
+		bool bTinyCalamitySimulationRage = false;
+		bool bTinyCalamitySimulationShrinkingGaze = false;
+
 		//Voice
 		bool bUseSLVoice = false;
 

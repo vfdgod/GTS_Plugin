@@ -16,6 +16,7 @@ namespace SizeOverride {
 	constexpr float ACTION_FIT_RESULT_MIN = 0.051f;
 	constexpr float ACTION_FIT_RESULT_MAX = 1.0f;
 	constexpr float ACTION_FIT_STRICTEST_THRESHOLD = Action_Vore + 0.01f;
+	constexpr float ACTION_FIT_EXTRA_SHRINK_MAX = ACTION_FIT_RESULT_MAX - ACTION_FIT_RESULT_MIN;
 
 	struct ResolvedSizeLimitRule {
 		bool HasOverrideLimit = false;
@@ -250,7 +251,9 @@ namespace SizeOverride {
 			return ACTION_FIT_RESULT_MAX;
 		}
 
-		return ComputeActionFitLimit(get_visual_scale(player));
+		const float baseLimit = ComputeActionFitLimit(get_visual_scale(player));
+		const float extraShrink = std::clamp(Config::Balance.fActionFitExtraShrink, 0.0f, ACTION_FIT_EXTRA_SHRINK_MAX);
+		return std::clamp(baseLimit - extraShrink, ACTION_FIT_RESULT_MIN, ACTION_FIT_RESULT_MAX);
 	}
 
 	bool IsAnimalTarget(Actor* a_actor) {

@@ -83,6 +83,8 @@ namespace GTS {
 		bool KissVoring = false;
 		bool SizeOverrideRestoreActive = false;
 		bool ShrinkAttackBlockActive = false;
+		bool FollowerNoAIAcquireAdded = false;
+		bool FollowerGTOnlyActive = false;
 
 		bool AutoAim_TargetLeft = false;
 
