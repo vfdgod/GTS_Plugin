@@ -174,6 +174,12 @@ namespace {
 
 		float prey_distance = (a_Pred->GetPosition() - a_Prey->GetPosition()).Length();
 		float max_distance = MINIMUM_STOMP_DISTANCE * PredScale * bonus;
+		float actionable_distance = max_distance;
+		if (a_UseAutoAimFootFix) {
+			const float farStompAimRange = std::max(Config::AutoAim.fAutoAim_Range_FarStomp, Config::AutoAim.fAutoAim_Range_FarStomp_Strong) * PredScale;
+			actionable_distance += farStompAimRange;
+		}
+
 		float forward_angle = GetForwardAngleToTarget(a_Pred, a_Prey);
 		if (a_Pred->IsPlayerRef() && prey_distance <= (MINIMUM_STOMP_DISTANCE * PredScale * bonus) && SizeDiff < MINIMUM_STOMP_SCALE_RATIO) {
 			LogStompKickCandidate(a_Pred, a_Prey, "fail_player_size_diff", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
@@ -186,14 +192,19 @@ namespace {
 		}
 
 		if (a_UseAutoAimFootFix && SizeDiff > MINIMUM_STOMP_SCALE_RATIO && AutoAim_Foot_CanTarget(a_Pred, a_Prey, true)) {
-			LogStompKickCandidate(a_Pred, a_Prey, "pass_autoaim_foot_before_selection", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
+			LogStompKickCandidate(a_Pred, a_Prey, "pass_autoaim_foot_before_selection", PredScale, SizeDiff, prey_distance, actionable_distance, forward_angle);
 			return true;
 		}
 
-		const std::string_view reason = prey_distance > max_distance && SizeDiff <= MINIMUM_STOMP_SCALE_RATIO ?
+		if (a_UseAutoAimFootFix && prey_distance <= actionable_distance && SizeDiff > MINIMUM_STOMP_SCALE_RATIO) {
+			LogStompKickCandidate(a_Pred, a_Prey, "pass_autoaim_reach_before_selection", PredScale, SizeDiff, prey_distance, actionable_distance, forward_angle);
+			return true;
+		}
+
+		const std::string_view reason = prey_distance > actionable_distance && SizeDiff <= MINIMUM_STOMP_SCALE_RATIO ?
 			"fail_distance_and_size_diff" :
-			(prey_distance > max_distance ? "fail_distance" : "fail_size_diff");
-		LogStompKickCandidate(a_Pred, a_Prey, reason, PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
+			(prey_distance > actionable_distance ? "fail_distance" : "fail_size_diff");
+		LogStompKickCandidate(a_Pred, a_Prey, reason, PredScale, SizeDiff, prey_distance, actionable_distance, forward_angle);
 		return false;
 	}
 

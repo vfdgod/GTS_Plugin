@@ -301,7 +301,7 @@ namespace {
 	}
 
 	//Calculate which actions should be started based on which ones can currently be started
-	ActionType CalculateProbability(const absl::flat_hash_map<ActionType, int>& a_ValidActionMap) {
+	ActionType CalculateProbability(const absl::flat_hash_map<ActionType, int>& a_ValidActionMap, bool a_AllowNone) {
 
 		constexpr int DesiredNonePercentage = 30; // Target probability for None
 		if (a_ValidActionMap.empty()) return ActionType::kNone;
@@ -315,12 +315,18 @@ namespace {
 				totalActionWeight += Action.second;
 			}
 
+			if (totalActionWeight <= 0) {
+				return ActionType::kNone;
+			}
+
 			// Scale None weight so it represents DesiredNonePercentage of total probability
 			// If None should be 30%, then actions should be 70% of total
 			// So: NoneWeight / (ActionWeight + NoneWeight) = 0.30
 			// Solving: NoneWeight = ActionWeight * (DesiredNonePercentage / (100 - DesiredNonePercentage))
-			const int noneWeight = (totalActionWeight * DesiredNonePercentage) / (100 - DesiredNonePercentage);
-			ProbabiltyList[static_cast<int>(ActionType::kNone)] = noneWeight;
+			if (a_AllowNone) {
+				const int noneWeight = (totalActionWeight * DesiredNonePercentage) / (100 - DesiredNonePercentage);
+				ProbabiltyList[static_cast<int>(ActionType::kNone)] = noneWeight;
+			}
 
 			return static_cast<ActionType>(RandomIntWeighted(ProbabiltyList));
 		}
@@ -533,10 +539,11 @@ namespace GTS {
 		const std::vector<Actor*> CombinedList = Temp;
 		HandleAttackBlocking(a_Performer, CombinedList);
 
-		const ActionType SelectedAction = CalculateProbability(StartableActions);
+		const bool allowNoneSelection = !AISettings.bStompKickAutoAimFix;
+		const ActionType SelectedAction = CalculateProbability(StartableActions, allowNoneSelection);
 		if (ShouldLogActionAI(a_Performer)) {
 			logger::info(
-				"[AI Action] summary performer={}({:08X}) potentialPrey={} validPrey={} candidates[vore={},devourment={},stompKick={},sandwich={},thighCrush={},butt={},hug={},grab={}] combined={} startable={} selected={} stompEnabled={} stompProb={:.0f} kickEnabled={} kickProb={:.0f} disableAttacks={} alwaysDisableAttacks={} followersGTOnly={}",
+				"[AI Action] summary performer={}({:08X}) potentialPrey={} validPrey={} candidates[vore={},devourment={},stompKick={},sandwich={},thighCrush={},butt={},hug={},grab={}] combined={} startable={} selected={} stompEnabled={} stompProb={:.0f} kickEnabled={} kickProb={:.0f} disableAttacks={} alwaysDisableAttacks={} followersGTOnly={} autoAimFootFix={} noneAllowed={}",
 				GetActorLogName(a_Performer),
 				a_Performer->formID,
 				a_PotentialPrey.size(),
@@ -558,7 +565,9 @@ namespace GTS {
 				AISettings.KickSwipe.fProbability,
 				AISettings.bDisableAttacks,
 				AISettings.bAlwaysDisableAttacks,
-				AISettings.bFollowersGTOnly
+				AISettings.bFollowersGTOnly,
+				AISettings.bStompKickAutoAimFix,
+				allowNoneSelection
 			);
 		}
 

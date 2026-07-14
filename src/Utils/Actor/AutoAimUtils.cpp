@@ -3,10 +3,12 @@
 #include "Utils/Actor/FindActor.hpp"
 #include "Magic/Effects/Common.hpp"
 #include "Config/Config.hpp"
+#include "Managers/Animation/Utils/AnimationUtils.hpp"
 
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <vector>
 
 namespace {
     using namespace GTS;
@@ -98,6 +100,43 @@ namespace {
         CalculateDirectionalBlend2D(giant, footPos, targetPos, max_distance, x, y, dx, dy, final_distance);
 
         return ShouldAutoAim(final_distance, max_distance, dx);
+    }
+
+    bool IsTargetNearFootCoordinates(Actor* giant, Actor* target, float max_distance, bool& left_foot) {
+        if (!giant || !target || giant == target) {
+            return false;
+        }
+
+        const auto leftPoints = GetFootCoordinates(giant, false, false);
+        const auto rightPoints = GetFootCoordinates(giant, true, false);
+        if (leftPoints.empty() && rightPoints.empty()) {
+            return false;
+        }
+
+        NiPoint3 targetPos = target->GetPosition();
+        targetPos.z = 0.0f;
+
+        auto EvaluatePoints = [&](const std::vector<NiPoint3>& points) {
+            float bestDistanceSquared = FLT_MAX;
+            for (auto point : points) {
+                point.z = 0.0f;
+                const NiPoint3 delta = targetPos - point;
+                const float distanceSquared = delta.x * delta.x + delta.y * delta.y;
+                bestDistanceSquared = std::min(bestDistanceSquared, distanceSquared);
+            }
+            return bestDistanceSquared;
+        };
+
+        const float scoreL = EvaluatePoints(leftPoints);
+        const float scoreR = EvaluatePoints(rightPoints);
+        const bool useLeft = scoreL <= scoreR;
+        const float score = useLeft ? scoreL : scoreR;
+        if (score > max_distance * max_distance) {
+            return false;
+        }
+
+        left_foot = useLeft;
+        return true;
     }
 }
 
@@ -392,7 +431,11 @@ namespace GTS {
             const float far_offset = Config::AutoAim.fAutoAim_Foot_OffsetDistance_FarStomp * scale;
             const NiPoint3 farPosL = GetPresetAimPosition(giant, true, foot_offset, far_offset);
             const NiPoint3 farPosR = GetPresetAimPosition(giant, false, foot_offset, far_offset);
-            return IsTargetNearPointPair(giant, target, farPosL, farPosR, far_distance, true, left_foot);
+            if (IsTargetNearPointPair(giant, target, farPosL, farPosR, far_distance, true, left_foot)) {
+                return true;
+            }
+
+            return IsTargetNearFootCoordinates(giant, target, std::max(close_distance, far_distance), left_foot);
         }
 
         bool AutoAim_IsSneakingOrCrawling(Actor* giant) {
