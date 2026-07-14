@@ -6,6 +6,10 @@
 #include "Utils/Actions/ActionUtils.hpp"
 #include "Utils/Actor/AutoAimUtils.hpp"
 
+#include <algorithm>
+#include <cmath>
+#include <string_view>
+
 using namespace GTS;
 
 namespace {
@@ -13,6 +17,7 @@ namespace {
 	constexpr float MINIMUM_STOMP_DISTANCE = 50.0f;
 	constexpr float MINIMUM_STOMP_SCALE_RATIO = 1.5f;
 	constexpr float STOMP_ANGLE = 50;
+	constexpr float PI = 3.14159265358979323846f;
 	//Light Kick/Swipe
 	const std::vector<std::string> light_kicks = {
 		"SwipeLight_Left",                  // 0
@@ -26,6 +31,92 @@ namespace {
 		"StrongKick_Low_Right",             // 2
 		"StrongKick_Low_Left",              // 3
 	};
+
+	bool ShouldLogStompKickAI(Actor* a_Pred) {
+		return a_Pred && (a_Pred->IsPlayerRef() || IsTeammate(a_Pred));
+	}
+
+	const char* GetActorLogName(Actor* a_Actor) {
+		if (!a_Actor) {
+			return "<null>";
+		}
+		return a_Actor->GetDisplayFullName();
+	}
+
+	float GetForwardAngleToTarget(Actor* a_Pred, Actor* a_Prey) {
+		if (!a_Pred || !a_Prey) {
+			return 0.0f;
+		}
+
+		NiPoint3 preyDir = a_Prey->GetPosition() - a_Pred->GetPosition();
+		preyDir.z = 0.0f;
+		const float preyDirLength = preyDir.Length();
+		if (preyDirLength <= 1e-4f) {
+			return 0.0f;
+		}
+
+		RE::NiPoint3 forwardVector{ 0.0f, 1.0f, 0.0f };
+		RE::NiPoint3 predDir = RotateAngleAxis(forwardVector, -a_Pred->data.angle.z, { 0.0f, 0.0f, 1.0f });
+		predDir.z = 0.0f;
+		const float predDirLength = predDir.Length();
+		if (predDirLength <= 1e-4f) {
+			return 180.0f;
+		}
+
+		const float dot = std::clamp(predDir.Dot(preyDir) / (predDirLength * preyDirLength), -1.0f, 1.0f);
+		return std::acos(dot) * 180.0f / PI;
+	}
+
+	void LogStompKickReject(Actor* a_Pred, Actor* a_Prey, std::string_view a_Reason) {
+		if (!ShouldLogStompKickAI(a_Pred)) {
+			return;
+		}
+
+		logger::info(
+			"[AI StompKick] reject reason={} pred={}({:08X}) prey={}({:08X})",
+			a_Reason,
+			GetActorLogName(a_Pred),
+			a_Pred ? a_Pred->formID : 0,
+			GetActorLogName(a_Prey),
+			a_Prey ? a_Prey->formID : 0
+		);
+	}
+
+	void LogStompKickCandidate(Actor* a_Pred, Actor* a_Prey, std::string_view a_Result, float a_PredScale, float a_SizeDiff, float a_Distance, float a_MaxDistance, float a_ForwardAngle) {
+		if (!ShouldLogStompKickAI(a_Pred)) {
+			return;
+		}
+
+		logger::info(
+			"[AI StompKick] candidate result={} pred={}({:08X}) prey={}({:08X}) predScale={:.2f} sizeDiff={:.2f} distance={:.1f}/{:.1f} forwardAngle={:.1f}/{} crawling={} sneaking={}",
+			a_Result,
+			GetActorLogName(a_Pred),
+			a_Pred ? a_Pred->formID : 0,
+			GetActorLogName(a_Prey),
+			a_Prey ? a_Prey->formID : 0,
+			a_PredScale,
+			a_SizeDiff,
+			a_Distance,
+			a_MaxDistance,
+			a_ForwardAngle,
+			STOMP_ANGLE,
+			AnimationVars::Crawl::IsCrawling(a_Pred),
+			a_Pred ? a_Pred->IsSneaking() : false
+		);
+	}
+
+	void LogStompKickAnimation(Actor* a_Performer, std::string_view a_Trigger) {
+		if (!ShouldLogStompKickAI(a_Performer)) {
+			return;
+		}
+
+		logger::info(
+			"[AI StompKick] start animation pred={}({:08X}) trigger={}",
+			GetActorLogName(a_Performer),
+			a_Performer ? a_Performer->formID : 0,
+			a_Trigger
+		);
+	}
 
 	bool ProtectFollowers(Actor* a_Pred, Actor* a_Prey) {
 		bool NPC = Config::General.bProtectFollowers;
@@ -47,15 +138,23 @@ namespace {
 
 	bool CanStomp(Actor* a_Pred, Actor* a_Prey) {
 
+		if (!a_Pred || !a_Prey) {
+			LogStompKickReject(a_Pred, a_Prey, "null_actor");
+			return false;
+		}
+
 		if (a_Pred == a_Prey) {
+			LogStompKickReject(a_Pred, a_Prey, "same_actor");
 			return false;
 		}
 
 		if (ProtectFollowers(a_Pred, a_Prey)) {
+			LogStompKickReject(a_Pred, a_Prey, "protected_follower");
 			return false;
 		}
 
 		if (!CanPerformActionOn(a_Pred, a_Prey, false)) {
+			LogStompKickReject(a_Pred, a_Prey, "cannot_perform_action_on");
 			return false;
 		}
 
@@ -68,39 +167,56 @@ namespace {
 		}
 
 		if (!CanStompDead(a_Prey, SizeDiff)) { // We don't want the follower to be stuck stomping corpses that can't be crushed.
+			LogStompKickCandidate(a_Pred, a_Prey, "fail_dead_below_crush_size", PredScale, SizeDiff, 0.0f, 0.0f, GetForwardAngleToTarget(a_Pred, a_Prey));
 			return false;
 		}
 
 		float prey_distance = (a_Pred->GetPosition() - a_Prey->GetPosition()).Length();
+		float max_distance = MINIMUM_STOMP_DISTANCE * PredScale * bonus;
+		float forward_angle = GetForwardAngleToTarget(a_Pred, a_Prey);
 		if (a_Pred->IsPlayerRef() && prey_distance <= (MINIMUM_STOMP_DISTANCE * PredScale * bonus) && SizeDiff < MINIMUM_STOMP_SCALE_RATIO) {
+			LogStompKickCandidate(a_Pred, a_Prey, "fail_player_size_diff", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
 			return false;
 		}
 
 		if (prey_distance <= (MINIMUM_STOMP_DISTANCE * PredScale * bonus) && SizeDiff > MINIMUM_STOMP_SCALE_RATIO) { // We don't want the Stomp to be too close
+			LogStompKickCandidate(a_Pred, a_Prey, "pass_range_size_before_front_cone", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
 			return true;
 		}
 
+		const std::string_view reason = prey_distance > max_distance && SizeDiff <= MINIMUM_STOMP_SCALE_RATIO ?
+			"fail_distance_and_size_diff" :
+			(prey_distance > max_distance ? "fail_distance" : "fail_size_diff");
+		LogStompKickCandidate(a_Pred, a_Prey, reason, PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
 		return false;
 	}
 
 	void Do_LightKick(Actor* pred) {
 		const int idx = RandomIntWeighted(10, 10);
-		AnimationManager::StartAnim(light_kicks.at(idx), pred);
+		const auto& trigger = light_kicks.at(idx);
+		LogStompKickAnimation(pred, trigger);
+		AnimationManager::StartAnim(trigger, pred);
 	}
 
 	void Do_HeavyKick(Actor* a_Performer) {
 		int idx = RandomIntWeighted(10, 10, 10, 10);
-		AnimationManager::StartAnim(heavy_kicks.at(idx), a_Performer);
+		const auto& trigger = heavy_kicks.at(idx);
+		LogStompKickAnimation(a_Performer, trigger);
+		AnimationManager::StartAnim(trigger, a_Performer);
 	}
 
 	void Do_LightSwipe(Actor* a_Performer) {
 		int idx = RandomIntWeighted(10, 10);
-		AnimationManager::StartAnim(light_kicks.at(idx), a_Performer);
+		const auto& trigger = light_kicks.at(idx);
+		LogStompKickAnimation(a_Performer, trigger);
+		AnimationManager::StartAnim(trigger, a_Performer);
 	}
 
 	void Do_HeavySwipe(Actor* a_Performer) {
 		int idx = RandomIntWeighted(10, 10);
-		AnimationManager::StartAnim(heavy_kicks.at(idx), a_Performer);
+		const auto& trigger = heavy_kicks.at(idx);
+		LogStompKickAnimation(a_Performer, trigger);
+		AnimationManager::StartAnim(trigger, a_Performer);
 	}
 
 	void Do_StrongStomp(Actor* a_Performer, Actor* a_Prey) {
@@ -110,8 +226,10 @@ namespace {
 		const std::string_view StompType_L = UnderStomp ? "UnderStompStrongLeft" : "StrongStompLeft";
 
 		if (!Left) {
+			LogStompKickAnimation(a_Performer, StompType_R);
 			AnimationManager::StartAnim(StompType_R, a_Performer);
 		} else {
+			LogStompKickAnimation(a_Performer, StompType_L);
 			AnimationManager::StartAnim(StompType_L, a_Performer);
 		}
 	}
@@ -124,8 +242,10 @@ namespace {
 		const std::string_view StompType_L = UnderStomp ? "UnderStompLeft" : "StompLeft";
 
 		if (!Left) {
+			LogStompKickAnimation(a_Performer, StompType_R);
 			AnimationManager::StartAnim(StompType_R, a_Performer);
 		} else {
+			LogStompKickAnimation(a_Performer, StompType_L);
 			AnimationManager::StartAnim(StompType_L, a_Performer);
 		}
 	}
@@ -138,8 +258,10 @@ namespace {
 
 		Utils_UpdateHighHeelBlend(a_Performer, false);
 		if (!Left) {
+			LogStompKickAnimation(a_Performer, TrampleType_R);
 			AnimationManager::StartAnim(TrampleType_R, a_Performer);
 		} else {
+			LogStompKickAnimation(a_Performer, TrampleType_L);
 			AnimationManager::StartAnim(TrampleType_L, a_Performer);
 		}
 	}
@@ -154,20 +276,56 @@ namespace GTS {
 
 		auto CharacterController = a_Pred->GetCharController();
 		if (!CharacterController) {
+			LogStompKickReject(a_Pred, nullptr, "no_character_controller");
 			return {};
 		}
 
-		auto preys = SelectTargetsInFront(a_Pred, a_PotentialPrey, a_PotentialPrey.size(), STOMP_ANGLE, true, [a_Pred](auto prey) {
-			return CanStomp(a_Pred, prey);
+		std::size_t rangeAndSizePassCount = 0;
+		auto preys = SelectTargetsInFront(a_Pred, a_PotentialPrey, a_PotentialPrey.size(), STOMP_ANGLE, true, [a_Pred, &rangeAndSizePassCount](auto prey) {
+			const bool canStomp = CanStomp(a_Pred, prey);
+			if (canStomp) {
+				++rangeAndSizePassCount;
+			}
+			return canStomp;
 		});
-		return GetMaxActionableTinyCount(a_Pred, preys);
+		auto finalPreys = GetMaxActionableTinyCount(a_Pred, preys);
+
+		if (ShouldLogStompKickAI(a_Pred)) {
+			logger::info(
+				"[AI StompKick] filter result pred={}({:08X}) potential={} range_size_pass={} front_cone_selected={} final={} coneAngle={} baseDistance={} minSizeDiff={}",
+				GetActorLogName(a_Pred),
+				a_Pred->formID,
+				a_PotentialPrey.size(),
+				rangeAndSizePassCount,
+				preys.size(),
+				finalPreys.size(),
+				STOMP_ANGLE,
+				MINIMUM_STOMP_DISTANCE,
+				MINIMUM_STOMP_SCALE_RATIO
+			);
+		}
+
+		return finalPreys;
 	}
 
 
 
 	void StompAI_Start(Actor* a_Performer, Actor* a_Prey) {
 
-		switch (RandomIntWeighted(10,10,10)) {
+		const int stompType = RandomIntWeighted(10,10,10);
+		if (ShouldLogStompKickAI(a_Performer)) {
+			logger::info(
+				"[AI StompKick] start stomp pred={}({:08X}) prey={}({:08X}) roll={} meaning={}",
+				GetActorLogName(a_Performer),
+				a_Performer ? a_Performer->formID : 0,
+				GetActorLogName(a_Prey),
+				a_Prey ? a_Prey->formID : 0,
+				stompType,
+				stompType == 0 ? "light_stomp" : (stompType == 1 ? "strong_stomp" : "trample_or_light_if_sneak_crawl")
+			);
+		}
+
+		switch (stompType) {
 
 			case 0: {
 				Do_LightStomp(a_Performer, a_Prey);
@@ -195,7 +353,19 @@ namespace GTS {
 		Utils_UpdateHighHeelBlend(a_Performer, false);
 		const bool Crawling = AnimationVars::Crawl::IsCrawling(a_Performer);
 
-		switch (RandomIntWeighted(10, 10)) {
+		const int kickType = RandomIntWeighted(10, 10);
+		if (ShouldLogStompKickAI(a_Performer)) {
+			logger::info(
+				"[AI StompKick] start kick_swipe pred={}({:08X}) roll={} crawling={} meaning={}",
+				GetActorLogName(a_Performer),
+				a_Performer ? a_Performer->formID : 0,
+				kickType,
+				Crawling,
+				kickType == 0 ? "light" : "heavy"
+			);
+		}
+
+		switch (kickType) {
 
 			case 0: {
 

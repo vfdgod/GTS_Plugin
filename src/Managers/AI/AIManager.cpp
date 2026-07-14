@@ -18,6 +18,8 @@
 #include "Managers/Animation/Controllers/VoreController.hpp"
 #include "Managers/Damage/TinyCalamity.hpp"
 
+#include <string_view>
+
 using namespace GTS;
 
 namespace {
@@ -35,6 +37,46 @@ namespace {
 		kNone,
 		kTotal
 	};
+
+	bool ShouldLogActionAI(Actor* a_Actor) {
+		return a_Actor && (a_Actor->IsPlayerRef() || IsTeammate(a_Actor));
+	}
+
+	const char* GetActorLogName(Actor* a_Actor) {
+		if (!a_Actor) {
+			return "<null>";
+		}
+		return a_Actor->GetDisplayFullName();
+	}
+
+	std::string_view ActionTypeName(ActionType a_Action) {
+		switch (a_Action) {
+			case ActionType::kVore:
+				return "Vore";
+			case ActionType::kDevourment:
+				return "Devourment";
+			case ActionType::kStomps:
+				return "Stomps";
+			case ActionType::kKicks:
+				return "Kicks";
+			case ActionType::kThighS:
+				return "ThighSandwich";
+			case ActionType::kThighC:
+				return "ThighCrush";
+			case ActionType::kButt:
+				return "ButtCrush";
+			case ActionType::kHug:
+				return "Hug";
+			case ActionType::kGrab:
+				return "Grab";
+			case ActionType::kNone:
+				return "None";
+			case ActionType::kTotal:
+				return "Total";
+			default:
+				return "Unknown";
+		}
+	}
 
 	//Set Reset attack blocking based on if we have a list of prey
 	void HandleAttackBlocking(Actor* a_Performer, const std::vector<Actor*>& a_ValidPreyList) {
@@ -366,6 +408,17 @@ namespace GTS {
 
 		const auto PreyList = FindValidPrey(a_Performer, a_PotentialPrey);
 		if (PreyList.empty()) {
+			if (ShouldLogActionAI(a_Performer)) {
+				logger::info(
+					"[AI Action] no valid prey performer={}({:08X}) potentialPrey={} hostileOnly={} allowPlayer={} allowFollowers={}",
+					GetActorLogName(a_Performer),
+					a_Performer->formID,
+					a_PotentialPrey.size(),
+					AISettings.bHostileOnly,
+					AISettings.bAllowPlayer,
+					AISettings.bAllowFollowers
+				);
+			}
 			return false;
 		}
 
@@ -480,7 +533,36 @@ namespace GTS {
 		const std::vector<Actor*> CombinedList = Temp;
 		HandleAttackBlocking(a_Performer, CombinedList);
 
-		switch (CalculateProbability(StartableActions)) {
+		const ActionType SelectedAction = CalculateProbability(StartableActions);
+		if (ShouldLogActionAI(a_Performer)) {
+			logger::info(
+				"[AI Action] summary performer={}({:08X}) potentialPrey={} validPrey={} candidates[vore={},devourment={},stompKick={},sandwich={},thighCrush={},butt={},hug={},grab={}] combined={} startable={} selected={} stompEnabled={} stompProb={:.0f} kickEnabled={} kickProb={:.0f} disableAttacks={} alwaysDisableAttacks={} followersGTOnly={}",
+				GetActorLogName(a_Performer),
+				a_Performer->formID,
+				a_PotentialPrey.size(),
+				PreyList.size(),
+				CanVore.size(),
+				CanDVVore.size(),
+				CanStompKickSwipe.size(),
+				CanThighSandwich.size(),
+				CanThighCrush.size(),
+				CanButtCrush.size(),
+				CanHug.size(),
+				CanGrab.size(),
+				CombinedList.size(),
+				StartableActions.size(),
+				ActionTypeName(SelectedAction),
+				AISettings.Stomp.bEnableAction,
+				AISettings.Stomp.fProbability,
+				AISettings.KickSwipe.bEnableAction,
+				AISettings.KickSwipe.fProbability,
+				AISettings.bDisableAttacks,
+				AISettings.bAlwaysDisableAttacks,
+				AISettings.bFollowersGTOnly
+			);
+		}
+
+		switch (SelectedAction) {
 
 			case ActionType::kVore: {
 
