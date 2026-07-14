@@ -186,6 +186,7 @@ struct SettingsAI_t {
     bool bDisableAttacks       = true;
     bool bAlwaysDisableAttacks = false;
     bool bFollowersGTOnly      = false;
+    bool bStompKickAutoAimFix  = false;
     bool bSlowMovementDown     = true;
     bool bSlowRotationDown     = true;
     bool bRecordBoneSpeedData  = false;

@@ -732,8 +732,13 @@ namespace GTS {
 			PSString T7 = "搜索目标的基础半径。实际距离会再乘以 1.6 倍和玩家当前体型。";
 			PSString T8 = "只有玩家与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。\n"
 			              "这个值只影响辅助吸附，不等于踩爆阈值；普通踩爆通常还需要约 10x 体型差。";
+			PSString T9 = "启用后，AI 踩踏/踢击候选会使用 AutoAim 的左右脚范围判断目标，\n"
+			              "不再只依赖角色中心点距离和前方锥形。\n"
+			              "主要用于修复随从已经站到目标脚边，却因为中心点距离过大而来回转圈、不踩踏的问题。\n"
+			              "关闭后恢复原始 AI 候选判定。";
 
 			if (ImGui::CollapsingHeader("踩踏辅助", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("AI 修复", &Config::AI.bStompKickAutoAimFix, T9);
 				ImGuiEx::CheckBox("启用踩踏辅助", &Config::Advanced.bStompAssist, T0);
 				ImGuiEx::CheckBox("普通踩踏", &Config::Advanced.bStompAssistNormal, T1, !Config::Advanced.bStompAssist);
 				ImGui::SameLine();

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <string_view>
+#include <utility>
 
 using namespace GTS;
 
@@ -136,7 +137,7 @@ namespace {
 		return true;
 	}
 
-	bool CanStomp(Actor* a_Pred, Actor* a_Prey) {
+	bool CanStomp(Actor* a_Pred, Actor* a_Prey, bool a_UseAutoAimFootFix) {
 
 		if (!a_Pred || !a_Prey) {
 			LogStompKickReject(a_Pred, a_Prey, "null_actor");
@@ -181,6 +182,11 @@ namespace {
 
 		if (prey_distance <= (MINIMUM_STOMP_DISTANCE * PredScale * bonus) && SizeDiff > MINIMUM_STOMP_SCALE_RATIO) { // We don't want the Stomp to be too close
 			LogStompKickCandidate(a_Pred, a_Prey, "pass_range_size_before_front_cone", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
+			return true;
+		}
+
+		if (a_UseAutoAimFootFix && SizeDiff > MINIMUM_STOMP_SCALE_RATIO && AutoAim_Foot_CanTarget(a_Pred, a_Prey, true)) {
+			LogStompKickCandidate(a_Pred, a_Prey, "pass_autoaim_foot_before_selection", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
 			return true;
 		}
 
@@ -280,19 +286,44 @@ namespace GTS {
 			return {};
 		}
 
+		const bool useAutoAimFootFix = Config::AI.bStompKickAutoAimFix;
 		std::size_t rangeAndSizePassCount = 0;
-		auto preys = SelectTargetsInFront(a_Pred, a_PotentialPrey, a_PotentialPrey.size(), STOMP_ANGLE, true, [a_Pred, &rangeAndSizePassCount](auto prey) {
-			const bool canStomp = CanStomp(a_Pred, prey);
-			if (canStomp) {
+		std::vector<Actor*> preys;
+
+		if (useAutoAimFootFix) {
+			std::vector<std::pair<Actor*, float>> candidates;
+			candidates.reserve(a_PotentialPrey.size());
+
+			for (auto prey : a_PotentialPrey) {
+				if (!CanStomp(a_Pred, prey, true)) {
+					continue;
+				}
+
 				++rangeAndSizePassCount;
+				const auto preyOffset = prey->GetPosition() - a_Pred->GetPosition();
+				candidates.emplace_back(prey, preyOffset.Length());
 			}
-			return canStomp;
-		});
+
+			std::ranges::sort(candidates, std::ranges::less{}, &std::pair<Actor*, float>::second);
+			preys.reserve(candidates.size());
+			for (const auto& candidate : candidates) {
+				preys.push_back(candidate.first);
+			}
+		}
+		else {
+			preys = SelectTargetsInFront(a_Pred, a_PotentialPrey, a_PotentialPrey.size(), STOMP_ANGLE, true, [a_Pred, &rangeAndSizePassCount](auto prey) {
+				const bool canStomp = CanStomp(a_Pred, prey, false);
+				if (canStomp) {
+					++rangeAndSizePassCount;
+				}
+				return canStomp;
+			});
+		}
 		auto finalPreys = GetMaxActionableTinyCount(a_Pred, preys);
 
 		if (ShouldLogStompKickAI(a_Pred)) {
 			logger::info(
-				"[AI StompKick] filter result pred={}({:08X}) potential={} range_size_pass={} front_cone_selected={} final={} coneAngle={} baseDistance={} minSizeDiff={}",
+				"[AI StompKick] filter result pred={}({:08X}) potential={} range_size_pass={} position_selected={} final={} coneAngle={} baseDistance={} minSizeDiff={} autoAimFootFix={}",
 				GetActorLogName(a_Pred),
 				a_Pred->formID,
 				a_PotentialPrey.size(),
@@ -301,7 +332,8 @@ namespace GTS {
 				finalPreys.size(),
 				STOMP_ANGLE,
 				MINIMUM_STOMP_DISTANCE,
-				MINIMUM_STOMP_SCALE_RATIO
+				MINIMUM_STOMP_SCALE_RATIO,
+				useAutoAimFootFix
 			);
 		}
 
