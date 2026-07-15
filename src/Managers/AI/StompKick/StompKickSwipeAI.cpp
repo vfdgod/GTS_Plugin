@@ -138,7 +138,7 @@ namespace {
 		return true;
 	}
 
-	bool CanStomp(Actor* a_Pred, Actor* a_Prey, bool a_UseAutoAimFootFix) {
+	bool CanStomp(Actor* a_Pred, Actor* a_Prey, bool a_UseStompAssistFix) {
 
 		if (!a_Pred || !a_Prey) {
 			LogStompKickReject(a_Pred, a_Prey, "null_actor");
@@ -181,9 +181,9 @@ namespace {
 			return false;
 		}
 
-		// AI fix: nearby trigger uses Stomp Assist radius/size sliders (no facing cone / AutoAim).
-		// Hit quality comes from under-foot assist at animation start.
-		if (a_UseAutoAimFootFix) {
+		// AI stomp fix only: nearby trigger uses Stomp Assist radius/size (no facing cone).
+		// Kicks always use the classic distance/size path below + front cone filter.
+		if (a_UseStompAssistFix) {
 			const float assistDistance = GetStompAssistSearchDistance(a_Pred) * bonus;
 			const float assistSizeThreshold = GetStompAssistSizeThreshold();
 			const float checkDistance = assistDistance > 0.0f ? assistDistance : max_distance;
@@ -242,7 +242,7 @@ namespace {
 
 	void Do_StrongStomp(Actor* a_Performer, Actor* a_Prey) {
 		bool Left = AutoAim_SetUpDefaultSide(a_Performer);
-		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, a_Prey, Left, true);
+		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, Left, true);
 		const std::string_view StompType_R = UnderStomp ? "UnderStompStrongRight" : "StrongStompRight";
 		const std::string_view StompType_L = UnderStomp ? "UnderStompStrongLeft" : "StrongStompLeft";
 
@@ -264,7 +264,7 @@ namespace {
 	void Do_LightStomp(Actor* a_Performer, Actor* a_Prey) {
 		bool Left = AutoAim_SetUpDefaultSide(a_Performer);
 		Utils_UpdateHighHeelBlend(a_Performer, false);
-		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, a_Prey, Left);
+		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, Left);
 		const std::string_view StompType_R = UnderStomp ? "UnderStompRight" : "StompRight";
 		const std::string_view StompType_L = UnderStomp ? "UnderStompLeft" : "StompLeft";
 
@@ -285,7 +285,7 @@ namespace {
 
 	void Do_Tramples(Actor* a_Performer, Actor* a_Prey) {
 		bool Left = AutoAim_SetUpDefaultSide(a_Performer);
-		bool UnderTrample = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, a_Prey, Left);
+		bool UnderTrample = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, Left);
 		const std::string_view TrampleType_L = UnderTrample ? "UnderTrampleL" : "TrampleL";
 		const std::string_view TrampleType_R = UnderTrample ? "UnderTrampleR" : "TrampleR";
 
@@ -308,7 +308,7 @@ namespace {
 
 namespace GTS {
 
-	std::vector<Actor*> StompKickSwipeAI_FilterList(Actor* a_Pred, const std::vector<Actor*>& a_PotentialPrey) {
+	std::vector<Actor*> StompKickSwipeAI_FilterList(Actor* a_Pred, const std::vector<Actor*>& a_PotentialPrey, bool a_UseStompAssistFix) {
 		if (!a_Pred) {
 			return {};
 		}
@@ -319,11 +319,12 @@ namespace GTS {
 			return {};
 		}
 
-		const bool useAutoAimFootFix = Config::AI.bStompKickAutoAimFix;
+		// Only stomps may use assist-nearby when AI fix is on; kicks always pass false.
+		const bool useStompAssistFix = a_UseStompAssistFix && Config::AI.bStompKickAutoAimFix;
 		std::size_t rangeAndSizePassCount = 0;
 		std::vector<Actor*> preys;
 
-		if (useAutoAimFootFix) {
+		if (useStompAssistFix) {
 			std::vector<std::pair<Actor*, float>> candidates;
 			candidates.reserve(a_PotentialPrey.size());
 
@@ -356,7 +357,7 @@ namespace GTS {
 
 		if (ShouldLogStompKickAI(a_Pred)) {
 			logger::info(
-				"[AI StompKick] filter result pred={}({:08X}) potential={} range_size_pass={} position_selected={} final={} coneAngle={} baseDistance={} minSizeDiff={} autoAimFootFix={} assistRadius={:.1f} assistSize={:.1f}",
+				"[AI StompKick] filter result pred={}({:08X}) potential={} range_size_pass={} position_selected={} final={} coneAngle={} baseDistance={} minSizeDiff={} stompAssistFix={} assistRadius={:.1f} assistSize={:.1f}",
 				GetActorLogName(a_Pred),
 				a_Pred->formID,
 				a_PotentialPrey.size(),
@@ -366,9 +367,9 @@ namespace GTS {
 				STOMP_ANGLE,
 				MINIMUM_STOMP_DISTANCE,
 				MINIMUM_STOMP_SCALE_RATIO,
-				useAutoAimFootFix,
-				useAutoAimFootFix ? GetStompAssistSearchDistance(a_Pred) : 0.0f,
-				useAutoAimFootFix ? GetStompAssistSizeThreshold() : MINIMUM_STOMP_SCALE_RATIO
+				useStompAssistFix,
+				useStompAssistFix ? GetStompAssistSearchDistance(a_Pred) : 0.0f,
+				useStompAssistFix ? GetStompAssistSizeThreshold() : MINIMUM_STOMP_SCALE_RATIO
 			);
 		}
 

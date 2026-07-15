@@ -1,5 +1,6 @@
 #include "Managers/AI/AIManager.hpp"
 
+#include <algorithm>
 #include <limits>
 
 #include "Grab/GrabAI.hpp"
@@ -448,19 +449,33 @@ namespace GTS {
 
 		//----------- STOMP
 		//----------- KICK/SWIPE
+		// Stomp and kick share distance/size checks historically, but AI stomp assist fix
+		// must not widen kick candidacy. Filter them separately when either action is enabled.
+
+		std::vector<Actor*> CanStomp = {};
+		std::vector<Actor*> CanKickSwipe = {};
 
 		if (AISettings.Stomp.bEnableAction || AISettings.KickSwipe.bEnableAction) {
-			CanStompKickSwipe = StompKickSwipeAI_FilterList(a_Performer, PreyList);
-
 			if (AISettings.Stomp.bEnableAction) {
-				if (!CanStompKickSwipe.empty()) {
+				CanStomp = StompKickSwipeAI_FilterList(a_Performer, PreyList, true);
+				if (!CanStomp.empty()) {
 					StartableActions.emplace(ActionType::kStomps, static_cast<int>(AISettings.Stomp.fProbability));
 				}
 			}
 
 			if (AISettings.KickSwipe.bEnableAction) {
-				if (!CanStompKickSwipe.empty()) {
+				// Kicks always use classic front-cone candidacy (a_UseStompAssistFix=false).
+				CanKickSwipe = StompKickSwipeAI_FilterList(a_Performer, PreyList, false);
+				if (!CanKickSwipe.empty()) {
 					StartableActions.emplace(ActionType::kKicks, static_cast<int>(AISettings.KickSwipe.fProbability));
+				}
+			}
+
+			// Keep a combined list for attack blocking / logging compatibility.
+			CanStompKickSwipe = CanStomp;
+			for (Actor* prey : CanKickSwipe) {
+				if (std::find(CanStompKickSwipe.begin(), CanStompKickSwipe.end(), prey) == CanStompKickSwipe.end()) {
+					CanStompKickSwipe.push_back(prey);
 				}
 			}
 		}
@@ -543,13 +558,15 @@ namespace GTS {
 		const ActionType SelectedAction = CalculateProbability(StartableActions, allowNoneSelection);
 		if (ShouldLogActionAI(a_Performer)) {
 			logger::info(
-				"[AI Action] summary performer={}({:08X}) potentialPrey={} validPrey={} candidates[vore={},devourment={},stompKick={},sandwich={},thighCrush={},butt={},hug={},grab={}] combined={} startable={} selected={} stompEnabled={} stompProb={:.0f} kickEnabled={} kickProb={:.0f} disableAttacks={} alwaysDisableAttacks={} followersGTOnly={} autoAimFootFix={} noneAllowed={}",
+				"[AI Action] summary performer={}({:08X}) potentialPrey={} validPrey={} candidates[vore={},devourment={},stomp={},kick={},stompKick={},sandwich={},thighCrush={},butt={},hug={},grab={}] combined={} startable={} selected={} stompEnabled={} stompProb={:.0f} kickEnabled={} kickProb={:.0f} disableAttacks={} alwaysDisableAttacks={} followersGTOnly={} stompAssistFix={} noneAllowed={}",
 				GetActorLogName(a_Performer),
 				a_Performer->formID,
 				a_PotentialPrey.size(),
 				PreyList.size(),
 				CanVore.size(),
 				CanDVVore.size(),
+				CanStomp.size(),
+				CanKickSwipe.size(),
 				CanStompKickSwipe.size(),
 				CanThighSandwich.size(),
 				CanThighCrush.size(),
@@ -596,8 +613,8 @@ namespace GTS {
 
 				logger::trace("AI Starting kStomps Action");
 
-				if (!CanStompKickSwipe.empty()) {
-					StompAI_Start(a_Performer, CanStompKickSwipe.front());
+				if (!CanStomp.empty()) {
+					StompAI_Start(a_Performer, CanStomp.front());
 				}
 
 				return true;
@@ -606,7 +623,7 @@ namespace GTS {
 
 				logger::trace("AI Starting kKicks Action");
 
-				if (!CanStompKickSwipe.empty()) {
+				if (!CanKickSwipe.empty()) {
 					KickSwipeAI_Start(a_Performer);
 				}
 

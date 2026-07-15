@@ -5,7 +5,6 @@
 #include "Config/Config.hpp"
 
 #include <algorithm>
-#include <cfloat>
 #include <cmath>
 
 namespace {
@@ -51,54 +50,6 @@ namespace {
         // Allows to auto-aim if enemy is a bit behind
     }
 
-    bool IsTargetNearPointPair(Actor* giant, Actor* target, const NiPoint3& pointL, const NiPoint3& pointR, float max_distance, bool use_rhomb, bool& left_foot) {
-        if (!giant || !target || giant == target) {
-            return false;
-        }
-
-        const float yaw = giant->data.angle.z;
-        const NiPoint3 forward(std::sin(yaw), std::cos(yaw), 0.0f);
-        const NiPoint3 right(forward.y, -forward.x, 0.0f);
-
-        NiPoint3 targetPos = target->GetPosition();
-        targetPos.z = 0.0f;
-
-        auto EvaluatePoint = [&](const NiPoint3& point) {
-            NiPoint3 delta = targetPos - point;
-            delta.z = 0.0f;
-
-            if (use_rhomb) {
-                const float localForward = delta.x * forward.x + delta.y * forward.y;
-                const float localRight = delta.x * right.x + delta.y * right.y;
-                const float diamondDistance = std::abs(localForward) + std::abs(localRight);
-                return diamondDistance <= max_distance ? diamondDistance : FLT_MAX;
-            }
-
-            const float distanceSquared = delta.x * delta.x + delta.y * delta.y;
-            return distanceSquared <= max_distance * max_distance ? distanceSquared : FLT_MAX;
-        };
-
-        const float scoreL = EvaluatePoint(pointL);
-        const float scoreR = EvaluatePoint(pointR);
-        const bool useLeft = scoreL <= scoreR;
-        const float score = useLeft ? scoreL : scoreR;
-        if (score == FLT_MAX) {
-            return false;
-        }
-
-        left_foot = useLeft;
-        NiPoint3 footPos = left_foot ? pointL : pointR;
-        footPos.z = 0.0f;
-
-        float x = 0.0f;
-        float y = 0.0f;
-        float dx = 0.0f;
-        float dy = 0.0f;
-        float final_distance = 0.0f;
-        CalculateDirectionalBlend2D(giant, footPos, targetPos, max_distance, x, y, dx, dy, final_distance);
-
-        return ShouldAutoAim(final_distance, max_distance, dx);
-    }
 }
 
 namespace GTS {
@@ -362,135 +313,6 @@ namespace GTS {
             AnimationVars::Stomp::SetUnderStompBlend_X(giant, AutoAim ? x : rng); // We added new behavior variables, needs new Behaviors in order to work
             AnimationVars::Stomp::SetUnderStompBlend_Y(giant, AutoAim ? y : rng); // We added new behavior variables, needs new Behaviors in order to work
 
-            return AutoAim;
-        }
-
-        bool AutoAim_Foot_CanTarget(Actor* giant, Actor* target, bool include_far_stomp) {
-            if (!giant || !target) {
-                return false;
-            }
-            if (giant->IsPlayerRef() && (!Config::AutoAim.bEnableAutoAim || IsFreeCameraEnabled())) {
-                return false;
-            }
-
-            bool left_foot = false;
-            const float scale = get_visual_scale(giant);
-            const float foot_offset = Config::AutoAim.fAutoAim_Foot_OffsetDistance * scale;
-
-            const float close_distance = Config::AutoAim.fAutoAim_Range_Stomp * scale;
-            const NiPoint3 closePosL = GetPresetAimPosition(giant, true, foot_offset, 0.0f);
-            const NiPoint3 closePosR = GetPresetAimPosition(giant, false, foot_offset, 0.0f);
-            if (IsTargetNearPointPair(giant, target, closePosL, closePosR, close_distance, Config::AutoAim.bUseRhombShape, left_foot)) {
-                return true;
-            }
-
-            if (!include_far_stomp) {
-                return false;
-            }
-
-            const float far_distance = std::max(Config::AutoAim.fAutoAim_Range_FarStomp, Config::AutoAim.fAutoAim_Range_FarStomp_Strong) * scale;
-            const float far_offset = Config::AutoAim.fAutoAim_Foot_OffsetDistance_FarStomp * scale;
-            const NiPoint3 farPosL = GetPresetAimPosition(giant, true, foot_offset, far_offset);
-            const NiPoint3 farPosR = GetPresetAimPosition(giant, false, foot_offset, far_offset);
-            return IsTargetNearPointPair(giant, target, farPosL, farPosR, far_distance, true, left_foot);
-        }
-
-        bool AutoAim_Foot_Directional_OnTarget(Actor* giant, Actor* target, bool& left_foot, bool forward_only) {
-            if (!giant || !target) {
-                return false;
-            }
-            if (giant->IsPlayerRef() && IsFreeCameraEnabled()) {
-                return false;
-            }
-
-            const float scale = get_visual_scale(giant);
-            const float max_distance = Config::AutoAim.fAutoAim_Range_Stomp * scale;
-            const float foot_offset = Config::AutoAim.fAutoAim_Foot_OffsetDistance * scale;
-
-            const NiPoint3 footPos_L = GetPresetAimPosition(giant, true, foot_offset, 0.0f);
-            const NiPoint3 footPos_R = GetPresetAimPosition(giant, false, foot_offset, 0.0f);
-            if (!IsTargetNearPointPair(giant, target, footPos_L, footPos_R, max_distance, Config::AutoAim.bUseRhombShape, left_foot)) {
-                RandomizeBlend_Debug_FlipFootBool(giant, footPos_L, footPos_R, max_distance, left_foot, Close_Stomp_Color);
-                return false;
-            }
-
-            NiPoint3 victimPos = target->GetPosition();
-            NiPoint3 footPos = left_foot ? footPos_L : footPos_R;
-            DrawDebugSpheres(giant, footPos, target, max_distance, Close_Stomp_Color);
-
-            footPos.z = 0.0f;
-            victimPos.z = 0.0f;
-
-            float x = 0.0f;
-            float y = 0.0f;
-            float dx = 0.0f;
-            float dy = 0.0f;
-            float final_distance = 0.0f;
-
-            if (forward_only) {
-                CalculateForwardBlend(giant, footPos, victimPos, max_distance, x, dx, final_distance);
-            } else {
-                CalculateDirectionalBlend2D(giant, footPos, victimPos, max_distance, x, y, dx, dy, final_distance);
-            }
-
-            x = std::clamp(x * Config::AutoAim.fAutoAim_AimMagnitudeMultiplier, -1.0f, 1.0f);
-            y = std::clamp(y * Config::AutoAim.fAutoAim_AimMagnitudeMultiplier, -1.0f, 1.0f);
-
-            const auto rng = RandomFloat(0.0f, Config::AutoAim.fAutoAim_NoHitValueRandomRange);
-            const bool AutoAim = ShouldAutoAim(final_distance, max_distance, dx);
-
-            AnimationVars::Stomp::SetUnderStompBlend_Legacy(giant, AutoAim ? x : rng);
-            AnimationVars::Stomp::SetUnderStompBlend_X(giant, AutoAim ? x : rng);
-            AnimationVars::Stomp::SetUnderStompBlend_Y(giant, AutoAim ? y : rng);
-            return AutoAim;
-        }
-
-        bool AutoAim_Foot_Directional_FarStomp_OnTarget(Actor* giant, Actor* target, bool& left_foot, bool strong_stomp) {
-            if (!giant || !target) {
-                return false;
-            }
-            if (giant->IsPlayerRef() && IsFreeCameraEnabled()) {
-                return false;
-            }
-
-            const float scale = get_visual_scale(giant);
-            float max_distance = Config::AutoAim.fAutoAim_Range_FarStomp * scale;
-            const float foot_offset = Config::AutoAim.fAutoAim_Foot_OffsetDistance * scale;
-            const float foot_offset_far = Config::AutoAim.fAutoAim_Foot_OffsetDistance_FarStomp * scale;
-            if (strong_stomp) {
-                max_distance = Config::AutoAim.fAutoAim_Range_FarStomp_Strong * scale;
-            }
-
-            const NiPoint3 footPos_L = GetPresetAimPosition(giant, true, foot_offset, foot_offset_far);
-            const NiPoint3 footPos_R = GetPresetAimPosition(giant, false, foot_offset, foot_offset_far);
-            if (!IsTargetNearPointPair(giant, target, footPos_L, footPos_R, max_distance, true, left_foot)) {
-                RandomizeBlend_Debug_FlipFootBool(giant, footPos_L, footPos_R, max_distance, left_foot, Far_Stomp_Color);
-                return false;
-            }
-
-            NiPoint3 victimPos = target->GetPosition();
-            NiPoint3 footPos = left_foot ? footPos_L : footPos_R;
-            DrawDebugSpheres(giant, footPos, target, max_distance, Far_Stomp_Color);
-
-            footPos.z = 0.0f;
-            victimPos.z = 0.0f;
-
-            float x = 0.0f;
-            float y = 0.0f;
-            float dx = 0.0f;
-            float dy = 0.0f;
-            float final_distance = 0.0f;
-            CalculateDirectionalBlend2D(giant, footPos, victimPos, max_distance, x, y, dx, dy, final_distance);
-
-            x = std::clamp(x * Config::AutoAim.fAutoAim_AimMagnitudeMultiplier, -1.0f, 1.0f);
-            y = std::clamp(y * Config::AutoAim.fAutoAim_AimMagnitudeMultiplier, -1.0f, 1.0f);
-
-            const auto rng = RandomFloat(0.0f, Config::AutoAim.fAutoAim_NoHitValueRandomRange);
-            const bool AutoAim = ShouldAutoAim(final_distance, max_distance, dx);
-
-            AnimationVars::Stomp::SetUnderStompBlend_Legacy(giant, AutoAim ? x : rng);
-            AnimationVars::Stomp::SetUnderStompBlend_X(giant, AutoAim ? x : rng);
-            AnimationVars::Stomp::SetUnderStompBlend_Y(giant, AutoAim ? y : rng);
             return AutoAim;
         }
 
