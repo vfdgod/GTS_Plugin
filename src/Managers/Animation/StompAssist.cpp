@@ -196,13 +196,56 @@ namespace GTS {
 		return actor && IsAssisted(actor->formID);
 	}
 
-	void TryStompAssist(Actor* giant, bool right, StompAssistAction action) {
-		if (!giant || !giant->IsPlayerRef() || !Config::Advanced.bStompAssist || !IsActionEnabled(action)) {
+	float GetStompAssistSearchDistance(Actor* giant) {
+		if (!giant) {
+			return 0.0f;
+		}
+		constexpr float SEARCH_RADIUS_MULT = 1.6f;
+		return std::max(0.0f, Config::Advanced.fStompAssistSearchRadius) * SEARCH_RADIUS_MULT * get_visual_scale(giant);
+	}
+
+	float GetStompAssistSizeThreshold() {
+		return std::max(1.0f, Config::Advanced.fStompAssistSizeThreshold);
+	}
+
+	void TryStompAssist(Actor* giant, bool right, StompAssistAction action, Actor* preferredTarget) {
+		if (!giant || !IsActionEnabled(action)) {
+			return;
+		}
+
+		// Player: needs the global assist toggle.
+		// AI/teammate: allow when AI stomp fix is on, so AI can lock the selected prey underfoot.
+		const bool allowPlayer = giant->IsPlayerRef() && Config::Advanced.bStompAssist;
+		const bool allowAI = !giant->IsPlayerRef() && Config::AI.bStompKickAutoAimFix && preferredTarget;
+		if (!allowPlayer && !allowAI) {
 			return;
 		}
 
 		const auto footPoints = GetFootCoordinates(giant, right, false);
 		if (footPoints.empty()) {
+			return;
+		}
+
+		const float duration = std::clamp(Config::Advanced.fStompAssistDuration, 0.2f, 2.0f);
+
+		// AI path: only assist the already-selected prey.
+		if (preferredTarget) {
+			const auto transient = Transient::GetActorData(preferredTarget);
+			const bool blockedState =
+				IsAssisted(preferredTarget->formID) ||
+				IsBeingHeld(giant, preferredTarget) ||
+				(transient && transient->AboutToBeEaten) ||
+				IsBetweenBreasts(preferredTarget) ||
+				AnimationVars::Tiny::IsBeingGrinded(preferredTarget) ||
+				AnimationVars::Tiny::IsBeingHugged(preferredTarget) ||
+				AnimationVars::Tiny::IsInThighs(preferredTarget) ||
+				AnimationVars::Tiny::IsUnderButt(preferredTarget);
+			// AI may still assist crushable corpses selected by stomp AI; skip other locked states.
+			if (blockedState) {
+				return;
+			}
+
+			HoldTargetUnderFoot(giant, preferredTarget, right, duration);
 			return;
 		}
 
@@ -214,7 +257,6 @@ namespace GTS {
 		const std::size_t maxTargets = Config::Advanced.bStompAssistMultiTarget
 			? std::clamp<std::size_t>(Config::Advanced.iStompAssistMaxTargets, 1, 8)
 			: 1;
-		const float duration = std::clamp(Config::Advanced.fStompAssistDuration, 0.2f, 2.0f);
 
 		std::size_t attached = 0;
 		for (const auto& target : targets) {

@@ -729,27 +729,30 @@ namespace GTS {
 			PSString T4 = "开启后，一次踩踏可预吸附多个目标；关闭时只吸附最近目标。";
 			PSString T5 = "允许多目标时，一次踩踏最多预吸附多少目标。";
 			PSString T6 = "预吸附后阻止目标移动的持续时间。";
-			PSString T7 = "搜索目标的基础半径。实际距离会再乘以 1.6 倍和玩家当前体型。";
-			PSString T8 = "只有玩家与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。\n"
-			              "这个值只影响辅助吸附，不等于踩爆阈值；普通踩爆通常还需要约 10x 体型差。";
-			PSString T9 = "启用后，AI 踩踏/踢击候选会使用 AutoAim 的左右脚范围判断目标，\n"
-			              "不再只依赖角色中心点距离和前方锥形。\n"
-			              "主要用于修复随从已经站到目标脚边，却因为中心点距离过大而来回转圈、不踩踏的问题。\n"
+			PSString T7 = "搜索目标的基础半径。实际距离会再乘以 1.6 倍和当前体型。\n"
+			              "开启「AI 修复」后，AI 踩踏/踢击附近触发也使用这个半径。";
+			PSString T8 = "只有与目标的体型差达到该倍率时，目标才会被视为适合踩踏辅助。\n"
+			              "开启「AI 修复」后，AI 附近触发也使用这个体型阈值。\n"
+			              "这个值不等于踩爆阈值；普通踩爆通常还需要约 10x 体型差。";
+			PSString T9 = "启用后，AI 踩踏/踢击改为按「踩踏辅助」的附近半径与体型阈值触发，\n"
+			              "不再依赖 AutoAim 脚部判定和前方锥形。\n"
+			              "启动踩踏时还会把已选目标预吸附到脚下，减少踩空。\n"
 			              "关闭后恢复原始 AI 候选判定。";
 
 			if (ImGui::CollapsingHeader("踩踏辅助", ImUtil::HeaderFlagsDefaultOpen)) {
 				ImGuiEx::CheckBox("AI 修复", &Config::AI.bStompKickAutoAimFix, T9);
 				ImGuiEx::CheckBox("启用踩踏辅助", &Config::Advanced.bStompAssist, T0);
-				ImGuiEx::CheckBox("普通踩踏", &Config::Advanced.bStompAssistNormal, T1, !Config::Advanced.bStompAssist);
+				const bool assistOrAI = Config::Advanced.bStompAssist || Config::AI.bStompKickAutoAimFix;
+				ImGuiEx::CheckBox("普通踩踏", &Config::Advanced.bStompAssistNormal, T1, !assistOrAI);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("重踩", &Config::Advanced.bStompAssistStrong, T2, !Config::Advanced.bStompAssist);
+				ImGuiEx::CheckBox("重踩", &Config::Advanced.bStompAssistStrong, T2, !assistOrAI);
 				ImGui::SameLine();
-				ImGuiEx::CheckBox("践踏", &Config::Advanced.bStompAssistTrample, T3, !Config::Advanced.bStompAssist);
+				ImGuiEx::CheckBox("践踏", &Config::Advanced.bStompAssistTrample, T3, !assistOrAI);
 				ImGuiEx::CheckBox("允许多目标", &Config::Advanced.bStompAssistMultiTarget, T4, !Config::Advanced.bStompAssist);
 				ImGuiEx::SliderU8("最大目标数量", &Config::Advanced.iStompAssistMaxTargets, 1, 8, T5, "%d", !Config::Advanced.bStompAssist || !Config::Advanced.bStompAssistMultiTarget);
-				ImGuiEx::SliderF("预吸附持续时间", &Config::Advanced.fStompAssistDuration, 0.2f, 2.0f, T6, "%.1f 秒", !Config::Advanced.bStompAssist);
-				ImGuiEx::SliderF("目标搜索半径", &Config::Advanced.fStompAssistSearchRadius, 8.0f, 120.0f, T7, "%.1f", !Config::Advanced.bStompAssist);
-				ImGuiEx::SliderF("目标体型阈值", &Config::Advanced.fStompAssistSizeThreshold, 1.5f, 20.0f, T8, "%.1fx", !Config::Advanced.bStompAssist);
+				ImGuiEx::SliderF("预吸附持续时间", &Config::Advanced.fStompAssistDuration, 0.2f, 2.0f, T6, "%.1f 秒", !assistOrAI);
+				ImGuiEx::SliderF("目标搜索半径", &Config::Advanced.fStompAssistSearchRadius, 8.0f, 120.0f, T7, "%.1f", !assistOrAI);
+				ImGuiEx::SliderF("目标体型阈值", &Config::Advanced.fStompAssistSizeThreshold, 1.5f, 20.0f, T8, "%.1fx", !assistOrAI);
 
 				ImGui::Spacing();
 			}
