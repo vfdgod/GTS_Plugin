@@ -125,6 +125,45 @@ namespace GTS {
         return Config::AutoAim.bPreventFarStomps ? true : CrosshairUnderstomp(giant);
     }
 
+    bool AnimationUnderStomp::AutoAim_And_DetermineStompType(Actor* giant, Actor* target, bool& left, bool strong_Attack) {
+        if (!target) {
+            return AutoAim_And_DetermineStompType(giant, left, strong_Attack);
+        }
+
+        const bool autoAim = Config::AutoAim.bEnableAutoAim;
+        if (giant->IsPlayerRef() && IsFreeCameraEnabled()) {
+            return false;
+        }
+
+        // AI already selected this prey; lock foot aim to that actor instead of re-scanning nearest targets.
+        if (autoAim || !giant->IsPlayerRef()) {
+            if (AutoAim_IsSneakingOrCrawling(giant)) {
+                if (strong_Attack && giant->IsSneaking() && AutoAim_Butt_TryButtSlam(giant, left)) {
+                    return true;
+                }
+                if (strong_Attack && AnimationVars::Crawl::IsCrawling(giant) && AutoAim_Butt_TryBreastSlam(giant, left)) {
+                    return true;
+                }
+                if (!AnimationVars::Crawl::IsCrawling(giant) && AutoAim_Foot_Directional_OnTarget(giant, target, left, false)) {
+                    return true;
+                }
+                if (AutoAim_Hand_TryHandAim(giant, left)) {
+                    return false;
+                }
+                return RandomBool();
+            }
+
+            if (AutoAim_Foot_Directional_OnTarget(giant, target, left, false)) {
+                return true;
+            }
+            if (AutoAim_Foot_Directional_FarStomp_OnTarget(giant, target, left, strong_Attack)) {
+                return false;
+            }
+        }
+
+        return Config::AutoAim.bPreventFarStomps ? true : CrosshairUnderstomp(giant);
+    }
+
     bool AnimationUnderStomp::CrosshairUnderstomp(Actor* giant) { // Should be player exclusive
         if (!giant->IsPlayerRef()) { // NPC's shouldn't be able to use it
             return false;

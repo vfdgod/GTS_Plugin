@@ -174,37 +174,36 @@ namespace {
 
 		float prey_distance = (a_Pred->GetPosition() - a_Prey->GetPosition()).Length();
 		float max_distance = MINIMUM_STOMP_DISTANCE * PredScale * bonus;
-		float actionable_distance = max_distance;
-		if (a_UseAutoAimFootFix) {
-			const float farStompAimRange = std::max(Config::AutoAim.fAutoAim_Range_FarStomp, Config::AutoAim.fAutoAim_Range_FarStomp_Strong) * PredScale;
-			actionable_distance += farStompAimRange;
-		}
-
 		float forward_angle = GetForwardAngleToTarget(a_Pred, a_Prey);
 		if (a_Pred->IsPlayerRef() && prey_distance <= (MINIMUM_STOMP_DISTANCE * PredScale * bonus) && SizeDiff < MINIMUM_STOMP_SCALE_RATIO) {
 			LogStompKickCandidate(a_Pred, a_Prey, "fail_player_size_diff", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
 			return false;
 		}
 
-		if (prey_distance <= (MINIMUM_STOMP_DISTANCE * PredScale * bonus) && SizeDiff > MINIMUM_STOMP_SCALE_RATIO) { // We don't want the Stomp to be too close
+		// With AutoAim foot fix, only start when the foot aim sphere can actually hold this target.
+		// This avoids "animation starts but stomp lands empty" from center-distance-only passes.
+		if (a_UseAutoAimFootFix) {
+			if (SizeDiff > MINIMUM_STOMP_SCALE_RATIO && AutoAim_Foot_CanTarget(a_Pred, a_Prey, true)) {
+				LogStompKickCandidate(a_Pred, a_Prey, "pass_autoaim_foot_before_selection", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
+				return true;
+			}
+
+			const std::string_view reason = SizeDiff <= MINIMUM_STOMP_SCALE_RATIO ?
+				(prey_distance > max_distance ? "fail_distance_and_size_diff" : "fail_size_diff") :
+				"fail_autoaim_foot";
+			LogStompKickCandidate(a_Pred, a_Prey, reason, PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
+			return false;
+		}
+
+		if (prey_distance <= (MINIMUM_STOMP_DISTANCE * PredScale * bonus) && SizeDiff > MINIMUM_STOMP_SCALE_RATIO) {
 			LogStompKickCandidate(a_Pred, a_Prey, "pass_range_size_before_front_cone", PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
 			return true;
 		}
 
-		if (a_UseAutoAimFootFix && SizeDiff > MINIMUM_STOMP_SCALE_RATIO && AutoAim_Foot_CanTarget(a_Pred, a_Prey, true)) {
-			LogStompKickCandidate(a_Pred, a_Prey, "pass_autoaim_foot_before_selection", PredScale, SizeDiff, prey_distance, actionable_distance, forward_angle);
-			return true;
-		}
-
-		if (a_UseAutoAimFootFix && prey_distance <= actionable_distance && SizeDiff > MINIMUM_STOMP_SCALE_RATIO) {
-			LogStompKickCandidate(a_Pred, a_Prey, "pass_autoaim_reach_before_selection", PredScale, SizeDiff, prey_distance, actionable_distance, forward_angle);
-			return true;
-		}
-
-		const std::string_view reason = prey_distance > actionable_distance && SizeDiff <= MINIMUM_STOMP_SCALE_RATIO ?
+		const std::string_view reason = prey_distance > max_distance && SizeDiff <= MINIMUM_STOMP_SCALE_RATIO ?
 			"fail_distance_and_size_diff" :
-			(prey_distance > actionable_distance ? "fail_distance" : "fail_size_diff");
-		LogStompKickCandidate(a_Pred, a_Prey, reason, PredScale, SizeDiff, prey_distance, actionable_distance, forward_angle);
+			(prey_distance > max_distance ? "fail_distance" : "fail_size_diff");
+		LogStompKickCandidate(a_Pred, a_Prey, reason, PredScale, SizeDiff, prey_distance, max_distance, forward_angle);
 		return false;
 	}
 
@@ -238,7 +237,7 @@ namespace {
 
 	void Do_StrongStomp(Actor* a_Performer, Actor* a_Prey) {
 		bool Left = AutoAim_SetUpDefaultSide(a_Performer);
-		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, Left, true);
+		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, a_Prey, Left, true);
 		const std::string_view StompType_R = UnderStomp ? "UnderStompStrongRight" : "StrongStompRight";
 		const std::string_view StompType_L = UnderStomp ? "UnderStompStrongLeft" : "StrongStompLeft";
 
@@ -254,7 +253,7 @@ namespace {
 	void Do_LightStomp(Actor* a_Performer, Actor* a_Prey) {
 		bool Left = AutoAim_SetUpDefaultSide(a_Performer);
 		Utils_UpdateHighHeelBlend(a_Performer, false);
-		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, Left);
+		const bool UnderStomp = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, a_Prey, Left);
 		const std::string_view StompType_R = UnderStomp ? "UnderStompRight" : "StompRight";
 		const std::string_view StompType_L = UnderStomp ? "UnderStompLeft" : "StompLeft";
 
@@ -269,7 +268,7 @@ namespace {
 
 	void Do_Tramples(Actor* a_Performer, Actor* a_Prey) {
 		bool Left = AutoAim_SetUpDefaultSide(a_Performer);
-		bool UnderTrample = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, Left);
+		bool UnderTrample = AnimationUnderStomp::AutoAim_And_DetermineStompType(a_Performer, a_Prey, Left);
 		const std::string_view TrampleType_L = UnderTrample ? "UnderTrampleL" : "TrampleL";
 		const std::string_view TrampleType_R = UnderTrample ? "UnderTrampleR" : "TrampleR";
 
