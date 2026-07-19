@@ -12,8 +12,7 @@
 
 #include "Magic/Effects/Common.hpp"
 #include "Scale/Scale.hpp"
-
-
+#include "Managers/Contact/ColliderUtils.hpp"
 
 #include "Utils/DeathReport.hpp"
 #include "Utils/MovementForce.hpp"

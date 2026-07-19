@@ -9,7 +9,13 @@
 
 
 namespace {
-	
+	bool AllowMovementEdits(RE::Actor* a_actor) {
+		if (a_actor) {
+			return !a_actor->IsPlayerRef() || GTS::Config::General.bAlterPlayerMaxSpeed;
+		}
+		return false;
+	}
+
 	void AdjustData(RE::Actor* a_actor, RE::Movement::TypeData* a_DataToEdit, bool a_refreshBaseline) {
 		if (!a_actor || !a_DataToEdit) {
 			return;
@@ -39,9 +45,10 @@ namespace {
 		}
 
 		const float scale = GTS::get_visual_scale(a_actor);
+		const bool IsPlayer = a_actor->IsPlayerRef() && GTS::Config::General.bAlterPlayerMaxSpeed;
 
-		constexpr float& START_CLAMP_SCALE = GTS::Config::General.fNPCMaxSpeedMultClampStartAt; // start lerp here
-		constexpr float& FULL_CLAMP_SCALE = GTS::Config::General.fNPCMaxSpeedMultClampMaxAt;   // fully clamped here
+		const float& START_CLAMP_SCALE = IsPlayer ? GTS::Config::General.fPlayerMaxSpeedMultClampStartAt : GTS::Config::General.fNPCMaxSpeedMultClampStartAt; // start lerp here
+		const float& FULL_CLAMP_SCALE =  IsPlayer ? GTS::Config::General.fPlayerMaxSpeedMultClampMaxAt : GTS::Config::General.fNPCMaxSpeedMultClampMaxAt;   // fully clamped here
 
 		// Interp factor: 0..1
 		float t = 0.0f;
@@ -56,7 +63,7 @@ namespace {
 		}
 
 		// Percent-based lerp ceiling (run-speed floor)
-		const float maxLerp = std::clamp(GTS::Config::General.fNPCMaxSpeedMultLerpTargetPercent * 0.01f, 0.0f, 1.0f);
+		const float maxLerp = std::clamp(IsPlayer ? GTS::Config::General.fPlayerMaxSpeedMultLerpTargetPercent * 0.01f : GTS::Config::General.fNPCMaxSpeedMultLerpTargetPercent * 0.01f, 0.0f, 1.0f);
 
 		// Never allow full walk if maxLerp < 1
 		t = std::min(t, maxLerp);
@@ -219,7 +226,7 @@ namespace Hooks {
 		static bool thunk(RE::AIProcess* a_process_src, RE::Movement::TypeData* a_typeData_dst) {
 			const bool result = func(a_process_src, a_typeData_dst);
 			if (RE::Actor* actor = a_process_src->GetUserData()) {
-				if (!actor->IsPlayerRef()) {
+				if (AllowMovementEdits(actor)) {
 					AdjustData(actor, a_typeData_dst, false);
 				}
 			}
@@ -238,7 +245,7 @@ namespace Hooks {
 			if (a_typeData_src) {
 				auto adjustedData = *a_typeData_src;
 				if (RE::Actor* actor = a_process_dst->GetUserData()) {
-					if (!actor->IsPlayerRef()) {
+					if (AllowMovementEdits(actor)) {
 						AdjustData(actor, &adjustedData, true);
 					}
 				}

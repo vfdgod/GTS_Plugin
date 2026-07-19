@@ -81,6 +81,8 @@ TOML_SERIALIZABLE(CameraOffsets_t);
 struct SettingsCamera_t {
 
     // Shake and crawl multipliers
+    float fCameraShakeDistanceMultPlayer = 1.0f;
+    float fCameraShakeDistanceMultNPC = 0.75f;
     float fCameraShakePlayer = 1.0f;
     float fCameraShakePlayerFP = 0.2f;
     float fCameraShakeOther = 1.0f;
@@ -94,6 +96,7 @@ struct SettingsCamera_t {
     // Automatic camera controls
     bool bAutomaticCamera = true;
     float fCameraInterpolationFactor = 0.35f;
+    bool bDisableBoneTrackingInMenus = false;
 
     // Distance and zoom controls
     bool bEnableAutoFNearDist = false;
@@ -111,7 +114,6 @@ struct SettingsCamera_t {
     bool bCamCollideTerrain = true;
     bool bCamCollideStatics = true;
     float fModifyCamCollideAt = 3.0f;
-
 
 };
 TOML_SERIALIZABLE(SettingsCamera_t);

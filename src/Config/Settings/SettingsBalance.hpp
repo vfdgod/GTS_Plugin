@@ -118,7 +118,7 @@ struct SettingsBalance_t {
     // Movement Speed Config
     float fSizeSpeedPercentage = 1.0f;
     // Anim Speed Config
-    float fAnimSpeedInfluence = 0.95f;
+    float fAnimSpeedInfluence = 0.90f;
 
     // Balance mode adjustments
     bool bBalanceMode = false;

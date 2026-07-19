@@ -1,4 +1,5 @@
 #include "UI/Windows/Settings/Categories/General.hpp"
+#include "UI/Controls/CollapsingTabHeader.hpp"
 
 #include "UI/Core/ImUtil.hpp"
 
@@ -38,6 +39,48 @@ namespace {
 
 	PSString T_UnknownBehavior = "无法确定使用的行为生成器。\n"
 							     "这可能表示你没有运行 Nemesis/Pandora，或使用了其他工具生成行为。";
+
+
+	void DrawMovement_Player() {
+		PSString T2Help = "移动速度钳制会在玩家超过指定体型阈值后逐渐降低移动速度。\n"
+							"这能防止大体型玩家以不真实的速度移动。\n"
+							"速度降低会在起始阈值与最大阈值之间平滑缩放。";
+		PSString T0 = "启用或完全关闭此效果";
+		PSString T1 = "当达到或超过“玩家速度钳制起点”体型时，阻止玩家冲刺动画";
+		PSString T2_1 = "禁用冲刺并开始降低速度的体型。";
+		PSString T2_2 = "玩家速度倍率完全钳制到下方设置值时的体型。";
+		PSString T2_3 =
+			"控制应用体型速度钳制后，玩家最多能变得多慢。\n"
+			"例如，80%% 表示即使超过最大钳制阈值，玩家仍至少以正常跑步/慢跑速度的 80%% 移动。\n"
+			"0%% 实际上会禁用此功能。";
+
+		ImGuiEx::HelpText("这是什么", T2Help);
+		ImGuiEx::CheckBox("启用此效果", &GTS::Config::General.bAlterPlayerMaxSpeed, T0);
+		ImGuiEx::CheckBox("阻止玩家冲刺", &GTS::Config::General.bPreventPlayerSprint, T1);
+		ImGuiEx::SliderF("玩家速度钳制起点", &GTS::Config::General.fPlayerMaxSpeedMultClampStartAt, 1.0f, 20.0f, T2_1, "大于 %.1fx 时");
+		ImGuiEx::SliderF("玩家最大钳制", &GTS::Config::General.fPlayerMaxSpeedMultClampMaxAt, GTS::Config::General.fPlayerMaxSpeedMultClampStartAt, GTS::Config::General.fPlayerMaxSpeedMultClampStartAt + 20.f, T2_2, "%.1fx 时");
+		ImGuiEx::SliderF("最低速度偏移 %", &GTS::Config::General.fPlayerMaxSpeedMultLerpTargetPercent, 0.0f, 100.f, T2_3, "步行速度的 %.0f%%");
+		ImGui::Spacing();
+	}
+
+	void DrawMovement_NPC() {
+		PSString T2Help = "移动速度钳制会在 NPC 超过指定体型阈值后逐渐降低移动速度。\n"
+							"这能防止大型 NPC 以不真实的速度移动。\n"
+							"速度降低会在起始阈值与最大阈值之间平滑缩放。";
+
+		PSString T2_1 = "禁用冲刺并开始降低速度的体型。";
+		PSString T2_2 = "NPC 速度倍率完全钳制到下方设置值时的体型。";
+		PSString T2_3 =
+			"控制应用体型速度钳制后，NPC 最多能变得多慢。\n"
+			"例如，80%% 表示即使超过最大钳制阈值，NPC 仍至少以正常跑步/慢跑速度的 80%% 移动。\n"
+			"0%% 实际上会禁用此功能。";
+
+		ImGuiEx::HelpText("这是什么", T2Help);
+		ImGuiEx::SliderF("NPC 速度钳制起点", &GTS::Config::General.fNPCMaxSpeedMultClampStartAt, 1.0f, 20.0f, T2_1, "大于 %.1fx 时");
+		ImGuiEx::SliderF("NPC 最大钳制", &GTS::Config::General.fNPCMaxSpeedMultClampMaxAt, GTS::Config::General.fNPCMaxSpeedMultClampStartAt, GTS::Config::General.fNPCMaxSpeedMultClampStartAt + 20.f, T2_2, "%.1fx 时");
+		ImGuiEx::SliderF("最低速度偏移 %", &GTS::Config::General.fNPCMaxSpeedMultLerpTargetPercent, 0.0f, 100.f, T2_3, "步行速度的 %.0f%%");
+		ImGui::Spacing();
+    }
 
 	void DrawImportExport(){
 
@@ -409,28 +452,23 @@ namespace GTS {
 			ImGui::Spacing();
 	    }
 
-		ImUtil_Unique
-		{
-			PSString T2Help = "移动速度钳制会在 NPC 超过指定体型阈值后逐渐降低移动速度。\n"
-							  "这能防止大型 NPC 以不真实的速度移动。\n"
-							  "速度降低会在起始阈值与最大阈值之间平滑缩放。";
-
-			PSString T2_1 = "禁用冲刺并开始降低速度的体型。";
-			PSString T2_2 = "NPC 速度倍率完全钳制到下方设置值时的体型。";
-			PSString T2_3 =
-				"控制应用体型速度钳制后，NPC 最多能变得多慢。\n"
-				"例如，80%% 表示即使超过最大钳制阈值，NPC 仍至少以正常跑步/慢跑速度的 80%% 移动。\n"
-				"0%% 实际上会禁用此功能。";
-
-
-			if (ImGui::CollapsingHeader("移动", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::HelpText("这是什么", T2Help);
-				ImGuiEx::SliderF("NPC 速度钳制起点", &Config::General.fNPCMaxSpeedMultClampStartAt, 1.0f, 20.0f, T2_1, "大于 %.1fx 时");
-				ImGuiEx::SliderF("NPC 最大钳制", &Config::General.fNPCMaxSpeedMultClampMaxAt, Config::General.fNPCMaxSpeedMultClampStartAt, Config::General.fNPCMaxSpeedMultClampStartAt + 20.f, T2_2, "%.1fx 时");
-				ImGuiEx::SliderF("最低速度偏移 %", &Config::General.fNPCMaxSpeedMultLerpTargetPercent, 0.0f, 100.f, T2_3, "步行速度的 %.0f%%");
-				ImGui::Spacing();
+		static ImGuiEx::CollapsingTabHeader ActionHeader (
+            "移动",
+			{
+				"玩家",
+				"NPC",
 			}
-		}
+        );
+
+        if (ImGuiEx::BeginCollapsingTabHeader(ActionHeader)) {
+            // Content based on active tab
+            switch (ActionHeader.GetActiveTab()) {
+                case 0: DrawMovement_Player();          break;
+                case 1: DrawMovement_NPC();        		break;
+				default:                              	break;
+            }
+        }
+        ImGuiEx::EndCollapsingTabHeader(ActionHeader);
 
 		//----- HH
 

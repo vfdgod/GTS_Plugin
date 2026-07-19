@@ -1,4 +1,5 @@
 #include "UI/Windows/Settings/Categories/Camera.hpp"
+#include "UI/Controls/CollapsingTabHeader.hpp"
 
 #include "UI/Controls/Slider.hpp"
 #include "UI/Core/ImUtil.hpp"
@@ -29,51 +30,65 @@ namespace GTS {
 
 	    PSString T0 = "选择镜头要追踪的双足骨架骨骼。";
 
-	    if (ImGui::CollapsingHeader(a_title, ImUtil::HeaderFlagsDefaultOpen)) {
-			ImGuiEx::ComboEx<LCameraTrackBone_t>("居中骨骼", a_set->sCenterOnBone, T0);
+		ImGuiEx::ComboEx<LCameraTrackBone_t>("居中骨骼", a_set->sCenterOnBone, T0);
 
-	        ImUtil_Unique 
+		ImUtil_Unique
 		{
-	            DrawCameraOffsets(
-	                "偏移 | 站立",
-	                "调整站立时的镜头偏移。\n"
-					"左/右 | 前/后 | 上/下",
-	                &a_set->f3NormalStand
-	            );
-	        }
+			DrawCameraOffsets(
+				"偏移 | 站立",
+				"调整站立时的镜头偏移。\n"
+				"左/右 | 前/后 | 上/下",
+				&a_set->f3NormalStand
+			);
+		}
 
-	        ImUtil_Unique 
+		ImUtil_Unique
 		{
-	            DrawCameraOffsets(
-	                "偏移 | 站立战斗",
-	                "调整站立且处于战斗中时的镜头偏移。\n"
-					"左/右 | 前/后 | 上/下",
-	                &a_set->f3CombatStand
-	            );
-	        }
+			DrawCameraOffsets(
+				"偏移 | 站立战斗",
+				"调整站立且处于战斗中时的镜头偏移。\n"
+				"左/右 | 前/后 | 上/下",
+				&a_set->f3CombatStand
+			);
+		}
 
-	        ImUtil_Unique 
+		ImUtil_Unique
 		{
-	            DrawCameraOffsets(
-	                "偏移 | 爬行",
-	                "调整潜行、爬行或趴伏时的镜头偏移。\n"
-					"左/右 | 前/后 | 上/下",
-	                &a_set->f3NormalCrawl
-	            );
-	        }
+			DrawCameraOffsets(
+				"偏移 | 爬行",
+				"调整潜行、爬行或趴伏时的镜头偏移。\n"
+				"左/右 | 前/后 | 上/下",
+				&a_set->f3NormalCrawl
+			);
+		}
 
-	        ImUtil_Unique 
+		ImUtil_Unique
 		{
-	            DrawCameraOffsets(
-	                "偏移 | 爬行战斗",
-	                "调整潜行、爬行或趴伏且处于战斗中时的镜头偏移。\n"
-					"左/右 | 前/后 | 上/下",
-	                &a_set->f3CombatCrawl
-	            );
-	        }
+			DrawCameraOffsets(
+				"偏移 | 爬行战斗",
+				"调整潜行、爬行或趴伏且处于战斗中时的镜头偏移。\n"
+				"左/右 | 前/后 | 上/下",
+				&a_set->f3CombatCrawl
+			);
+		}
 
-	        ImGui::Spacing();
-	    }
+		ImGui::Spacing();
+	}
+
+	void DrawPlayerShake() {
+		PSString T0 = "调整玩家执行动作时的镜头震动强度。";
+		PSString T1 = "调整由自身体型或体型动作造成的第一人称镜头震动强度。";
+		PSString T2 = "调整玩家镜头震动计算的距离倍率。提高后，更远的距离也会触发震动。";
+		ImGuiEx::SliderF("玩家震动强度", &Config::Camera.fCameraShakePlayer, 0.1f, 3.0f, T0, "%.2fx");
+		ImGuiEx::SliderF("第一人称震动强度", &Config::Camera.fCameraShakePlayerFP, 0.0f, 1.0f, T1, "%.2fx");
+		ImGuiEx::SliderF("玩家震动范围", &Config::Camera.fCameraShakeDistanceMultPlayer, 0.25f, 3.0f, T2, "%.2fx");
+	}
+	void DrawNPCShake() {
+		PSString T0 = "调整 NPC 造成的镜头震动强度。";
+		PSString T1 = "调整 NPC 镜头震动计算的距离倍率。提高后，更远的距离也会触发震动。";
+
+		ImGuiEx::SliderF("NPC 震动强度", &Config::Camera.fCameraShakeOther, 0.1f, 3.0f, T0, "%.2fx");
+		ImGuiEx::SliderF("NPC 震动范围", &Config::Camera.fCameraShakeDistanceMultNPC, 0.25f, 3.0f, T1, "%.2fx");
 	}
 
 	CategoryCamera::CategoryCamera() {
@@ -81,29 +96,30 @@ namespace GTS {
 	}
 
 	void CategoryCamera::DrawLeft() {
+		static ImGuiEx::CollapsingTabHeader ActionHeader (
+            "体型震动设置",
+			{
+				"玩家",
+				"NPC",
+			}
+        );
 
-	    ImUtil_Unique 
-		{
+        if (ImGuiEx::BeginCollapsingTabHeader(ActionHeader)) {
+            // Content based on active tab
+            switch (ActionHeader.GetActiveTab()) {
+                case 0: DrawPlayerShake();          	break;
+                case 1: DrawNPCShake();       			break;
+				default:                              	break;
+            }
+        }
+        ImGuiEx::EndCollapsingTabHeader(ActionHeader);
 
-	        PSString T0 = "调整玩家执行动作时的镜头震动强度。";
-			PSString T1 = "调整由自身体型或体型动作造成的第一人称镜头震动强度。";
-			PSString T2 = "调整 NPC 造成的镜头震动强度。";
-
-	        if (ImGui::CollapsingHeader("镜头震动", ImUtil::HeaderFlagsDefaultOpen)) {
-				ImGuiEx::SliderF("玩家总震动强度", &Config::Camera.fCameraShakePlayer, 0.1f, 3.0f, T0, "%.2fx");
-				ImGuiEx::SliderF("玩家第一人称震动强度", &Config::Camera.fCameraShakePlayerFP, 0.0f, 1.0f, T1, "%.2fx");
-				ImGuiEx::SliderF("NPC 总震动强度", &Config::Camera.fCameraShakeOther, 0.1f, 3.0f, T2, "%.2fx");
-
-	            ImGui::Spacing();
-	        }
-	    }
-
-	    ImUtil_Unique 
+	    ImUtil_Unique
 		{
 
 	        PSString T0 = "调整爬行时的镜头高度倍率。\n"
-							 "第一人称 | 第三人称\n\n"
-							 "注意：如果使用 SmoothCam，第三人称可能无法正常工作。";
+						  "第一人称 | 第三人称\n\n"
+						  "注意：如果使用 SmoothCam，第三人称可能无法正常工作。";
 
 			if (ImGui::CollapsingHeader("爬行高度", ImUtil::HeaderFlagsDefaultOpen)) {
 				//Temp Store
@@ -114,7 +130,7 @@ namespace GTS {
 	        }
 	    }
 
-	    ImUtil_Unique 
+	    ImUtil_Unique
 		{
 
 	        PSString T0 = "启用镜头与角色的碰撞。";
@@ -137,21 +153,21 @@ namespace GTS {
 	        }
 	    }
 
-	    ImUtil_Unique 
+	    ImUtil_Unique
 		{
 
 	        PSString T0 = "偏移第三人称镜头的最小缩放距离。\n"
-		              "结合最大距离一起，影响镜头视角切换到第一人称时与玩家的距离。";
+	    	              "结合最大距离一起，影响镜头视角切换到第一人称时与玩家的距离。";
 
 	        PSString T1 = "偏移第三人称镜头的最大缩放距离。\n"
-		              "数值越高，镜头会拉得越远。\n"
-		              "结合最小距离一起，影响镜头视角切换到第一人称时与玩家的距离。";
+	    	              "数值越高，镜头会拉得越远。\n"
+	    	              "结合最小距离一起，影响镜头视角切换到第一人称时与玩家的距离。";
 
 			PSString T2 = "调整镜头缩放步进之间的过渡速度。";
 
 	        PSString T3 = "调整镜头缩放步进除数。\n"
 						  "数值越低，缩放步数越多；\n"
-					  "数值越高，缩放步数越少。\n";
+	    				  "数值越高，缩放步数越少。\n";
 
 			PSString T4 = "切换本模组是否覆盖 Skyrim 的镜头设置。\n"
 						  "注意：禁用后需要重启游戏，原始值才会重新应用。\n\n"
@@ -162,8 +178,8 @@ namespace GTS {
 				             "注意 1：这里的设置会持续覆盖游戏设置，\n"
 				             "无论你在任何 ini 文件中设置了什么值，或其他模组修改了它们，都会被这里的值覆盖。\n\n"
 							 "注意 2：强烈建议不要修改距离设置。本模组的镜头系统在这些值保持默认时效果最好。\n\n"
-						 "默认值：\n"
-						 " - 最小距离：150.0\n"
+	    					 "默认值：\n"
+	    					 " - 最小距离：150.0\n"
 							 " - 最大距离：600.0\n"
 							 " - 缩放速度：0.8\n"
 							 " - 缩放步进：0.075\n";
@@ -192,33 +208,45 @@ namespace GTS {
 
 	void CategoryCamera::DrawRight() {
 
-	    ImUtil_Unique 
+	    ImUtil_Unique
 		{
 
 	        PSString T0 = "启用自动镜头。";
 			PSString T1 = "修改第三人称镜头模式。";
+			PSString T2 = "菜单打开时禁用基于骨骼的追踪（等同于在“居中骨骼”中选择“无”）。\n"
+			              "这可兼容诸如 “Show Player In Inventory” 一类的模组。";
 
 			//Hack
             auto CamState = std::bit_cast<int*>(&Persistent::TrackedCameraState.value);
 
 	        if (ImGui::CollapsingHeader("自动镜头", ImUtil::HeaderFlagsDefaultOpen)) {
 				ImGuiEx::CheckBox("启用自动镜头", &Config::Camera.bAutomaticCamera, T0);
+				ImGuiEx::CheckBox("菜单中禁用骨骼追踪", &Config::Camera.bDisableBoneTrackingInMenus, T2);
 				ImGuiEx::IComboEx<LCameraMode_t>("镜头模式", CamState, T1, !Config::Camera.bAutomaticCamera);
-		ImGui::Spacing();
+	        	ImGui::Spacing();
 	        }
 	    }
 
 	    ImGui::BeginDisabled(!Config::Camera.bAutomaticCamera);
 
-	    ImUtil_Unique 
-		{
-	        DrawCameraSettings(&Config::Camera.OffsetsNormal, "普通镜头");
-	    }
 
-	    ImUtil_Unique 
-		{
-	        DrawCameraSettings(&Config::Camera.OffsetsAlt, "替代镜头");
-	    }
+		static ImGuiEx::CollapsingTabHeader ActionHeader (
+            "镜头模式设置",
+			{
+				"普通镜头",
+				"替代镜头",
+			}
+        );
+
+        if (ImGuiEx::BeginCollapsingTabHeader(ActionHeader)) {
+            // Content based on active tab
+            switch (ActionHeader.GetActiveTab()) {
+                case 0: DrawCameraSettings(&Config::Camera.OffsetsNormal, "普通镜头");          break;
+                case 1: DrawCameraSettings(&Config::Camera.OffsetsAlt, "替代镜头");        break;
+				default:                              	break;
+            }
+        }
+        ImGuiEx::EndCollapsingTabHeader(ActionHeader);
 
 		ImGui::EndDisabled();
 
