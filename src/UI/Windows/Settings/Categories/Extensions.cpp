@@ -539,6 +539,16 @@ namespace GTS {
 
 		ImUtil_Unique
 		{
+			PSString TCD = "关闭后，体型动作相关冷却（拥抱/胸部/臀部/灾厄等）会被跳过。\n"
+			               "内部防刷计时器仍会保留，避免同一帧重复结算。";
+			if (ImGui::CollapsingHeader("冷却", ImUtil::HeaderFlagsDefaultOpen)) {
+				ImGuiEx::CheckBox("启用尺寸技能冷却", &Config::Advanced.bCooldowns, TCD);
+				ImGui::Spacing();
+			}
+		}
+
+		ImUtil_Unique
+		{
 			PSString T0 = "开启后，玩家会被视为微型灾厄正在生效。\n"
 			              "这会影响所有检查 TinyCalamityActive() 的逻辑，例如禁用随机成长、启用持续缩小逻辑、狂怒灾厄前置等。\n"
 			              "不会播放龙吼启动音效、爆发特效，也不会自动压制玩家体型。";
