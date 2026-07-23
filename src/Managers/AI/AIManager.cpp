@@ -391,7 +391,9 @@ namespace GTS {
 		if (!a_Performer->IsPlayerRef() &&
 			TinyCalamityActive(a_Performer) &&
 			TinyCalamityHasRage(a_Performer) &&
-			TinyCalamity_WrathfulCalamity(a_Performer)) {
+			TinyCalamity_WrathfulCalamity(
+				a_Performer,
+				VoreController::GetSingleton().GetVoreTargetsInFront(a_Performer, 1))) {
 			return true;
 		}
 
