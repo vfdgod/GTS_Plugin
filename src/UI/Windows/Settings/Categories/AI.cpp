@@ -204,7 +204,6 @@ namespace {
             ImGuiEx::SliderF("碾压概率", &Config::AI.ButtCrush.fCrushProb, 0.0f, 100.0f, T5, "%.0f%%");
         }
         ImGui::EndDisabled();
-
     }
 
     void DrawAIAction_Grab() {
@@ -286,7 +285,36 @@ namespace {
         ImGui::EndDisabled();
     }
 
-}
+    void DrawAIAction_Calamity() {
+        PSString TCHelp = "Tiny Calamity（微小灾厄）通常是玩家专属的喊声效果。
+"
+                          "- 模组默认没有给 NPC 施加该效果的途径";
+        PSString WCHelp = "狂怒灾厄是通常仅玩家可用的一击必杀动作。
+"
+                          "- 只能对生命值较低的人形敌人使用
+"
+                          "- 且需要 Tiny Calamity 处于激活状态";
+        PSString T0 = "允许 AI 开始狂怒灾厄动作。";
+        PSString T1 = "设置开始狂怒灾厄动作的概率。";
+        PSString TC = "当 Tiny Calamity 激活时：
+"
+                        "- 开启：NPC 先缩小敌人，再做体型动作
+"
+                        "- 关闭：NPC 跳过缩小，直接播放动作
+"
+                        "建议保持开启，同体型动作会非常违和。";
+        
+        ImGui::Text("Tiny Calamity");
+        ImGuiEx::HelpText("什么是 Tiny Calamity", TCHelp);
+        ImGuiEx::CheckBox("Tiny Calamity：启用先缩小动画", &Config::AI.bCalamityShrinksFirst, TC);
+        ImGui::Spacing();
+        ImGui::Text("狂怒灾厄");
+        ImGuiEx::HelpText("什么是狂怒灾厄", WCHelp);
+        ImGuiEx::CheckBox("启用动作", &Config::AI.WrathfulCalamity.bEnableAction, T0);
+        ImGuiEx::SliderF("开始概率", &Config::AI.WrathfulCalamity.fProbability, 1.0f, 100.0f, T1, "%.0f%%", !Config::AI.WrathfulCalamity.bEnableAction);
+    }
+
+} 
 
 namespace GTS {
 
@@ -387,10 +415,11 @@ namespace GTS {
 				"踩踏",
                 "踢击/挥击",
                 "大腿夹击",
-                "大腿碾压",
+                "大腿压碎",
                 "拥抱",
-                "臀部碾压",
+                "臀部压碎",
                 "抓取",
+                "Tiny Calamity",
 			}
         );
 
@@ -407,6 +436,7 @@ namespace GTS {
                 case 5: DrawAIAction_Hugs();          break;
                 case 6: DrawAIAction_ButtCrush();     break;
                 case 7: DrawAIAction_Grab();          break;
+                case 8: DrawAIAction_Calamity();      break;
 				default:                              break;
             }
         }

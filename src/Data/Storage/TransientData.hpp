@@ -1,4 +1,5 @@
 #pragma once
+#include "Hooks/Experiments/Experiments_FootColliders.hpp"
 
 namespace GTS {
 
@@ -87,9 +88,12 @@ namespace GTS {
 		bool FollowerNoAIAcquireAdded = false;
 		bool FollowerGTOnlyActive = false;
 		bool MovementRunSpeedsInitialized = false;
+		bool TinyCalamityActive = false;
 
 		bool AutoAim_TargetLeft = false;
 
+		float TinyCalamity_StartingDuration = 0.0f;
+		float TinyCalamity_SecondsPassed = 0.0f;
 		float EscapingActionProgress = 0.0f;
 		bool EscapingInteraction = false;
 
@@ -121,6 +125,9 @@ namespace GTS {
 
 		std::vector<ActorHandle> shrinkies;
 		std::vector<Actor*> toSandwich;
+
+		//FootwearInformation FootwearInfo;
+
 		float fRecordedFurnScale = 1.0f;
 		bool bIsUsingFurniture = false;
 		bool IsBeingSizeDamaged = false;
@@ -133,6 +140,6 @@ namespace GTS {
 
 			BaseHeight = GameUnitToMeter(_BoundValues[2] * _Scale);
 			BoundingBoxCache = _BoundValues;
-		}
+		} 
 	};
 }

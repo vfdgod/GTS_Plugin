@@ -1,4 +1,5 @@
 #include "UI/Windows/Settings/Categories/Widgets.hpp"
+#include "UI/Controls/CollapsingTabHeader.hpp"
 
 #include "Config/Config.hpp"
 
@@ -73,7 +74,201 @@ namespace {
 	PSString KFEnableWorldKills = "显示没有攻击者的原版游戏死亡（例如坠落伤害、脚本死亡等）。";
 	PSString KFFontScale = "设置相对于图标大小的字体大小。";
 
+	void DrawToggle_Buffs(WindowSettingsStatusBar_t& ExtraSettings) {
+		bool sDamReduction   	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideDamageReduction);
+		bool sLifeAbsorbtion 	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideLifeAbsorbtion);
+		bool sEnachantment   	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideEnchantment);
+		bool sVoreStacks     	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideVoreStacks);
+		bool sSizeReserve    	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideSizeReserve);
+		bool sOnTheEdge      	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideOnTheEdge);
+		bool sVoreAbsorbing  	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideVoreBeingAbsorbed);
+		bool sCalamityDuration	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideCalamityDuration);
+		ImUtil_Unique
+		{
+			if (ImGuiEx::CheckBox("伤害减免", &sDamReduction, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideDamageReduction, !sDamReduction);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("生命吸收", &sLifeAbsorbtion, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideLifeAbsorbtion, !sLifeAbsorbtion);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("GTS 附魔", &sEnachantment, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideEnchantment, !sEnachantment);
+			}
+			//------------ Line 2
+			if (ImGuiEx::CheckBox("吞噬层数", &sVoreStacks, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideVoreStacks, !sVoreStacks);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("体型储备", &sSizeReserve, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideSizeReserve, !sSizeReserve);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("临界边缘", &sOnTheEdge, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideOnTheEdge, !sOnTheEdge);
+			}
+			//------------ Line 3
+			if (ImGuiEx::CheckBox("吞噬吸收中", &sVoreAbsorbing, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideVoreBeingAbsorbed, !sVoreAbsorbing);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("灾厄持续时间", &sCalamityDuration, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideCalamityDuration, !sCalamityDuration);
+			}
+		}
+	}
+	void DrawToggle_Cooldowns(WindowSettingsStatusBar_t& ExtraSettings) {
+		bool sCalamityShrink 	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideCalamityShrink);
+		bool sWrathfulCalamity	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideWrathfulCalamity);
+		bool sHug 				= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideHugs);
+		bool sHugCrush			= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideHugCrush);
+		bool sHealthGate 		= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideHealthGate);
+		bool sBreastAbsorb	 	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideBreastAbsorb);
+		bool sBreastSuffocate 	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideBreastSuffocate);
+		bool sBreastVore 		= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideBreastVore);
+		bool sButtCrush			= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideButtCrush);
+		bool sShrinkOutburst	= !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideShrinkOutburst);
+		ImUtil_Unique
+			{
+			if (ImGuiEx::CheckBox("微小灾厄冷却", &sCalamityShrink, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideCalamityShrink, !sCalamityShrink);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("狂怒灾厄冷却", &sWrathfulCalamity, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideWrathfulCalamity, !sWrathfulCalamity);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("拥抱冷却", &sHug, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideHugs, !sHug);
+			}
+			if (ImGuiEx::CheckBox("拥抱压碎冷却", &sHugCrush, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideHugCrush, !sHugCrush);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("生命闸冷却", &sHealthGate, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideHealthGate, !sHealthGate);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("胸部吸收冷却", &sBreastAbsorb, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideBreastAbsorb, !sBreastAbsorb);
+			}
+			if (ImGuiEx::CheckBox("胸部窒息冷却", &sBreastSuffocate, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideBreastSuffocate, !sBreastSuffocate);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("胸部吞噬冷却", &sBreastVore, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideBreastVore, !sBreastVore);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("臀部压碎冷却", &sButtCrush, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideButtCrush, !sButtCrush);
+			}
+			if (ImGuiEx::CheckBox("缩小爆发冷却", &sShrinkOutburst, TIcoVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideShrinkOutburst, !sShrinkOutburst);
+			}
+		}
+	}
+	void DrawAlwaysShow_Buffs(WindowSettingsStatusBar_t& ExtraSettings) {
+		bool ASDamReduction   	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASDamageReduction);
+		bool ASLifeAbsorbtion 	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASLifeAbsorbtion);
+		bool ASEnachantment   	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASEnchantment);
+		bool ASVoreStacks     	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASVoreStacks);
+		bool ASSizeReserve    	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASSizeReserve);
+		bool ASOnTheEdge      	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASOnTheEdge);
+		bool ASVoreAbsorbing  	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASVoreBeingAbsorbed);
+		bool ASCalamityDuration = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASCalamityDuration);
+		ImUtil_Unique
+		{
+			if (ImGuiEx::CheckBox("伤害减免", &ASDamReduction, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASDamageReduction, ASDamReduction);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("生命吸收", &ASLifeAbsorbtion, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASLifeAbsorbtion, ASLifeAbsorbtion);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("GTS 附魔", &ASEnachantment, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASEnchantment, ASEnachantment);
+			}
+			//------------ Line 2
 
+			if (ImGuiEx::CheckBox("吞噬层数", &ASVoreStacks, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASVoreStacks, ASVoreStacks);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("体型储备", &ASSizeReserve, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASSizeReserve, ASSizeReserve);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("临界边缘", &ASOnTheEdge, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASOnTheEdge, ASOnTheEdge);
+			}
+			//----------- Line 3
+			if (ImGuiEx::CheckBox("吞噬吸收中", &ASVoreAbsorbing, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASVoreBeingAbsorbed, ASVoreAbsorbing);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("灾厄持续时间", &ASCalamityDuration, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASCalamityDuration, ASCalamityDuration);
+			}
+		}
+	}
+	void DrawAlwaysShow_Cooldowns(WindowSettingsStatusBar_t& ExtraSettings) {
+		bool ASCalamityShrink 	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASCalamityShrink);
+		bool ASWrathfulCalamity = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASWrathfulCalamity);
+		bool ASHug				= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASHugs);
+		bool ASHugCrush			= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASHugCrush);
+		bool ASHealthGate		= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASHealthGate);
+		bool ASBreastAbsorb		= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASBreastAbsorb);
+		bool ASBreastSuffocate	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASBreastSuffocate);
+		bool ASBreastVore		= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASBreastVore);
+		bool ASButtCrush		= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASButtCrush);
+		bool ASShrinkOutburst	= (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASShrinkOutburst);
+		ImUtil_Unique
+		{
+			if (ImGuiEx::CheckBox("微小灾厄冷却", &ASCalamityShrink, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASCalamityShrink, ASCalamityShrink);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("狂怒灾厄冷却", &ASWrathfulCalamity, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASWrathfulCalamity, ASWrathfulCalamity);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("拥抱冷却", &ASHug, TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASHugs, ASHug);
+			}
+			// line 2
+			if (ImGuiEx::CheckBox("拥抱压碎冷却", &ASHugCrush,  TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASHugCrush, ASHugCrush);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("生命闸冷却", &ASHealthGate,  TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASHealthGate, ASHealthGate);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("胸部吸收冷却", &ASBreastAbsorb,  TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASBreastAbsorb, ASBreastAbsorb);
+			}
+			// line 3
+			if (ImGuiEx::CheckBox("胸部窒息冷却", &ASBreastSuffocate,  TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASBreastSuffocate, ASBreastSuffocate);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("胸部吞噬冷却", &ASBreastVore,  TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASBreastVore, ASBreastVore);
+			}
+			ImGui::SameLine();
+			if (ImGuiEx::CheckBox("臀部压碎冷却", &ASButtCrush,  TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASButtCrush, ASButtCrush);
+			}
+			if (ImGuiEx::CheckBox("缩小爆发冷却", &ASShrinkOutburst,  TIcoAlwaysVis)) {
+				ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASShrinkOutburst, ASShrinkOutburst);
+			}
+		}
+	}
+
+	
 	void DrawKillFeedWindowBase(GTS::ImWindow* a_KillFeed) {
 
 		if (!a_KillFeed) return;
@@ -338,22 +533,6 @@ namespace {
 			ImGuiEx::SliderU16("图标大小", &ExtraSettings.iIconSize, 8, 128, TIcoSize, "%d px");
 			ImGuiEx::SliderF("相对字体缩放", &ExtraSettings.fRelativeFontScale, 0.5f, 1.5f, TRelativeFontScale, "%.1fx");
 
-			bool sDamReduction   = !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideDamageReduction);
-			bool sLifeAbsorbtion = !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideLifeAbsorbtion);
-			bool sEnachantment   = !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideEnchantment);
-			bool sVoreStacks     = !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideVoreStacks);
-			bool sSizeReserve    = !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideSizeReserve);
-			bool sOnTheEdge      = !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideOnTheEdge);
-			bool sVoreAbsorbing  = !(ExtraSettings.iFlagsVis & ImGuiEx::StatusbarFlag_HideVoreBeingAbsorbed);
-
-			bool ASDamReduction   = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASDamageReduction);
-			bool ASLifeAbsorbtion = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASLifeAbsorbtion);
-			bool ASEnachantment   = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASEnchantment);
-			bool ASVoreStacks     = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASVoreStacks);
-			bool ASSizeReserve    = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASSizeReserve);
-			bool ASOnTheEdge      = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASOnTheEdge);
-			bool ASVoreAbsorbing  = (ExtraSettings.iFlagsAS & ImGuiEx::StatusbarASFlag_ASVoreBeingAbsorbed);
-
 			static GTS::ImGraphics::ImageTransform T = {
 				.recolorEnabled = true,
 			};
@@ -369,103 +548,41 @@ namespace {
 			ImGuiEx::SliderF("背景透明度", &BaseSettings.fBGAlphaMult, 0.0f, 1.0f, TFrameAlpha, "%.2fx");
 			ImGui::ColorEdit3("溢出颜色", GTS::Config::UI.f3IconOverflowColor.data(), ImGuiColorEditFlags_DisplayHSV);
 
-			ImGui::Spacing();
-
-			ImUtil_Unique
-			{
-
-				ImGui::Text("图标可见性开关");
-
-				if (ImGuiEx::CheckBox("伤害减免", &sDamReduction, TIcoVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideDamageReduction, !sDamReduction);
+			// -------------- Just Toggles
+			static ImGuiEx::CollapsingTabHeader ActionHeader_Enabler (
+				"图标：可见性开关",
+				{
+					"增益",
+					"冷却",
 				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("生命吸收", &sLifeAbsorbtion, TIcoVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideLifeAbsorbtion, !sLifeAbsorbtion);
-				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("GTS 化身", &sEnachantment, TIcoVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideEnchantment, !sEnachantment);
-				}
-
-				//------------ Line 2
-
-				if (ImGuiEx::CheckBox("吞噬层数", &sVoreStacks, TIcoVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideVoreStacks, !sVoreStacks);
-				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("体型储备", &sSizeReserve, TIcoVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideSizeReserve, !sSizeReserve);
-				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("濒临边缘", &sOnTheEdge, TIcoVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideOnTheEdge, !sOnTheEdge);
-				}
-
-				//------------ Line 3
-
-				if (ImGuiEx::CheckBox("吞噬吸收中", &sVoreAbsorbing, TIcoVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsVis, ImGuiEx::StatusbarFlag_HideVoreBeingAbsorbed, !sVoreAbsorbing);
+			);
+			if (ImGuiEx::BeginCollapsingTabHeader(ActionHeader_Enabler)) {
+				// Content based on active tab
+				switch (ActionHeader_Enabler.GetActiveTab()) {
+					case 0: DrawToggle_Buffs(ExtraSettings);          					break;
+					case 1: DrawToggle_Cooldowns(ExtraSettings);        				break;
+					default:                              								break;
 				}
 			}
+			ImGuiEx::EndCollapsingTabHeader(ActionHeader_Enabler);
 
 			// -------------- Always Show Toggles
-
-			ImGui::Spacing();
-
-			ImUtil_Unique 
-			{
-
-				ImGui::Text("始终显示图标开关");
-
-				if (ImGuiEx::CheckBox("伤害减免", &ASDamReduction, TIcoAlwaysVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASDamageReduction, ASDamReduction);
+			static ImGuiEx::CollapsingTabHeader ActionHeader_AlwaysShow (
+				"图标：始终显示",
+				{
+					"增益",
+					"冷却",
 				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("生命吸收", &ASLifeAbsorbtion, TIcoAlwaysVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASLifeAbsorbtion, ASLifeAbsorbtion);
-				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("GTS 化身", &ASEnachantment, TIcoAlwaysVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASEnchantment, ASEnachantment);
-				}
-
-				//------------ Line 2
-
-				if (ImGuiEx::CheckBox("吞噬层数", &ASVoreStacks, TIcoAlwaysVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASVoreStacks, ASVoreStacks);
-				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("体型储备", &ASSizeReserve, TIcoAlwaysVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASSizeReserve, ASSizeReserve);
-				}
-
-				ImGui::SameLine();
-
-				if (ImGuiEx::CheckBox("濒临边缘", &ASOnTheEdge, TIcoAlwaysVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASOnTheEdge, ASOnTheEdge);
-				}
-
-				//------------ Line 3
-
-				if (ImGuiEx::CheckBox("吞噬吸收中", &ASVoreAbsorbing, TIcoAlwaysVis)) {
-					ImUtil::ToggleFlag(ExtraSettings.iFlagsAS, ImGuiEx::StatusbarASFlag_ASVoreBeingAbsorbed, ASVoreAbsorbing);
+			);
+			if (ImGuiEx::BeginCollapsingTabHeader(ActionHeader_AlwaysShow)) {
+				// Content based on active tab
+				switch (ActionHeader_AlwaysShow.GetActiveTab()) {
+					case 0: DrawAlwaysShow_Buffs(ExtraSettings);          			break;
+					case 1: DrawAlwaysShow_Cooldowns(ExtraSettings);        		break;
+					default:                              							break;
 				}
 			}
+			ImGuiEx::EndCollapsingTabHeader(ActionHeader_AlwaysShow);
 		}
 		ImGui::EndDisabled();
 	}

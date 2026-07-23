@@ -1,3 +1,4 @@
+#include "Managers/Animation/Utils/CooldownManager.hpp"
 #include "Utils/Actions/VoreUtils.hpp"
 #include "Utils/Actor/ActorBools.hpp"
 #include "Config/Config.hpp"
@@ -453,11 +454,49 @@ namespace {
 	}
 
 	bool TinyCalamityActive(Actor* giant) {
+		// Real effect path: prefer Transient cache (upstream), humanoids only.
+		if (giant) {
+			if (auto TranData = Transient::GetActorData(giant)) {
+				if (TranData->TinyCalamityActive) {
+					return true;
+				}
+			}
+			if (IsHumanoid(giant) && HasTinyCalamityEffect(giant)) {
+				return true;
+			}
+		}
+		// Local simulation path (player / follower toggles) stays available.
 		return IsTinyCalamityFeatureEnabled(
 			giant,
 			Config::Advanced.bPlayerTinyCalamityActive,
 			&PersistentActorData::bTinyCalamitySimulationActive
 		);
+	}
+
+	bool TinyCalamity_ShouldShrinkFirst(Actor* giant, Actor* tiny, float size_diff_requirement, float shrink_until, float shrink_rate_normal, float shrink_rate_sneak) {
+		if (!giant || !tiny) {
+			return false;
+		}
+		if (!giant->IsPlayerRef() && !Config::AI.bCalamityShrinksFirst) {
+			return false; // Allow cursed and weird ass looking anims to happen
+		}
+		if (get_scale_difference(giant, tiny, SizeType::VisualScale, false, false) < size_diff_requirement) {
+			if (!IsActionOnCooldown(giant, CooldownSource::Misc_TinyCalamity_Shrink)) {
+				const float shrinkrate = giant->IsSneaking() ? shrink_rate_sneak : shrink_rate_normal;
+				ShrinkUntil(giant, tiny, shrink_until, shrinkrate, true);
+			} else {
+				if (giant->IsPlayerRef()) {
+					std::string message = std::format("缩小冷却中：{:.1f} 秒", GetRemainingCooldown(giant, CooldownSource::Misc_TinyCalamity_Shrink));
+					shake_camera(giant, 0.45f, 0.30f);
+					NotifyWithSound(giant, message);
+				} else {
+					Cprint("{} 的缩小冷却中: {:.1f}", giant->GetDisplayFullName(), GetRemainingCooldown(giant, CooldownSource::Misc_TinyCalamity_Shrink));
+					logger::info("{}'s Shrink is on a cooldown: {:.1f}", giant->GetDisplayFullName(), GetRemainingCooldown(giant, CooldownSource::Misc_TinyCalamity_Shrink));
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 
 	bool TinyCalamitySprintBoostActive(Actor* giant) {

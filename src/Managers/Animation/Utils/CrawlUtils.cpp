@@ -42,7 +42,7 @@ namespace GTS {
 		if (actor) {
 			GTS_PROFILE_SCOPE("CrawlUtils: DoCrawlingSounds");
 			auto player = PlayerCharacter::GetSingleton();
-			if (actor->IsPlayerRef() && TinyCalamityActionBoostActive(actor)) {
+			if (TinyCalamityActionBoostActive(actor) || TinyCalamityActive(actor)) {
 				scale *= 1.85f;
 			}
 			const bool LegacySounds = Config::Audio.bUseOldSounds; // Determine if we should play old pre 2.00 update sounds
@@ -70,14 +70,12 @@ namespace GTS {
 		LaunchActor::LaunchAtCustomNode(actor, launch_dist, damage_dist, multiplier, node); // Launch actors
 		// Order matters here since we don't want to make it even stronger during SMT, so that's why SMT check is after this function
 		
-		if (actor->IsPlayerRef()) {
-			if (TinyCalamityActionBoostActive(actor)) {
-				smt = 2.0f; // Stronger Camera Shake
-				multiplier *= 1.8f;
-				minimal_scale = 1.0f;
-				scale += 0.75f;
-				damage *= 2.0f;
-			}
+		if (TinyCalamityActionBoostActive(actor) || TinyCalamityActive(actor)) {
+			smt = 2.0f; // Stronger Camera Shake
+			multiplier *= 1.8f;
+			minimal_scale = 1.0f;
+			scale += 0.75f;
+			damage *= 2.0f;
 		}
 
 		//std::string rumbleName = std::format("{}{}", tag, actor->formID);
@@ -117,13 +115,13 @@ namespace GTS {
 		if (!giant) {
 			return;
 		}
-		auto distanceSquared = [](const NiPoint3& delta) {
-			return delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
-		};
+		
+		const float toHavok = CollisionDamage::ToHavok();
+		constexpr float BASE_CHECK_DISTANCE = 220.0f;
 		float giantScale = get_visual_scale(giant);
 
 		float SCALE_RATIO = 1.25f;
-		if (TinyCalamityActionBoostActive(giant)) {
+		if (TinyCalamityActionBoostActive(giant) || TinyCalamityActive(giant)) {
 			SCALE_RATIO = 0.9f;
 			giantScale *= 1.3f;
 		}
@@ -131,50 +129,45 @@ namespace GTS {
 		NiPoint3 NodePosition = node->world.translate;
 
 		float maxDistance = radius * giantScale;
-		float maxNodeDistance = maxDistance + Collision_Distance_Override;
-		float maxNodeDistanceSquared = maxNodeDistance * maxNodeDistance;
-		float CheckDistance = 220 * giantScale;
-		float CheckDistanceSquared = CheckDistance * CheckDistance;
+		
 		// Make a list of points to check
+		auto* world = giant->GetParentCell() ? giant->GetParentCell()->GetbhkWorld() : nullptr;
+		if (!world) return;
+		std::vector points = {NiPoint3(0.0f, 0.0f, 0.0f)};
+		std::vector<NiPoint3> Points = {};
 
-		if (DebugDraw::CanDraw(giant, DebugDraw::DrawTarget::kAnyGTS)) {
-			DebugDraw::DrawSphere(glm::vec3(NodePosition.x, NodePosition.y, NodePosition.z), maxDistance, 300);
+		for (NiPoint3 _: points) {
+			Points.push_back(NodePosition);
 		}
 
+		float maxCheckDistance = BASE_CHECK_DISTANCE * giantScale;
+		float maxCheckDistanceSq = maxCheckDistance * maxCheckDistance;
+		
+		const float sphereRadiusHk = maxDistance * toHavok;
+		const float sphereRadiusSq = sphereRadiusHk * sphereRadiusHk;
+
+		const bool Condition = DebugDraw::CanDraw(giant, DebugDraw::DrawTarget::kAnyGTS);
+		CollisionDamage::DebugCollision(world, giant, Points, maxDistance, toHavok, Condition);
+		
 		NiPoint3 giantLocation = giant->GetPosition();
 
 		for (auto otherActor: find_actors()) {
-			if (otherActor != giant) {
-				float tinyScale = get_visual_scale(otherActor);
-				if (giantScale / tinyScale > SCALE_RATIO) {
-					NiPoint3 actorLocation = otherActor->GetPosition();
-					if (distanceSquared(actorLocation - giantLocation) <= CheckDistanceSquared) {
-						auto model = otherActor->GetCurrent3D();
+			if (otherActor == giant) {
+				continue;
+			}
+			bool HitDetected = CollisionDamage::HasCollided(giant, otherActor, world, Points, giantLocation, giantScale, SCALE_RATIO, maxDistance, maxCheckDistanceSq, sphereRadiusSq, toHavok);
+			if (HitDetected) {
+				Utils_PushCheck(giant, otherActor, Get_Bone_Movement_Speed(giant, Cause)); 
 
-						bool collided = false;
-						if (model) {
-							VisitNodes(model, [&](NiAVObject& a_obj) {
-								if (distanceSquared(NodePosition - a_obj.world.translate) <= maxNodeDistanceSquared) {
-									collided = true;
-									return false;
-								}
-								return true;
-							});
-						}
-						if (collided) {
-							Utils_PushCheck(giant, otherActor, Get_Bone_Movement_Speed(giant, Cause)); 
-
-							if (AnimationVars::ButtCrush::IsButtCrushing(giant) && !IsBeingEaten(otherActor) && get_scale_difference(giant, otherActor, SizeType::VisualScale, false, true) > 1.2f) {
-								PushActorAway(giant, otherActor, 1.0f);
-							}
-							
-							CollisionDamage::DoSizeDamage(giant, otherActor, damage, bbmult, crushmult, static_cast<int>(random), Cause, true);
-						}
-					}
+				if (AnimationVars::ButtCrush::IsButtCrushing(giant) && !IsBeingEaten(otherActor) && get_scale_difference(giant, otherActor, SizeType::VisualScale, false, true) > 1.2f) {
+					PushActorAway(giant, otherActor, 1.0f);
 				}
+				CollisionDamage::DoSizeDamage(giant, otherActor, damage, bbmult, crushmult, static_cast<int>(random), Cause, true);
 			}
 		}
 	}
+
+	
 
 	void ApplyAllCrawlingDamage(Actor* giant, int random, float bonedamage) { // Applies damage to all 4 crawl bones at once
 		auto LC = find_node(giant, "NPC L Calf [LClf]");

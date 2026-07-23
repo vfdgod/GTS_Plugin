@@ -108,22 +108,28 @@ namespace {
     }
 
     void DrawKickSettings() {
-        PSString THelp = "踢击是一类可以同时命中多个敌人的尺寸动作。\n"
-        "[站立] 角色未潜行或爬行时执行踢击。\n"
+        PSString THelp = "踢击是一种可同时命中多名敌人的体型动作。
+"
+        "[站立] 角色未潜行或爬行时执行踢击。
+"
         "[手部挥击] 角色潜行或爬行时执行挥击。";
-        PSString T0 = "[半径] 决定搜索碰撞体大小。\n"
-        "默认：36.0";
-        PSString T01 = "[半径] 决定潜行 / 爬行状态的搜索碰撞体大小。\n"
-        "默认：36.0";
-        PSString T1 = "[偏移] 初始搜索碰撞体相对角色前后移动的距离。\n"
-        "默认：20.0";
-        PSString T2 = "[手部挥击偏移] 初始搜索碰撞体相对角色前后移动的距离。\n"
-        "默认：35.0";
+        PSString T0 = "[半径] 决定搜索碰撞体大小。
+"
+        "默认：48.0";
+        PSString T01 = "[半径] 决定潜行/爬行状态的搜索碰撞体大小。
+"
+        "默认：48.0";
+        PSString T1 = "[偏移] 初始搜索碰撞体相对角色前后移动的距离。
+"
+        "默认：40.0";
+        PSString T2 = "[手部挥击偏移] 初始搜索碰撞体相对角色前后移动的距离。
+"
+        "默认：50.0";
         ImGuiEx::HelpText("什么是踢击", THelp);
         ImGuiEx::SliderF("踢击半径", &GTS::Config::AutoAim.fAutoAim_Range_Kick, 20.0f, 60.0f, T0, "%.2f");
         ImGuiEx::SliderF("[潜行] 踢击半径", &GTS::Config::AutoAim.fAutoAim_Range_Kick_Sneak, 20.0f, 60.0f, T01, "%.2f");
-        ImGuiEx::SliderF("[站立] 前后偏移", &GTS::Config::AutoAim.fAutoAim_Kick_OffsetDistance_Forward, 10.0f, 50.0f, T1, "%.2f");
-        ImGuiEx::SliderF("[潜行] 前后偏移", &GTS::Config::AutoAim.fAutoAim_Hand_OffsetDistance_Forward_Sneak, 20.0f, 50.0f, T2, "%.2f");
+        ImGuiEx::SliderF("[站立] 前后偏移", &GTS::Config::AutoAim.fAutoAim_Kick_OffsetDistance_Forward, 10.0f, 70.0f, T1, "%.2f");
+        ImGuiEx::SliderF("[潜行] 前后偏移", &GTS::Config::AutoAim.fAutoAim_Hand_OffsetDistance_Forward_Sneak, 20.0f, 70.0f, T2, "%.2f");
         ImGui::Spacing();
     }
 }
@@ -140,10 +146,14 @@ namespace GTS {
         ImUtil_Unique
 		{
 
-            PSString T0 = "启用或禁用部分尺寸动作的自动瞄准。\n"
-            "关闭后，玩家会回到旧逻辑：通过低头角度触发脚下动作。\n"
-            "该开关只影响玩家；NPC 仍会使用自动瞄准。";
-            PSString T1 = "未找到目标时，阻止动作退回到远距离踩踏。";
+            PSString T0 = "启用或关闭部分体型动作的自动瞄准。
+"
+            "- 关闭后会回到旧逻辑：通过镜头俯仰角触发动作
+"
+            "- 可仅对玩家关闭，NPC 仍会使用自动瞄准
+"
+            "- 关闭后也会禁用脚下踩踏组件。";
+            PSString T1 = "未找到目标时，阻止触发远距离踩踏。";
 
             PSString THelp = "自动瞄准会让尺寸动作自动选择更合适的目标与左右侧，并减少需要绑定的按键数量。\n"
                     "它适用于轻踩、重踩、践踏、手部拍击等基础尺寸动作。\n"

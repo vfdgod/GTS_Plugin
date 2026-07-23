@@ -2,11 +2,18 @@
 #include "Managers/Rumble.hpp"
 #include "Managers/Perks/ShrinkingGaze.hpp"
 #include "Utils/Actor/ActorBools.hpp"
+#include "Managers/HighHeel.hpp"
 
 using namespace GTS;
 
 namespace {
-
+	void RecordTinyCalamity(Actor* actor, float seconds_passed, float starting_duration, bool enable) {
+		if (auto TranData = Transient::GetActorData(actor)) {
+			TranData->TinyCalamityActive = enable;
+			TranData->TinyCalamity_SecondsPassed = seconds_passed;
+			TranData->TinyCalamity_StartingDuration = starting_duration;
+		}
+	}
 	float GetSMTBonus(Actor* actor) {
 		auto transient = Transient::GetActorData(actor);
 		if (transient) {
@@ -23,7 +30,7 @@ namespace {
 		return 0.0f;
 	}
 
-	void NullifySMTDuration(Actor* actor) {
+	void ResetDurationBonuses(Actor* actor) {
 		auto transient = Transient::GetActorData(actor);
 		if (transient) {
 			transient->SMTBonusDuration = 0.0f;
@@ -41,6 +48,28 @@ namespace {
 			}
 		}
 	}
+
+	void SpawnFootParticles(Actor* caster) {
+		const float scale = get_visual_scale(caster);
+		for (auto foot: {"NPC R Foot [Rft ]","NPC L Foot [Lft ]"}) {
+			if (auto node = find_node(caster, foot)) {
+				auto pos = node->world.translate;
+				pos.z -= HighHeelManager::GetInitialHeelHeight(caster) * 100.0f * scale;
+				SpawnCustomParticle(caster, ParticleType::Red, pos, foot, scale * 0.5f);
+			}
+		}
+	}
+
+	void CapCasterSize(Actor* caster, float CasterScale, bool ShouldRun) {
+		if (CasterScale < 1.0f) {
+			set_target_scale(caster, 1.0f);
+		} else if (CasterScale > 1.5f) {
+			update_target_scale(caster, -0.0300f, SizeEffectType::kNeutral);
+			if (ShouldRun && caster->IsPlayerRef()) {
+				Notify("Im getting too big, it becomes hard to handle such power.");
+			}
+		} // <- Disallow having it when scale is > natural scale * 1.50
+	}
 }
 
 namespace GTS {
@@ -52,12 +81,12 @@ namespace GTS {
 	void TinyCalamity::OnStart() {
 		auto caster = GetCaster();
 		if (caster) {
-
+			RecordTinyCalamity(caster, GetActiveEffect()->elapsedSeconds, GetActiveEffect()->duration, true);
 			if (caster->IsPlayerRef() && !Persistent::MSGSeenTinyCamity.value) {
 				PrintMessageBox(TinyCalamityMessage);
 				Persistent::MSGSeenTinyCamity.value = true;
 			}
-
+			
 			Runtime::PlaySoundAtNode(Runtime::SNDR.GTSSoundTinyCalamity, caster, 1.0f, "NPC COM [COM ]");
 			AdjustCalamityDuration(caster, GetActiveEffect());
 			auto node = find_node(caster, "NPC Root [Root]");
@@ -83,31 +112,23 @@ namespace GTS {
 		}
 		static Timer warningtimer = Timer(3.0);
 		float CasterScale = get_target_scale(caster);
-		float bonus = GetSMTBonus(caster);
-		float penalty = GetSMTPenalty(caster);
-
-		if (bonus > 0.5f) {
-			GetActiveEffect()->duration += bonus;
-
-			NullifySMTDuration(caster);
+		auto effect = GetActiveEffect();
+		RecordTinyCalamity(caster, effect->elapsedSeconds, effect->duration, true);
+		if (float bonus = GetSMTBonus(caster); bonus > 0.5f) {
+			effect->duration += bonus;
+			ResetDurationBonuses(caster);
 		}
-		if (penalty > 0.5f) {
-			GetActiveEffect()->duration -= penalty;
-			NullifySMTDuration(caster);
+		if (float penalty = GetSMTPenalty(caster); penalty > 0.5f) {
+			effect->duration -= penalty;
+			ResetDurationBonuses(caster);
 		}
-		if (CasterScale < 1.0f) {// Disallow to be smaller than 1.5 to avoid weird interactions with others
-			set_target_scale(caster, 1.0f);
-		} else if (CasterScale > 1.5f) {
-			update_target_scale(caster, -0.0300f, SizeEffectType::kNeutral);
-			if (warningtimer.ShouldRun() && caster->IsPlayerRef()) {
-				Notify("Im getting too big, it becomes hard to handle such power.");
-			}
-		} // <- Disallow having it when scale is > natural scale * 1.50
+		CapCasterSize(caster, CasterScale, warningtimer.ShouldRun()); // Cap size between 1.0x and 1.5, not bigger than that.
 	}
 
 	void TinyCalamity::OnFinish() {
 		auto caster = GetCaster();
 		if (caster) {
+			RecordTinyCalamity(caster, 0.0f, 0.0f, false);
 			float CasterScale = get_target_scale(caster);
 			float naturalscale = get_natural_scale(caster, true);
 			if (CasterScale < naturalscale) {

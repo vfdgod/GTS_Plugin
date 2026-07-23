@@ -1,4 +1,5 @@
 #include "Managers/Animation/Utils/CooldownManager.hpp"
+#include "Constants.hpp"
 
 #include "Config/Config.hpp"
 
@@ -7,44 +8,74 @@
 using namespace GTS;
 
 namespace {
+    float Calculate_FootstepTimer(Actor* actor) {
+        float cooldown = 0.2f;
+        cooldown /= AnimationManager::GetAnimSpeed(actor);
+        //log::info("Cooldown for footstep: {}", cooldown);
+        return cooldown;
+    }
 
-	constexpr float LAUNCH_COOLDOWN = 1.8f;
-	constexpr float PUSH_COOLDOWN = 2.0f;
-	constexpr float HANDDAMAGE_COOLDOWN = 0.6f;
-	constexpr float THIGHDAMAGE_COOLDOWN = 1.2f;
+    float Calculate_EmotionCooldown(Actor* actor) {
+        return EMOTION_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
+    }
+    float Calculate_EmotionCooldown_Long(Actor* actor) {
+        return EMOTION_COOLDOWN_LONG / AnimationManager::GetAnimSpeed(actor);
+    }
+    float Calculate_LaughCooldown(Actor* actor) {
+        return LAUGH_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
+    }
+    float Calculate_MoanCooldown(Actor* actor) {
+        return MOAN_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
+    }
 
-	constexpr float ABSORB_OTHER_COOLDOWN = 30.0f;
+    bool IsCooldownDisabledByCheat(CooldownSource source) {
+        if (Enum_Contains<CooldownSource>(source, "Action")) {
+            return true;
+        }
 
-	constexpr float BREAST_SUFFOCATE_OTHER_COOLDOWN = 30.0f;
-	constexpr float BREAST_ABSORB_OTHER_COOLDOWN = 30.0f;
-	constexpr float BREAST_VORE_OTHER_COOLDOWN = 30.0f;
+        switch (source) {
+            case CooldownSource::Misc_ShrinkOutburst:
+            case CooldownSource::Misc_ShrinkOutburst_Forced:
+            case CooldownSource::Misc_TinyCalamity_WrathfulCalamity:
+            case CooldownSource::Misc_TinyCalamity_Shrink:
+                return true;
+            default:
+                return false;
+        }
+    }
+}
 
-	constexpr float TINYCALAMITY_ONESHOT_COOLDOWN = 60.0f;
+namespace GTS {
 
-	constexpr float HEALTHGATE_COOLDOWN = 60.0f;
-	constexpr float SCARE_COOLDOWN = 6.0f;
-	constexpr float BUTTCRUSH_COOLDOWN = 30.0f;
-	constexpr float HUGS_COOLDOWN = 10.0f;
+	std::string CooldownManager::DebugName() {
+		return "::CooldownManager";
+	}
 
-	constexpr float LAUGH_COOLDOWN = 4.0f;
-	constexpr float MOAN_COOLDOWN = 5.0f;
-	constexpr float MOAN_CRUSH_COOLDOWN = 3.0f;
+    CooldownData& CooldownManager::GetCooldownData(Actor* actor) {
+		this->CooldownData.try_emplace(actor);
+		return this->CooldownData.at(actor);
+	}
 
-	constexpr float SOUND_COOLDOWN = 2.0f;
-	constexpr float GROW_SOUND_COOLDOWN = 1.0f;
-
-	constexpr float HIT_COOLDOWN = 1.0f;
-	constexpr float AI_GROWTH_COOLDOWN = 2.0f;
-	constexpr float SHRINK_OUTBURST_COOLDOWN = 18.0f;
-	constexpr float SHRINK_OUTBURST_COOLDOWN_FORCED = 180.0f;
-	constexpr float SHRINK_PARTICLE_COOLDOWN = 0.25f;
-	constexpr float SHRINK_PARTICLE_COOLDOWN_GAZE = 0.25f;
-	constexpr float SHRINK_PARTICLE_COOLDOWN_ANIM = 1.5f;
-	constexpr float SHRINK_TINYCALAMITY_RAGE = 60.0f;
-
-    constexpr float EMOTION_COOLDOWN = 1.5f;
-    constexpr float EMOTION_COOLDOWN_LONG = 3.5f;
-    
+    void CooldownManager::Reset() {
+        this->CooldownData.clear();
+        logger::info("Cooldowns cleared");
+    }
+    float Calculate_ShrinkOutburstTimer(Actor* actor) {
+        bool DarkArts3 = Runtime::HasPerk(actor, Runtime::PERK.GTSPerkDarkArtsAug3);
+        bool HealthRegen = Runtime::HasPerk(actor, Runtime::PERK.GTSPerkGrowthAug2);
+        bool DarkArts_Legendary = Runtime::HasPerk(actor, Runtime::PERK.GTSPerkDarkArtsLegendary);
+        float reduction = 1.0f;
+        if (DarkArts3) {
+            reduction = 0.7f;
+        }
+        if (HealthRegen && IsGrowthSpurtActive(actor)) {
+            reduction *= 0.75f;
+        }
+        if (DarkArts_Legendary) {
+            reduction *= 0.75f;
+        }
+        return SHRINK_OUTBURST_COOLDOWN * reduction;
+    }
 
     float Calculate_BreastActionCooldown(Actor* giant, int type) {
         float Cooldown = 1.0;
@@ -73,9 +104,9 @@ namespace {
         return Cooldown * reduction;
     }
 
-    float Calculate_AbsorbCooldown(Actor* giant) {
-        float mastery = std::clamp(GetGtsSkillLevel(giant) * 0.01f, 0.0f, 1.0f) * 0.73f;
-        float reduction = 1.0f - mastery; // Up to 8.1 seconds at level 100
+    float Calculate_HugCrushCooldown(Actor* giant) {
+        float mastery = std::clamp(GetGtsSkillLevel(giant) * 0.01f, 0.0f, 1.0f) * 0.666f;
+        float reduction = 1.0f - mastery; // Up to 15 seconds at level 100
 
         return ABSORB_OTHER_COOLDOWN * reduction;
     }
@@ -86,81 +117,11 @@ namespace {
 		float reduction = 1.0f;
 		if (lvl100) { // 15% reduction
 			reduction -= 0.15f;
-		}
-		if (lvl70) { // 10% reduction
+		} if (lvl70) { // 10% reduction
 			reduction -= 0.10f;
 		} 
 		return BUTTCRUSH_COOLDOWN * reduction;
 	}
-
-    float Calculate_FootstepTimer(Actor* actor) {
-        float cooldown = 0.2f;
-        cooldown /= AnimationManager::GetAnimSpeed(actor);
-        //log::info("Cooldown for footstep: {}", cooldown);
-        return cooldown;
-    }
-
-    float Calculate_ShrinkOutburstTimer(Actor* actor) {
-        bool DarkArts3 = Runtime::HasPerk(actor, Runtime::PERK.GTSPerkDarkArtsAug3);
-        bool HealthRegen = Runtime::HasPerk(actor, Runtime::PERK.GTSPerkGrowthAug2);
-        bool DarkArts_Legendary = Runtime::HasPerk(actor, Runtime::PERK.GTSPerkDarkArtsLegendary);
-        float reduction = 1.0f;
-        if (DarkArts3) {
-            reduction = 0.7f;
-        }
-        if (HealthRegen && IsGrowthSpurtActive(actor)) {
-            reduction *= 0.75f;
-        }
-        if (DarkArts_Legendary) {
-            reduction *= 0.75f;
-        }
-        return SHRINK_OUTBURST_COOLDOWN * reduction;
-    }
-
-    float Calculate_EmotionCooldown(Actor* actor) {
-        return EMOTION_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
-    }
-    float Calculate_EmotionCooldown_Long(Actor* actor) {
-        return EMOTION_COOLDOWN_LONG / AnimationManager::GetAnimSpeed(actor);
-    }
-    float Calculate_LaughCooldown(Actor* actor) {
-        return LAUGH_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
-    }
-    float Calculate_MoanCooldown(Actor* actor) {
-        return MOAN_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
-    }
-
-    bool IsCooldownDisabledByCheat(CooldownSource source) {
-        if (Enum_Contains<CooldownSource>(source, "Action")) {
-            return true;
-        }
-
-        switch (source) {
-            case CooldownSource::Misc_ShrinkOutburst:
-            case CooldownSource::Misc_ShrinkOutburst_Forced:
-            case CooldownSource::Misc_TinyCalamityRage:
-                return true;
-            default:
-                return false;
-        }
-    }
-}
-
-namespace GTS {
-
-	std::string CooldownManager::DebugName() {
-		return "::CooldownManager";
-	}
-
-    CooldownData& CooldownManager::GetCooldownData(Actor* actor) {
-		this->CooldownData.try_emplace(actor);
-		return this->CooldownData.at(actor);
-	}
-
-    void CooldownManager::Reset() {
-        this->CooldownData.clear();
-        logger::info("Cooldowns cleared");
-    }
 
     void CooldownManager::ResetActor(Actor* actor) {
         if (actor) {
@@ -200,7 +161,7 @@ namespace GTS {
             case CooldownSource::Action_Hugs:   
                 data.lastHugTime = Time::WorldTimeElapsed();
                 break;     
-            case CooldownSource::Action_AbsorbOther:
+            case CooldownSource::Action_HugAbsorbOther:
                 data.lastAbsorbTime = Time::WorldTimeElapsed();
                 break;
             case CooldownSource::Action_Breasts_Suffocate:
@@ -248,8 +209,11 @@ namespace GTS {
             case CooldownSource::Misc_ShrinkParticle_Gaze:
                 data.lastGazeShrinkParticleTime = Time::WorldTimeElapsed();
                 break;
-            case CooldownSource::Misc_TinyCalamityRage:
-                data.lastTinyCalamityTime = Time::WorldTimeElapsed();
+            case CooldownSource::Misc_TinyCalamity_WrathfulCalamity:
+                data.lastTinyCalamityOneShotTime = Time::WorldTimeElapsed();
+                break;
+            case CooldownSource::Misc_TinyCalamity_Shrink:
+                data.lastTinyCalamityShrinkTime = Time::WorldTimeElapsed();
                 break;
             case CooldownSource::Footstep_Right:
                 data.lastFootstepTime_R = Time::WorldTimeElapsed();
@@ -294,8 +258,8 @@ namespace GTS {
                 return (data.lastScareTime + SCARE_COOLDOWN) - time;
             case CooldownSource::Action_Hugs:
                 return (data.lastHugTime + HUGS_COOLDOWN) - time;
-            case CooldownSource::Action_AbsorbOther:
-                return (data.lastAbsorbTime + Calculate_AbsorbCooldown(giant)) - time;    
+            case CooldownSource::Action_HugAbsorbOther:
+                return (data.lastAbsorbTime + Calculate_HugCrushCooldown(giant)) - time;    
             case CooldownSource::Action_Breasts_Suffocate:
                 return (data.lastBreastSuffocateTime + Calculate_BreastActionCooldown(giant, 0)) - time;
             case CooldownSource::Action_Breasts_Vore:
@@ -326,8 +290,10 @@ namespace GTS {
                 return (data.lastAnimShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_ANIM) - time;
             case CooldownSource::Misc_ShrinkParticle_Gaze:
                 return (data.lastGazeShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_GAZE) - time;
-            case CooldownSource::Misc_TinyCalamityRage:
-                return (data.lastTinyCalamityTime + SHRINK_TINYCALAMITY_RAGE) - time;
+            case CooldownSource::Misc_TinyCalamity_WrathfulCalamity:
+                return (data.lastTinyCalamityOneShotTime + TINYCALAMITY_ONESHOT_COOLDOWN) - time;
+            case CooldownSource::Misc_TinyCalamity_Shrink:
+                return (data.lastTinyCalamityShrinkTime + TINYCALAMITY_SHRINK_COOLDOWN) - time;
             case CooldownSource::Footstep_Right:
                 return (data.lastFootstepTime_R + Calculate_FootstepTimer(giant)) - time;   
             case CooldownSource::Footstep_Left:
@@ -375,8 +341,8 @@ namespace GTS {
                 return time <= (data.lastBreastAbsorbTime + Calculate_BreastActionCooldown(giant, 2));
             case CooldownSource::Action_Hugs:
                 return time <= (data.lastHugTime + HUGS_COOLDOWN);
-            case CooldownSource::Action_AbsorbOther:
-                return time <= (data.lastAbsorbTime + Calculate_AbsorbCooldown(giant));
+            case CooldownSource::Action_HugAbsorbOther:
+                return time <= (data.lastAbsorbTime + Calculate_HugCrushCooldown(giant));
             case CooldownSource::Emotion_Laugh:   
                 return time <= (data.lastLaughTime + LAUGH_COOLDOWN);
             case CooldownSource::Emotion_Moan: 
@@ -401,8 +367,10 @@ namespace GTS {
                 return time <= (data.lastAnimShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_ANIM);
             case CooldownSource::Misc_ShrinkParticle_Gaze:
                 return time <= (data.lastGazeShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_GAZE);
-            case CooldownSource::Misc_TinyCalamityRage:
-                return time <= (data.lastTinyCalamityTime + SHRINK_TINYCALAMITY_RAGE); 
+            case CooldownSource::Misc_TinyCalamity_WrathfulCalamity:
+                return time <= (data.lastTinyCalamityOneShotTime + TINYCALAMITY_ONESHOT_COOLDOWN); 
+            case CooldownSource::Misc_TinyCalamity_Shrink:
+                return time <= (data.lastTinyCalamityShrinkTime + TINYCALAMITY_SHRINK_COOLDOWN); 
             case CooldownSource::Footstep_Right:
                 return time <= (data.lastFootstepTime_R + Calculate_FootstepTimer(giant));    
             case CooldownSource::Footstep_Left:

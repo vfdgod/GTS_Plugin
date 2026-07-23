@@ -1,3 +1,4 @@
+#include "Managers/Damage/TinyCalamity.hpp"
 #include "Managers/AI/AIManager.hpp"
 
 #include <algorithm>
@@ -14,6 +15,7 @@
 #include "Managers/AI/ButtCrush/ButtCrushAI.hpp"
 #include "Managers/AI/Thigh/ThighSandwichAI.hpp"
 #include "Managers/AI/StompKick/StompKickSwipeAI.hpp"
+#include "Managers/Animation/Utils/CooldownManager.hpp"
 #include "Managers/Animation/Grab.hpp"
 #include "Managers/Animation/HugShrink.hpp"
 #include "Managers/Animation/Controllers/VoreController.hpp"
@@ -36,6 +38,7 @@ namespace {
 		kHug,
 		kGrab,
 		kNone,
+		kWrathfulCalamity,
 		kTotal
 	};
 
@@ -302,36 +305,28 @@ namespace {
 	}
 
 	//Calculate which actions should be started based on which ones can currently be started
-	ActionType CalculateProbability(const absl::flat_hash_map<ActionType, int>& a_ValidActionMap, bool a_AllowNone) {
+	ActionType CalculateProbability(const absl::flat_hash_map<ActionType, int>& a_ValidActionMap) {
+		if (a_ValidActionMap.empty()) {
+			return ActionType::kNone;
+		} try {
+			std::array<int, static_cast<int>(ActionType::kTotal)> ProbabilityList = { 0 };
+			bool hasValidAction = false;
 
-		constexpr int DesiredNonePercentage = 30; // Target probability for None
-		if (a_ValidActionMap.empty()) return ActionType::kNone;
-
-		try {
-			std::array<int, static_cast<int>(ActionType::kTotal)> ProbabiltyList = { 0 };
-			int totalActionWeight = 0;
-
-			for (auto Action : a_ValidActionMap) {
-				ProbabiltyList[static_cast<int>(Action.first)] = Action.second;
-				totalActionWeight += Action.second;
+			// Roll percentage chance for every action independently
+			for (const auto& [action, chance] : a_ValidActionMap) {
+				if (chance <= 0) {
+					continue;
+				}
+				if (RandomInt(1, 100) <= chance) {
+					ProbabilityList[static_cast<int>(action)] = 1; // Equal weight
+					hasValidAction = true;
+				}
 			}
 
-			if (totalActionWeight <= 0) {
-				return ActionType::kNone;
-			}
-
-			// Scale None weight so it represents DesiredNonePercentage of total probability
-			// If None should be 30%, then actions should be 70% of total
-			// So: NoneWeight / (ActionWeight + NoneWeight) = 0.30
-			// Solving: NoneWeight = ActionWeight * (DesiredNonePercentage / (100 - DesiredNonePercentage))
-			if (a_AllowNone) {
-				const int noneWeight = (totalActionWeight * DesiredNonePercentage) / (100 - DesiredNonePercentage);
-				ProbabiltyList[static_cast<int>(ActionType::kNone)] = noneWeight;
-			}
-
-			return static_cast<ActionType>(RandomIntWeighted(ProbabiltyList));
-		}
-		catch (std::exception& e) {
+			// Nothing succeeded -> do nothing
+			if (!hasValidAction) return ActionType::kNone;
+			return static_cast<ActionType>(RandomIntWeighted(ProbabilityList));
+		} catch (std::exception& e) {
 			logger::warn("CalculateProbability Exception: {}", e.what());
 			return ActionType::kNone;
 		}
@@ -401,6 +396,7 @@ namespace GTS {
 		}
 
 		//Actor* container from each filter result.
+		std::vector<Actor*> CanCalamity = {};
 		std::vector<Actor*> CanVore = {};
 		std::vector<Actor*> CanDVVore = {};
 		std::vector<Actor*> CanStompKickSwipe = {};
@@ -427,6 +423,15 @@ namespace GTS {
 				);
 			}
 			return false;
+		}
+
+		//----------- WRATHFUL CALAMITY
+
+		if (AISettings.WrathfulCalamity.bEnableAction && TinyCalamityActive(a_Performer)) {
+			CanCalamity = VoreController::GetSingleton().GetVoreTargetsInFront(a_Performer, 1);  // This action supports only ONE actor
+			if (!CanCalamity.empty() && !IsActionOnCooldown(a_Performer, CooldownSource::Misc_TinyCalamity_WrathfulCalamity)) { 
+				StartableActions.emplace(ActionType::kWrathfulCalamity, static_cast<int>(AISettings.WrathfulCalamity.fProbability));
+			}
 		}
 
 		//----------- VORE
@@ -531,7 +536,7 @@ namespace GTS {
 
 		Temp.reserve(CanVore.size() + CanStompKickSwipe.size() +
 			CanThighSandwich.size() + CanThighCrush.size() +
-			CanButtCrush.size() + CanHug.size() + CanGrab.size());
+			CanButtCrush.size() + CanHug.size() + CanGrab.size() + CanCalamity.size());
 
 		auto CombineActorList = [&UniqueActors, &Temp](const std::vector<Actor*>& idxActor) {
 			for (Actor* TempActor : idxActor) {
@@ -554,42 +559,15 @@ namespace GTS {
 		const std::vector<Actor*> CombinedList = Temp;
 		HandleAttackBlocking(a_Performer, CombinedList);
 
-		const bool allowNoneSelection = !AISettings.bStompKickAutoAimFix;
-		const ActionType SelectedAction = CalculateProbability(StartableActions, allowNoneSelection);
-		if (ShouldLogActionAI(a_Performer)) {
-			logger::info(
-				"[AI Action] summary performer={}({:08X}) potentialPrey={} validPrey={} candidates[vore={},devourment={},stomp={},kick={},stompKick={},sandwich={},thighCrush={},butt={},hug={},grab={}] combined={} startable={} selected={} stompEnabled={} stompProb={:.0f} kickEnabled={} kickProb={:.0f} disableAttacks={} alwaysDisableAttacks={} followersGTOnly={} stompAssistFix={} noneAllowed={}",
-				GetActorLogName(a_Performer),
-				a_Performer->formID,
-				a_PotentialPrey.size(),
-				PreyList.size(),
-				CanVore.size(),
-				CanDVVore.size(),
-				CanStomp.size(),
-				CanKickSwipe.size(),
-				CanStompKickSwipe.size(),
-				CanThighSandwich.size(),
-				CanThighCrush.size(),
-				CanButtCrush.size(),
-				CanHug.size(),
-				CanGrab.size(),
-				CombinedList.size(),
-				StartableActions.size(),
-				ActionTypeName(SelectedAction),
-				AISettings.Stomp.bEnableAction,
-				AISettings.Stomp.fProbability,
-				AISettings.KickSwipe.bEnableAction,
-				AISettings.KickSwipe.fProbability,
-				AISettings.bDisableAttacks,
-				AISettings.bAlwaysDisableAttacks,
-				AISettings.bFollowersGTOnly,
-				AISettings.bStompKickAutoAimFix,
-				allowNoneSelection
-			);
-		}
-
-		switch (SelectedAction) {
-
+		switch (CalculateProbability(StartableActions)) {
+			case ActionType::kWrathfulCalamity: {
+				logger::trace("AI wants to start Wrathful calamity");
+				if (TinyCalamity_WrathfulCalamity(a_Performer, CanCalamity)) {
+					logger::trace("AI starting Wrathful calamity");
+					return true;
+				};
+				break;
+			}
 			case ActionType::kVore: {
 
 				logger::trace("AI Starting kVore Action");

@@ -90,7 +90,10 @@ namespace {
 }
 
 namespace GTS {
-    bool TinyCalamity_WrathfulCalamity(Actor* giant) {
+    bool TinyCalamity_WrathfulCalamity(Actor* giant, std::vector<Actor*> preys) {
+        if (preys.empty()) {
+            return false;
+        }
         bool perform = false;
         const bool has_rage = TinyCalamityHasRage(giant);
         const bool is_active = TinyCalamityActive(giant);
@@ -110,8 +113,7 @@ namespace GTS {
 
             const float base_threshold = 0.25f + std::clamp(GetGtsSkillLevel(giant) - 70.0f, 0.0f, 0.30f);
 
-            std::vector<Actor*> preys = VoreController::GetSingleton().GetVoreTargetsInFront(giant, 1);
-            bool OnCooldown = IsActionOnCooldown(giant, CooldownSource::Misc_TinyCalamityRage);
+            bool OnCooldown = IsActionOnCooldown(giant, CooldownSource::Misc_TinyCalamity_WrathfulCalamity);
             if (giant->IsPlayerRef()) {
                 logger::warn(
                     "[TinyCalamityDiag:WrathfulSearch] preyCount={} onCooldown={} actionBoost={} simActionBoost={}",
@@ -122,6 +124,7 @@ namespace GTS {
                 );
             }
             for (auto tiny: preys) {
+                
                 if (tiny) {
                     if (!giant->IsPlayerRef()) {
                         const bool hostile = IsHostile(giant, tiny) || IsHostile(tiny, giant);
@@ -136,8 +139,7 @@ namespace GTS {
                         float tiny_hp = GetMaxAV(tiny, ActorValue::kHealth);
 
                         float min_cap = SizeManager::BalancedMode() ? 0.5f : 1.0f;
-
-                        float difference = std::clamp(gts_hp / tiny_hp, min_cap, 2.0f);
+                        float difference = std::clamp(gts_hp / tiny_hp, min_cap, giant->IsPlayerRef() ? 2.0f : 4.0f); // Npc's can 1shot at full hp
 
                         float threshold = base_threshold * difference;
                         if (giant->IsPlayerRef()) {
@@ -165,7 +167,7 @@ namespace GTS {
                                 }
                                 return false;
                             }
-                            ApplyActionCooldown(giant, CooldownSource::Misc_TinyCalamityRage);
+                            ApplyActionCooldown(giant, CooldownSource::Misc_TinyCalamity_WrathfulCalamity);
                             Animation_TinyCalamity::AddToData(giant, tiny, 1.0f);
 
                             if (giant->IsPlayerRef()) {
@@ -202,10 +204,17 @@ namespace GTS {
                                     shake_camera(giant, 0.45f, 0.30f);
                                     NotifyWithSound(giant, message);
                                 } else {
-                                    std::string message = std::format("狂怒灾厄冷却中：{:.1f} 秒", GetRemainingCooldown(giant, CooldownSource::Misc_TinyCalamityRage));
+                                    std::string message = std::format("狂怒灾厄冷却中：{:.1f} 秒", GetRemainingCooldown(giant, CooldownSource::Misc_TinyCalamity_WrathfulCalamity));
                                     shake_camera(giant, 0.45f, 0.30f);
                                     NotifyWithSound(giant, message);
                                 }
+                            } else {
+                                Cprint("{} tried to start Wrathful Calamity", giant->GetDisplayFullName());
+                                Cprint("On Cooldown:{} ", OnCooldown);
+                                Cprint("Health: {:.0f}%; Requirement: {:.0f}%", health * 100.0f, threshold * 100.0f);
+                                logger::info("{} tried to start Wrathful Calamity", giant->GetDisplayFullName());
+                                logger::info("On Cooldown:{} ", OnCooldown);
+                                logger::info("Health: {:.0f}%; Requirement: {:.0f}%", health * 100.0f, threshold * 100.0f);
                             }
                         }
                     }

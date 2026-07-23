@@ -46,5 +46,6 @@ namespace GTS {
 	bool TinyCalamityHasRage(Actor* giant);
 	bool TinyCalamityHasShrinkingGaze(Actor* giant);
 	void LogTinyCalamityDiagnostics(Actor* giant, const char* context);
+	bool TinyCalamity_ShouldShrinkFirst(Actor* giant, Actor* tiny, float size_diff_requirement, float shrink_until, float shrink_rate_normal, float shrink_rate_sneak);
 
 }

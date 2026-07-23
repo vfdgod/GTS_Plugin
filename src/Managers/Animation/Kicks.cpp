@@ -7,15 +7,17 @@
 #include "Managers/Input/InputManager.hpp"
 #include "Utils/Actor/AutoAimUtils.hpp"
 
+
+#include "Managers/Perks/PerkHandler.hpp"
 #include "Utils/Actions/InputConditions.hpp"
 
 using namespace GTS;
 
 namespace {
-
 	constexpr std::string_view RNode = "NPC R Foot [Rft ]";
 	constexpr std::string_view LNode = "NPC L Foot [Lft ]";
 
+	
 	void PerformKick(std::string_view kick_type, float stamina_drain, bool strong) {
 		auto player = PlayerCharacter::GetSingleton();
 		std::string_view KickType;
@@ -64,15 +66,19 @@ namespace {
 
 	void GTS_Kick_Camera_On_R(AnimationEventData& data) {
 		ManageCamera(&data.giant, true, CameraTracking::R_Foot);
+		PerkHandler::KickPerk_ChangeAnimSpeed(data);
 	}
 	void GTS_Kick_Camera_On_L(AnimationEventData& data) {
 		ManageCamera(&data.giant, true, CameraTracking::L_Foot);
+		PerkHandler::KickPerk_ChangeAnimSpeed(data);
 	}
 	void GTS_Kick_Camera_Off_R(AnimationEventData& data) {
 		ManageCamera(&data.giant, false, CameraTracking::R_Foot);
+		PerkHandler::KickPerk_ChangeAnimSpeed(data, true);
 	}
 	void GTS_Kick_Camera_Off_L(AnimationEventData& data) {
 		ManageCamera(&data.giant, false, CameraTracking::L_Foot);
+		PerkHandler::KickPerk_ChangeAnimSpeed(data, true);
 	}
 
 	void GTS_Kick_SwingLeg_L(AnimationEventData& data) {
@@ -83,6 +89,7 @@ namespace {
 	void GTS_Kick_HitBox_On_R(AnimationEventData& data) {
 		StartDamageAt(&data.giant, Damage_Kick, 1.8f, Push_Kick_Normal, true, "NPC R Toe0 [RToe]", DamageSource::KickedRight);
 		DrainStamina(&data.giant, "StaminaDrain_StrongKick", Runtime::PERK.GTSPerkDestructionBasics, true, 4.0f);
+		
 	}
 	void GTS_Kick_HitBox_On_L(AnimationEventData& data) {
 		StartDamageAt(&data.giant, Damage_Kick, 1.8f, Push_Kick_Normal, false, "NPC L Toe0 [LToe]", DamageSource::KickedLeft);
@@ -108,6 +115,7 @@ namespace {
 	}
 	void GTS_Kick_HitBox_Power_Off_L(AnimationEventData& data) {
 		StopAllDamageAndStamina(&data.giant);
+		
 	}
 
 	// ======================================================================================
