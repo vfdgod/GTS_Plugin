@@ -143,10 +143,8 @@ namespace GTS {
 			}
 		}
 
-			// Attribute boost simulation (local) or real TC (upstream).
-			if (TinyCalamityAttributeBoostActive(tiny) || TinyCalamityActive(tiny)) {
-				TinyScale += 1.50f;
-			}
+		// Attribute boost simulation (local) or real TC (upstream).
+		if (TinyCalamityAttributeBoostActive(tiny) || TinyCalamityActive(tiny)) {
 			TinyScale += 1.50f;
 		}
 

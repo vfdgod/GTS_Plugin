@@ -147,10 +147,8 @@ namespace GTS {
 			float scale = impact.scale;
 			auto actor = impact.actor;
 			
-				// Action boost (local) or real TC (upstream NPC support).
-				if (TinyCalamityActionBoostActive(actor) || TinyCalamityActive(actor)) {
-					scale *= 2.5f; // Affect Sound threshold itself
-				}
+			// Action boost (local) or real TC (upstream NPC support).
+			if (TinyCalamityActionBoostActive(actor) || TinyCalamityActive(actor)) {
 				scale *= 2.5f; // Affect Sound threshold itself
 			}
 
