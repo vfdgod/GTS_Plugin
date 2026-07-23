@@ -388,14 +388,6 @@ namespace GTS {
 	bool AIManager::TryStartAction(Actor* a_Performer, const std::vector<Actor*>& a_PotentialPrey) const {
 
 		if (!a_Performer) return false;
-		if (!a_Performer->IsPlayerRef() &&
-			TinyCalamityActive(a_Performer) &&
-			TinyCalamityHasRage(a_Performer) &&
-			TinyCalamity_WrathfulCalamity(
-				a_Performer,
-				VoreController::GetSingleton().GetVoreTargetsInFront(a_Performer, 1))) {
-			return true;
-		}
 
 		//Actor* container from each filter result.
 		std::vector<Actor*> CanCalamity = {};
@@ -549,6 +541,7 @@ namespace GTS {
 			}
 		};
 
+		CombineActorList(CanCalamity);
 		CombineActorList(CanVore);
 		CombineActorList(CanStompKickSwipe);
 		CombineActorList(CanThighSandwich);

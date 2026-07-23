@@ -89,6 +89,7 @@ namespace GTS {
                     if (!windowRes) {
                         logger::warn("Some window settings could not be deserialized");
                     }
+                    loadRes &= windowRes;
                 }
 
                 if (!loadRes) {

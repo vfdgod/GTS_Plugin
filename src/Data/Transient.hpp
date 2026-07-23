@@ -18,8 +18,8 @@ namespace GTS {
 
 		static inline std::mutex _Lock;
 		static inline std::unordered_map<FormID, std::unique_ptr<TransientActorData>> TempActorDataMap {};
-		// Retired objects remain alive until plugin shutdown so pointers obtained by
-		// in-flight Havok or main-thread work cannot observe freed storage.
+		// Keep one retirement generation alive so in-flight Havok or main-thread work
+		// can finish. The next bulk reset or purge reclaims the previous generation.
 		static inline std::vector<std::unique_ptr<TransientActorData>> RetiredActorData {};
 	};
 }

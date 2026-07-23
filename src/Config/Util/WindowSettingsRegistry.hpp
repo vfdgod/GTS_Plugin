@@ -156,6 +156,7 @@ namespace GTS {
                 try {
                     if (!holderPtr->LoadStructFromTOML(a_mainToml)) {
                         logger::warn("Failed to deserialize settings for window: {}", holderPtr->GetWindowTypeName());
+                        success = false;
                     }
                 }
                 catch (const std::exception& e) {

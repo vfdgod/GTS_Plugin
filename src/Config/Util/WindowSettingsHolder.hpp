@@ -277,6 +277,7 @@ namespace GTS {
             catch (const std::exception& e) {
                 logger::warn("Failed to load base settings for {}: {} - using defaults", baseTableName, e.what());
                 m_baseSettings = m_baseDefaults;
+                result = false;
             }
 
             // Load custom settings if they exist
@@ -293,6 +294,7 @@ namespace GTS {
                         if (!m_customSettings->LoadStructFromTOML(tempToml)) {
                             logger::warn("Failed to load custom settings for {} - using defaults", customTableName);
                             m_customSettings->ResetToDefaults();
+                            result = false;
                         }
                     }
                     else {
@@ -303,6 +305,7 @@ namespace GTS {
                 catch (const std::exception& e) {
                     logger::warn("Exception loading custom settings for {}: {} - using defaults", baseTableName, e.what());
                     m_customSettings->ResetToDefaults();
+                    result = false;
                 }
             }
 
