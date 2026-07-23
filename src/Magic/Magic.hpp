@@ -30,7 +30,7 @@ namespace GTS {
 
 		private:
 
-		enum State {
+		enum class State {
 			Init,
 			Start,
 			Update,
