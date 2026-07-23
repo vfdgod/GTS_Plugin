@@ -61,9 +61,14 @@ namespace GTS {
 		}
 	}
 
-	float GetPercentageAV(Actor* actor, ActorValue av) {
-		return actor ? GetAV(actor, av) / GetMaxAV(actor, av) : 0.0f;
-	}
+		float GetPercentageAV(Actor* actor, ActorValue av) {
+			if (!actor) {
+				return 0.0f;
+			}
+
+			const float maxValue = GetMaxAV(actor, av);
+			return maxValue > 0.0f ? GetAV(actor, av) / maxValue : 0.0f;
+		}
 
 	void SetPercentageAV(Actor* actor, ActorValue av, float target) {
 		if (actor) {

@@ -8,7 +8,6 @@ namespace GTS {
 
 	void Transient::Reset() {
 		std::unique_lock lock(_Lock);
-		RetiredActorData.clear();
 		constexpr auto noAIAcquireFlag = static_cast<std::uint32_t>(Actor::RecordFlags::kNoAIAcquire);
 		for (const auto& [formID, data] : TempActorDataMap) {
 			if (data && data->FollowerNoAIAcquireAdded) {
@@ -69,8 +68,6 @@ namespace GTS {
 
 	void Transient::EraseUnloadedData() {
 		std::unique_lock lock(_Lock);
-		RetiredActorData.clear();
-
 		// Create a set to hold the whitelisted FormIDs.
 		std::unordered_set<FormID> allowedFormIDs;
 

@@ -33,11 +33,13 @@ namespace GTS {
 				m_fadeSettings.visibilityTimer = 0.0f;
             }
         }
-        else {
-			m_fadeSettings.visibilityTimer += deltaTime;
-			float fadeProgress = std::clamp(m_fadeSettings.visibilityTimer / m_fadeSettings.fadeDuration, 0.0f, 1.0f);
-            m_fadeSettings.fadeAlpha = 1.0f - fadeProgress;
-        }
+		else {
+				m_fadeSettings.visibilityTimer += deltaTime;
+				const float fadeProgress = m_fadeSettings.fadeDuration > 0.0f
+					? std::clamp(m_fadeSettings.visibilityTimer / m_fadeSettings.fadeDuration, 0.0f, 1.0f)
+					: 1.0f;
+			m_fadeSettings.fadeAlpha = 1.0f - fadeProgress;
+		}
     }
 
 	bool ImWindow::IsFadeComplete() const {

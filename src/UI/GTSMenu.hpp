@@ -30,9 +30,7 @@ namespace GTS {
 		std::atomic_bool m_isScaleformVisible = false;
 		std::atomic_bool m_cursorEnabled = false;
 
-		inline static std::atomic_flag g_alreadyPresenting = ATOMIC_FLAG_INIT;
-
-		public:
+			public:
 
 		//Init
 		void InitScaleform();

@@ -7,6 +7,20 @@ namespace {
 		std::shared_ptr<GTS::BaseTask> task;
 	};
 
+	class TaskUpdateGuard {
+		public:
+		explicit TaskUpdateGuard(GTS::BaseTask& a_task) : task(a_task) {}
+		~TaskUpdateGuard() {
+			task.EndUpdate();
+		}
+
+		TaskUpdateGuard(const TaskUpdateGuard&) = delete;
+		TaskUpdateGuard& operator=(const TaskUpdateGuard&) = delete;
+
+		private:
+		GTS::BaseTask& task;
+	};
+
 	std::vector<QueuedTask> CollectTasksForUpdate(auto& taskings, std::mutex& taskingsLock, GTS::UpdateKind kind) {
 		std::vector<QueuedTask> queued;
 
@@ -54,12 +68,20 @@ namespace {
 				continue;
 			}
 
-			const bool shouldContinue = entry.task->Update();
-			entry.task->EndUpdate();
-
-			if (!shouldContinue) {
-				toRemove.push_back(entry);
+			TaskUpdateGuard updateGuard(*entry.task);
+			try {
+				if (entry.task->Update()) {
+					continue;
+				}
 			}
+			catch (const std::exception& e) {
+				logger::error("Task '{}' failed: {}", entry.name, e.what());
+			}
+			catch (...) {
+				logger::error("Task '{}' failed with an unknown exception", entry.name);
+			}
+
+			toRemove.push_back(entry);
 		}
 
 		RemoveCompletedTasks(taskings, taskingsLock, toRemove);

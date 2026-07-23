@@ -4,6 +4,7 @@ namespace GTS {
 
 	void ImGraphics::SwapBaseTexture(Texture* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>&& newTexture) {
 		if (!texture) return;
+		texture->transformedTextureCache.clear();
 
 		// Move the CURRENT resource to the 'old' buffer.
 		// The ComPtr will not release the resource here, only decrement the ref count.
@@ -20,7 +21,7 @@ namespace GTS {
 		}
 
 		m_Device = a_device;
-		m_Context = a_context;
+		(void)a_context;
 
 		HRESULT hr = CoCreateInstance(
 			CLSID_WICImagingFactory,
@@ -39,8 +40,6 @@ namespace GTS {
 			ReportAndExit("ImGraphics: Could not create the default checkerboard texture.");
 
 		}
-
-		CreateSamplers();
 
 	}
 
@@ -115,8 +114,7 @@ namespace GTS {
 	bool ImGraphics::LoadImage(const std::string& name, const std::string& filePath) {
 		std::lock_guard lock(m_Lock);
 
-		// Convert std::string to wstring for WIC
-		std::wstring wFilePath(filePath.begin(), filePath.end());
+			const std::wstring wFilePath = std::filesystem::path(filePath).wstring();
 
 		// Create a WIC decoder
 		Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
@@ -330,6 +328,12 @@ namespace GTS {
 			return false; // Failed to create
 		}
 
+		// Keep the cache bounded when callers use continuously changing transforms.
+		constexpr std::size_t maxCachedTransforms = 128;
+		if (texture->transformedTextureCache.size() >= maxCachedTransforms) {
+			texture->transformedTextureCache.clear();
+		}
+
 		// Store the new texture in the cache
 		texture->transformedTextureCache[transform] = newTransformedTexture;
 
@@ -377,7 +381,7 @@ namespace GTS {
 		}
 		// Raster: auto resample via WIC scaler when downsizing
 		else if (tex->type == BaseImageType::Raster && a_size.x > 0 && a_size.y > 0 &&
-			(fabs(tex->originalSize.x - a_size.x) > 1.0f || fabs(tex->originalSize.y - a_size.y) > 1.0f)) {
+			(fabs(tex->size.x - a_size.x) > 1.0f || fabs(tex->size.y - a_size.y) > 1.0f)) {
 			ResampleRaster(tex, a_size);
 		}
 
@@ -430,6 +434,11 @@ namespace GTS {
 			return { reinterpret_cast<ImTextureID>(m_defaultTexture->texture.Get()), m_defaultTexture->size };
 		}
 
+		constexpr std::size_t maxCachedTransforms = 128;
+		if (tex->transformedTextureCache.size() >= maxCachedTransforms) {
+			tex->transformedTextureCache.clear();
+		}
+
 		// Store the new texture in the cache
 		tex->transformedTextureCache[transform] = newTransformedTexture;
 
@@ -470,10 +479,10 @@ namespace GTS {
 		return names;
 	}
 
-	bool ImGraphics::RasterizeSVG(Texture* a_svgTexture, ImVec2 a_size) {
-		if (!a_svgTexture->document) {
-			return false;
-		}
+		bool ImGraphics::RasterizeSVG(Texture* a_svgTexture, ImVec2 a_size) {
+			if (!a_svgTexture->document || a_svgTexture->originalSize.x <= 0.0f || a_svgTexture->originalSize.y <= 0.0f) {
+				return false;
+			}
 
 		// Calculate aspect ratio for proper scaling
 		float aspectRatio = a_svgTexture->originalSize.x / a_svgTexture->originalSize.y;
@@ -626,31 +635,6 @@ namespace GTS {
 		texture->size = texture->originalSize;
 		m_defaultTexture = texture;
 		return true;
-	}
-
-	void ImGraphics::CreateSamplers() {
-
-		D3D11_SAMPLER_DESC sd{};
-		sd.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		sd.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		sd.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		sd.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		sd.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		sd.MinLOD = 0;
-		sd.MaxLOD = D3D11_FLOAT32_MAX;
-
-		HRESULT hr = m_Device->CreateSamplerState(&sd, &m_PointSampler);
-		if (FAILED(hr)) {
-			logger::error("CreateSamplerState m_PointSampler fail: {:X}", hr);
-		}
-
-		sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		hr = m_Device->CreateSamplerState(&sd, &m_LinearSampler);
-		if (FAILED(hr)) {
-			logger::error("CreateSamplerState m_LinearSampler fail: {:X}", hr);
-		}
-
-		logger::info("Samplers built");
 	}
 
 	// Lanczos 'a' parameter
@@ -861,12 +845,6 @@ namespace GTS {
 	}
 
 	bool ImGraphics::CreateTextureFromWICBitmap(Texture* texture, const BYTE* pixelData, UINT width, UINT height, UINT stride) {
-		// Release old texture if it exists
-		if (texture->texture) {
-			texture->texture->Release();
-			texture->texture = nullptr;
-		}
-
 		// Create DirectX texture
 		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));

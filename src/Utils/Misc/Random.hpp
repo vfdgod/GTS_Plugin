@@ -4,9 +4,7 @@
 
 namespace GTS {
 
-	inline static std::random_device rdevice;
-	//inline static XoshiroCpp::Xoshiro256StarStar generator(rdevice());
-	inline static clib_util::RNG generator(rdevice());
+	inline thread_local clib_util::RNG generator;
 
 	// ------------------
 	// Random Float

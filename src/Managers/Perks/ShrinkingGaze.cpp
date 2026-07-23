@@ -45,7 +45,7 @@ namespace {
 
 	void LaughOr(Actor* giant) {
 		int MoanRNG = RandomInt(0, 3);
-		if (MoanRNG >= 2 && IsActionOnCooldown(giant, CooldownSource::Emotion_Moan)) {
+			if (MoanRNG >= 2 && !IsActionOnCooldown(giant, CooldownSource::Emotion_Moan)) {
 			ApplyActionCooldown(giant, CooldownSource::Emotion_Moan);
 			Task_FacialEmotionTask_Smile(giant, 2.0f, "CalamityMoan",0.0f, 0.35f);
 			Sound_PlayLaughs(giant, 1.0f, 0.14f, EmotionTriggerSource::Superiority);

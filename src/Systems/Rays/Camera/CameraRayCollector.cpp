@@ -47,16 +47,21 @@ namespace GTS::CameraCol {
 	}
 
 	HkpRayResult HkpCastRay(RE::Actor* a_owner, const glm::vec4& start, const glm::vec4& end) noexcept {
+		if (!a_owner) {
+			return {};
+		}
+
 		constexpr float hkpScale = 0.0142875f;
 		const glm::vec4 dif = end - start;
 		constexpr float one = 1.0f;
 
 		const auto from = start * hkpScale;
-		const auto to = dif * hkpScale;
+		const auto to = end * hkpScale;
+		const auto ray = dif * hkpScale;
 
 		RE::hkpWorldRayCastInput pickRayInput{};
 		pickRayInput.from = RE::hkVector4(from.x, from.y, from.z, one);
-		pickRayInput.to = RE::hkVector4(to.x, to.y, to.z, one);  // 'to' here = end * hkpScale
+		pickRayInput.to = RE::hkVector4(to.x, to.y, to.z, one);
 		pickRayInput.filterInfo = 0;
 		pickRayInput.enableShapeCollectionFilter = false;
 
@@ -65,7 +70,7 @@ namespace GTS::CameraCol {
 
 		RE::bhkPickData pickData{};
 		pickData.rayInput = pickRayInput;
-		pickData.ray = RE::hkVector4(to.x, to.y, to.z, one);
+		pickData.ray = RE::hkVector4(ray.x, ray.y, ray.z, 0.0f);
 		pickData.rayHitCollectorA8 = reinterpret_cast<RE::hkpClosestRayHitCollector*>(&collector);
 
 		auto cell = a_owner->GetParentCell();

@@ -90,7 +90,7 @@ namespace GTS {
 		}
 
 		//Always draw all if the widget page is open in settings
-		if (*m_isConfiguring && *m_settingsVisible) {
+		if (m_isConfiguring && m_settingsVisible && *m_isConfiguring && *m_settingsVisible) {
 			this->ResetFadeState();
 		}
 
@@ -109,7 +109,7 @@ namespace GTS {
 
 		m_fadeSettings.enabled = BaseSettings.bEnableFade;
 		m_fadeSettings.visibilityDuration = BaseSettings.fFadeAfter;
-		bool configuring = *m_isConfiguring && *m_settingsVisible;
+		bool configuring = m_isConfiguring && m_settingsVisible && *m_isConfiguring && *m_settingsVisible;
 
 		const ImVec2 offset{ BaseSettings.f2Position[0], BaseSettings.f2Position[1] };
 		ImGui::SetWindowPos(GetAnchorPos(StringToEnum<WindowAnchor>(BaseSettings.sAnchor), offset, true));

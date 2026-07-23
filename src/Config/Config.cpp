@@ -1,6 +1,40 @@
 #include "Config/Config.hpp"
 #include "Config/Util/SettingsOperations.hpp"
 
+namespace {
+	std::string SanitizeFileNameComponent(std::string a_value) {
+		constexpr std::string_view invalidChars = "<>:\"/\\|?*";
+		for (char& ch : a_value) {
+			if (static_cast<unsigned char>(ch) < 32 || invalidChars.contains(ch)) {
+				ch = '_';
+			}
+		}
+
+		while (!a_value.empty() && (a_value.back() == '.' || a_value.back() == ' ')) {
+			a_value.pop_back();
+		}
+
+		if (a_value.empty()) {
+			return "Unknown";
+		}
+
+		std::string upper = a_value;
+		std::ranges::transform(upper, upper.begin(), [](unsigned char ch) {
+			return static_cast<char>(std::toupper(ch));
+		});
+		static constexpr std::array reservedNames{
+			"CON"sv, "PRN"sv, "AUX"sv, "NUL"sv,
+			"COM1"sv, "COM2"sv, "COM3"sv, "COM4"sv, "COM5"sv, "COM6"sv, "COM7"sv, "COM8"sv, "COM9"sv,
+			"LPT1"sv, "LPT2"sv, "LPT3"sv, "LPT4"sv, "LPT5"sv, "LPT6"sv, "LPT7"sv, "LPT8"sv, "LPT9"sv,
+		};
+		if (std::ranges::find(reservedNames, upper) != reservedNames.end()) {
+			a_value.insert(a_value.begin(), '_');
+		}
+
+		return a_value;
+	}
+}
+
 namespace GTS {
 
     std::string Config::DebugName() {
@@ -43,8 +77,10 @@ namespace GTS {
             logger::error("Could not Parse Persistent Mod Settings: {}", e.what());
             return false;
         }
-        catch (...) {
-            logger::error("LoadSettingsFromString() -> TOML::Parse Exception Outside of TOML11's Scope");
+		catch (...) {
+			TomlData = toml::ordered_table();
+			Sett->clear();
+			logger::error("LoadSettingsFromString() -> TOML::Parse Exception Outside of TOML11's Scope");
             return false;
         }
 
@@ -107,7 +143,7 @@ namespace GTS {
         }
 
         const auto player = PlayerCharacter::GetSingleton();
-        const std::string playerName = player ? player->GetName() : "Unknown";
+		const std::string playerName = SanitizeFileNameComponent(player ? player->GetName() : "Unknown");
         const std::string FileName = "Export_" + playerName +  "_" + FileUtils::GetTimestamp() + ".toml";
         auto exportPath = _fileManager.GetExportPath(FileName);
         bool result = SaveTOMLToFile(TomlData, exportPath);
@@ -121,10 +157,11 @@ namespace GTS {
         return result;
     }
 
-    bool Config::LoadFromExport(const std::filesystem::path& exportPath) {
+	bool Config::LoadFromExport(const std::filesystem::path& exportPath) {
 
-        if (!std::filesystem::exists(exportPath)) {
-            logger::error("Export file does not exist: {}", exportPath.string());
+		std::error_code ec;
+		if (!std::filesystem::exists(exportPath, ec) || ec) {
+			logger::error("Export file does not exist: {}", exportPath.string());
             return false;
         }
 

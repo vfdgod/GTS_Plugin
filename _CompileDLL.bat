@@ -53,14 +53,6 @@ if not exist "%VCPKG_PATH%" (
 )
 
 echo.
-echo Setting up build environment...
-if not defined VS_PATH (
-    echo Visual Studio environment already configured.
-) else (
-    call "%VS_PATH%\VC\Auxiliary\Build\vcvars64.bat"
-)
-
-echo.
 echo Running CMake configuration...
 cmake --preset config-release
 if %errorlevel% neq 0 (

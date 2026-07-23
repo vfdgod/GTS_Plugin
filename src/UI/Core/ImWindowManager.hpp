@@ -21,10 +21,7 @@ namespace GTS {
         ImWindow* wDebug = nullptr;
 
         ImWindow* wKillFeed = nullptr;
-        ImWindow* wActionMenu = nullptr;
-        ImWindow* wQuestWidget = nullptr;
-
-        //Widgets
+		//Widgets
         ImWindow* wUBar = nullptr;
         ImWindow* wStatusBar = nullptr;
 

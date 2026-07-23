@@ -106,7 +106,7 @@ namespace GTS {
 		if (!actor) {
 			return 0.0f;
 		}
-		float GS = clamp (0.0f, 1000000.0f, this->GetData(actor).GrowthSpurtSize);
+		float GS = std::clamp(this->GetData(actor).GrowthSpurtSize, 0.0f, 1000000.0f);
 		return GS;
 	}
 
@@ -147,10 +147,10 @@ namespace GTS {
 		}
 		auto Persistent = Persistent::GetActorData(actor);
 		if (Persistent) {
-			float Normal = clamp (1.0f, 1000000.0f, Persistent->fNormalDamage);
-			float Sprint = clamp (1.0f, 1000000.0f, Persistent->fSprintDamage);
-			float Fall = clamp (1.0f, 1000000.0f, Persistent->fFallDamage);
-			float HH = clamp (1.0f, 1000000.0f, Persistent->fHHDamage);
+			float Normal = std::clamp(Persistent->fNormalDamage, 1.0f, 1000000.0f);
+			float Sprint = std::clamp(Persistent->fSprintDamage, 1.0f, 1000000.0f);
+			float Fall = std::clamp(Persistent->fFallDamage, 1.0f, 1000000.0f);
+			float HH = std::clamp(Persistent->fHHDamage, 1.0f, 1000000.0f);
 			switch (attribute) {
 				case SizeAttribute::Normal: 
 					return Normal;

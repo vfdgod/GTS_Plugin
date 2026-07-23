@@ -393,11 +393,10 @@ namespace GTS {
 		}
 
 		//ImGui_ImplWin32_NewFrame();
-		ImGui_ImplDX11_NewFrame();
-		ImGui::NewFrame();
-		ImGraphics::ClearTransformedTextureCache();
+			ImGui_ImplDX11_NewFrame();
+			ImGui::NewFrame();
 
-		Input->ProcessInputEventQueue();
+			Input->ProcessInputEventQueue();
 		WindowManager->Update();
 
 		depthPriority = WindowManager->GetDesiredPriority();

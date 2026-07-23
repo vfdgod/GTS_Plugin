@@ -5,6 +5,7 @@ namespace GTS {
 
 	class Magic {
 		public:
+		virtual ~Magic() = default;
 		virtual void OnStart();
 		virtual void OnUpdate();
 		virtual void OnFinish();
@@ -19,8 +20,9 @@ namespace GTS {
 		[[nodiscard]] bool HasDuration() const;
 		[[nodiscard]] bool IsFinished() const;
 
-		void Poll();
-		void Dispel() const;
+			void Poll();
+			void Finish();
+			void Dispel() const;
 
 		Magic(ActiveEffect* effect);
 
@@ -73,6 +75,7 @@ namespace GTS {
 		virtual void ActorUpdate(RE::Actor* actor) override;
 		virtual void Update() override;
 		virtual void Reset() override;
+		virtual void ResetActor(RE::Actor* actor) override;
 		virtual void DataReady() override;
 
 		static void ProcessActiveEffects(Actor* a_actor);
@@ -91,11 +94,15 @@ namespace GTS {
 			}
 		}	
 
-		private:
-		static inline std::unordered_map<ActiveEffect*, std::unique_ptr<Magic>> active_effects;
-		static inline std::unordered_map<EffectSetting*, std::unique_ptr<MagicFactoryBase>> factories;
-		static inline std::uint64_t numberOfEffects = 0;
-		static inline std::uint64_t numberOfOurEffects = 0;
+			private:
+			struct TrackedMagic {
+				std::unique_ptr<Magic> effect;
+				Actor* owner = nullptr;
+			};
+
+			static inline std::unordered_map<ActiveEffect*, TrackedMagic> active_effects;
+			static inline std::unordered_map<EffectSetting*, std::unique_ptr<MagicFactoryBase>> factories;
+			static inline std::mutex activeEffectsLock;
 	};
 
 }

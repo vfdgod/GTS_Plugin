@@ -9,7 +9,6 @@ function(add_cxx_files TARGET)
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/*.hxx"
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/*.inl"
 	)
-	list(FILTER HEADER_FILES EXCLUDE REGEX "/Hooks/Experiments/")
 
 	source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
 		PREFIX "Header Files"
@@ -25,7 +24,6 @@ function(add_cxx_files TARGET)
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cxx"
 	)
-	list(FILTER SOURCE_FILES EXCLUDE REGEX "/Hooks/Experiments/")
 
 	source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
 		PREFIX "Source Files"

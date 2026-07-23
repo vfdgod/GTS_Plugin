@@ -365,7 +365,7 @@ namespace GTS {
 
 	void Grow_Ally(Actor* from, Actor* to, float receiver, float caster) {
 		float receive = CalcPower(from, receiver, 0, false);
-		float lose = CalcPower(from, receiver, 0, false);
+			float lose = CalcPower(from, caster, 0, false);
 		float CasterScale = get_target_scale(from);
 		if (CasterScale > get_natural_scale(from, true)) { // We don't want to scale the caster below this limit!
 			update_target_scale(from, -lose, SizeEffectType::kShrink);

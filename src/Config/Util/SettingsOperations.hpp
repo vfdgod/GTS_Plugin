@@ -16,27 +16,45 @@
 
 namespace GTS {
 
-    class SettingsOperations : SettingsHandler {
+	class SettingsOperations : SettingsHandler {
 
-        public:
+		private:
+		template<typename Config, typename Func>
+		static void ForEachStaticSetting(Config& a_conf, Func&& a_func) {
+			std::apply(
+				[&a_func](auto&... setting) {
+					(a_func(setting), ...);
+				},
+				std::tie(
+					a_conf.Hidden,
+					a_conf.Advanced,
+					a_conf.General,
+					a_conf.Gameplay,
+					a_conf.Balance,
+					a_conf.AutoAim,
+					a_conf.Audio,
+					a_conf.AI,
+					a_conf.Camera,
+					a_conf.UI,
+					a_conf.Collision
+				)
+			);
+		}
+
+		public:
         template<typename Config>
         static bool SerializeAllStructsToTOML(Config& a_conf, toml::ordered_value& a_toml) {
             try {
                 bool updateRes = true;
                 a_toml = toml::ordered_table();
 
-                // Serialize static settings
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.Hidden,    std::string(toml::refl::GetFriendlyName(a_conf.Hidden)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.Advanced,  std::string(toml::refl::GetFriendlyName(a_conf.Advanced)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.General,   std::string(toml::refl::GetFriendlyName(a_conf.General)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.Gameplay,  std::string(toml::refl::GetFriendlyName(a_conf.Gameplay)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.Balance,   std::string(toml::refl::GetFriendlyName(a_conf.Balance)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.AutoAim,   std::string(toml::refl::GetFriendlyName(a_conf.AutoAim)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.Audio,     std::string(toml::refl::GetFriendlyName(a_conf.Audio)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.AI,        std::string(toml::refl::GetFriendlyName(a_conf.AI)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.Camera,    std::string(toml::refl::GetFriendlyName(a_conf.Camera)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.UI,        std::string(toml::refl::GetFriendlyName(a_conf.UI)));
-                updateRes &= a_conf.UpdateTOMLFromStruct(a_toml, a_conf.Collision, std::string(toml::refl::GetFriendlyName(a_conf.Collision)));
+				ForEachStaticSetting(a_conf, [&](auto& setting) {
+					updateRes &= a_conf.UpdateTOMLFromStruct(
+						a_toml,
+						setting,
+						std::string(toml::refl::GetFriendlyName(setting))
+					);
+				});
 
                 // Serialize window settings
                 if (WindowSettingsRegistry::GetSingleton().HasWindowSettings()) {
@@ -70,18 +88,13 @@ namespace GTS {
             try {
                 bool loadRes = true;
 
-                // Deserialize static settings
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.Hidden,     std::string(toml::refl::GetFriendlyName(a_conf.Hidden)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.Advanced,   std::string(toml::refl::GetFriendlyName(a_conf.Advanced)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.General,    std::string(toml::refl::GetFriendlyName(a_conf.General)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.Gameplay,   std::string(toml::refl::GetFriendlyName(a_conf.Gameplay)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.Balance,    std::string(toml::refl::GetFriendlyName(a_conf.Balance)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.AutoAim,    std::string(toml::refl::GetFriendlyName(a_conf.AutoAim)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.Audio,      std::string(toml::refl::GetFriendlyName(a_conf.Audio)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.AI,         std::string(toml::refl::GetFriendlyName(a_conf.AI)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.Camera,     std::string(toml::refl::GetFriendlyName(a_conf.Camera)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.UI,         std::string(toml::refl::GetFriendlyName(a_conf.UI)));
-                loadRes &= a_conf.LoadStructFromTOML(a_toml, a_conf.Collision,  std::string(toml::refl::GetFriendlyName(a_conf.Collision)));
+				ForEachStaticSetting(a_conf, [&](auto& setting) {
+					loadRes &= a_conf.LoadStructFromTOML(
+						a_toml,
+						setting,
+						std::string(toml::refl::GetFriendlyName(setting))
+					);
+				});
 
                 // Deserialize window settings
                 if (WindowSettingsRegistry::GetSingleton().HasWindowSettings()) {
@@ -113,18 +126,9 @@ namespace GTS {
 
         template<typename Config>
         static void ResetAllStructsToDefaults(Config& a_conf) {
-            // Reset static settings
-            a_conf.Hidden    = SettingsHidden_t{};
-            a_conf.Advanced  = SettingsAdvanced_t{};
-            a_conf.General   = SettingsGeneral_t{};
-            a_conf.AI        = SettingsAI_t{};
-            a_conf.Audio     = SettingsAudio_t{};
-            a_conf.Balance   = SettingsBalance_t{};
-            a_conf.AutoAim   = SettingsAutoAim_t{};
-            a_conf.Camera    = SettingsCamera_t{};
-            a_conf.Gameplay  = SettingsGameplay_t{};
-            a_conf.UI        = SettingsUI_t{};
-            a_conf.Collision = SettingsCollision_t{};
+			ForEachStaticSetting(a_conf, [](auto& setting) {
+				setting = std::remove_cvref_t<decltype(setting)>{};
+			});
 
             // Reset window settings
             WindowSettingsRegistry::GetSingleton().ResetAllWindowSettings();

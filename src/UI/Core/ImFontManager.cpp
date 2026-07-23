@@ -26,10 +26,23 @@ namespace GTS {
 
     }
 
-    void ImFontManager::Push(ActiveFontType a_ActiveFontType, float a_scaleOverride_mult) {
-    	const auto& Type = TextTypeMap.find(a_ActiveFontType)->second;
-        ImGui::PushFont(Type.FontSet->EN, Type.Scale * a_scaleOverride_mult);
-    }
+	void ImFontManager::Push(ActiveFontType a_ActiveFontType, float a_scaleOverride_mult) {
+		if (TextTypeMap.empty()) {
+			Init();
+		}
+		auto it = TextTypeMap.find(a_ActiveFontType);
+		if (it == TextTypeMap.end()) {
+			logger::warn("Unknown font type {}, falling back to regular text", std::to_underlying(a_ActiveFontType));
+			it = TextTypeMap.find(kText);
+		}
+		if (it == TextTypeMap.end()) {
+			logger::error("Font manager has no regular font; using the active ImGui font");
+			ImGui::PushFont(ImGui::GetFont(), ImGui::GetFontSize());
+			return;
+		}
+		const auto& Type = it->second;
+		ImGui::PushFont(Type.FontSet->EN, Type.Scale * a_scaleOverride_mult);
+	}
 
     void ImFontManager::Pop() {
         ImGui::PopFont();

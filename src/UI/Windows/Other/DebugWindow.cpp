@@ -290,13 +290,13 @@ namespace GTS {
 			ImGui::InputFloat("fTest8", &Config::Experiments.fTest8);
 
 			ImGui::InputInt("iTest1", &Config::Experiments.iTest1);
-			ImGui::InputInt("iTest2", &Config::Experiments.iTest1);
-			ImGui::InputInt("iTest3", &Config::Experiments.iTest1);
-			ImGui::InputInt("iTest4", &Config::Experiments.iTest1);
-			ImGui::InputInt("iTest5", &Config::Experiments.iTest1);
-			ImGui::InputInt("iTest6", &Config::Experiments.iTest1);
-			ImGui::InputInt("iTest7", &Config::Experiments.iTest1);
-			ImGui::InputInt("iTest8", &Config::Experiments.iTest1);
+			ImGui::InputInt("iTest2", &Config::Experiments.iTest2);
+			ImGui::InputInt("iTest3", &Config::Experiments.iTest3);
+			ImGui::InputInt("iTest4", &Config::Experiments.iTest4);
+			ImGui::InputInt("iTest5", &Config::Experiments.iTest5);
+			ImGui::InputInt("iTest6", &Config::Experiments.iTest6);
+			ImGui::InputInt("iTest7", &Config::Experiments.iTest7);
+			ImGui::InputInt("iTest8", &Config::Experiments.iTest8);
 
 		}
 

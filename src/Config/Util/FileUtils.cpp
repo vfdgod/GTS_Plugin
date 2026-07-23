@@ -4,15 +4,27 @@ namespace GTS {
 
 	std::string FileUtils::GetTimestamp() {
 		using namespace std::chrono;
-		auto now = system_clock::now();
-		auto unix_seconds = duration_cast<seconds>(now.time_since_epoch()).count();
-		return std::to_string(unix_seconds);
+		const auto now = system_clock::now();
+		const auto unixMilliseconds = duration_cast<milliseconds>(now.time_since_epoch()).count();
+		return std::to_string(unixMilliseconds);
 	}
 
 	bool FileUtils::EnsureExportDirectoryExists() {
 		std::error_code ec;
-		if (!std::filesystem::exists(_exportsDir, ec)) {
-			if (!std::filesystem::create_directories(_exportsDir, ec)) {
+		const bool exists = std::filesystem::exists(_exportsDir, ec);
+		if (ec) {
+			logger::error("Failed to inspect export directory: {}", ec.message());
+			return false;
+		}
+		if (exists) {
+			if (!std::filesystem::is_directory(_exportsDir, ec) || ec) {
+				logger::error("Export path is not a directory: {}", _exportsDir.string());
+				return false;
+			}
+		}
+		else {
+			if (!std::filesystem::create_directories(_exportsDir, ec) &&
+				(ec || !std::filesystem::is_directory(_exportsDir, ec))) {
 				logger::error("Failed to create export directory: {}", ec.message());
 				return false;
 			}
@@ -22,22 +34,33 @@ namespace GTS {
 
 	std::vector<std::filesystem::path> FileUtils::GetExportedFiles() {
 		std::vector<std::filesystem::path> exports;
-		if (!std::filesystem::exists(_exportsDir)) {
+		std::error_code ec;
+		if (!std::filesystem::exists(_exportsDir, ec) || ec) {
+			if (ec) {
+				logger::error("Failed to inspect export directory: {}", ec.message());
+			}
 			return exports;
 		}
 
-		std::error_code ec;
-		for (const auto& entry : std::filesystem::directory_iterator(_exportsDir, ec)) {
-			if (entry.is_regular_file() && entry.path().extension() == ".toml") {
+		for (std::filesystem::directory_iterator it(_exportsDir, ec), end; it != end && !ec; it.increment(ec)) {
+			std::error_code entryError;
+			const auto& entry = *it;
+			if (entry.is_regular_file(entryError) && !entryError && entry.path().extension() == ".toml") {
 				exports.push_back(entry.path());
 			}
+		}
+		if (ec) {
+			logger::error("Failed while enumerating export directory: {}", ec.message());
 		}
 
 		// Sort by modification time (newest first)
 		std::ranges::sort(exports, [](const auto& a, const auto& b) {
-			std::error_code err;
-			auto timeA = std::filesystem::last_write_time(a, err);
-			auto timeB = std::filesystem::last_write_time(b, err);
+			std::error_code errA;
+			std::error_code errB;
+			auto timeA = std::filesystem::last_write_time(a, errA);
+			auto timeB = std::filesystem::last_write_time(b, errB);
+			if (errA) timeA = std::filesystem::file_time_type::min();
+			if (errB) timeB = std::filesystem::file_time_type::min();
 			return timeA > timeB;
 		});
 
@@ -46,17 +69,30 @@ namespace GTS {
 
 	bool FileUtils::DeleteExport(const std::filesystem::path& a_exportPath) {
 		std::error_code ec;
-		bool result = std::filesystem::remove(a_exportPath, ec);
+		const auto exportDirectory = std::filesystem::weakly_canonical(_exportsDir, ec);
+		if (ec) {
+			logger::error("Failed to resolve export directory: {}", ec.message());
+			return false;
+		}
+
+		const auto exportPath = std::filesystem::weakly_canonical(a_exportPath, ec);
+		if (ec || exportPath.parent_path() != exportDirectory || exportPath.extension() != ".toml") {
+			logger::error("Refusing to delete a path outside the export directory: {}", a_exportPath.string());
+			return false;
+		}
+
+		bool result = std::filesystem::remove(exportPath, ec);
 		if (result) {
-			logger::info("Deleted export: {}", a_exportPath.string());
+			logger::info("Deleted export: {}", exportPath.string());
 		}
 		else {
-			logger::error("Failed to delete export {}: {}", a_exportPath.string(), ec.message());
+			logger::error("Failed to delete export {}: {}", exportPath.string(), ec.message());
 		}
 		return result;
 	}
 
 	bool FileUtils::CleanOldExports(int a_keepCount) {
+		a_keepCount = std::max(a_keepCount, 0);
 		auto exports = GetExportedFiles();
 		if (exports.size() <= static_cast<size_t>(a_keepCount)) {
 			return true; // Nothing to clean
@@ -77,11 +113,15 @@ namespace GTS {
 	}
 
 	void FileUtils::CopyLegacySettings(const std::filesystem::path& a_fullFilePath) {
-
-		if (!std::filesystem::exists(a_fullFilePath) || !EnsureExportDirectoryExists()) {
-			return;
-		}
 		try {
+			std::error_code ec;
+			if (!std::filesystem::exists(a_fullFilePath, ec) || ec || !EnsureExportDirectoryExists()) {
+				if (ec) {
+					logger::error("Could not inspect legacy settings file: {}", ec.message());
+				}
+				return;
+			}
+
 			auto destinationPath = _exportsDir / "LegacySettings.toml";
 			std::filesystem::copy_file(a_fullFilePath, destinationPath, std::filesystem::copy_options::overwrite_existing);
 			std::filesystem::remove(a_fullFilePath);

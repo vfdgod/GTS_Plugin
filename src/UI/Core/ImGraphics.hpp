@@ -179,10 +179,7 @@ namespace GTS {
 
         private:
         static inline ID3D11Device* m_Device = nullptr;
-        static inline ID3D11DeviceContext* m_Context = nullptr;
-        static inline ID3D11SamplerState* m_PointSampler = nullptr;
-        static inline ID3D11SamplerState* m_LinearSampler = nullptr;
-        static inline absl::flat_hash_map<std::string, std::shared_ptr<Texture>> m_TextureMap;
+		static inline absl::flat_hash_map<std::string, std::shared_ptr<Texture>> m_TextureMap;
         static inline std::mutex m_Lock;
         static inline Microsoft::WRL::ComPtr<IWICImagingFactory> m_wicFactory;
         static inline std::shared_ptr<Texture> m_defaultTexture;
@@ -207,8 +204,7 @@ namespace GTS {
         static inline std::atomic_bool m_ready = false;
         static bool RasterizeSVG(Texture* a_svgTexture, ImVec2 a_size);
         static bool CreateDefaultCheckerboardTexture(UINT tileSize = 4, UINT tiles = 8);
-        static void CreateSamplers();
-        static bool ResampleRaster(Texture* tex, ImVec2 size);
+		static bool ResampleRaster(Texture* tex, ImVec2 size);
         static void SwapBaseTexture(Texture* texture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>&& newTexture);
         static bool CreateTextureFromWICBitmap(Texture* texture, const BYTE* pixelData, UINT width, UINT height, UINT stride);
         static Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ApplyTransformations(Texture* texture, const ImageTransform& transform);

@@ -40,9 +40,7 @@ namespace GTS {
 	bool EventDispatcher::RemoveListenerFrom(tbb::concurrent_vector<ListenerEntry>& listeners, EventListener* a_listener) {
 		bool removed = false;
 		for (auto& entry : listeners) {
-			EventListener* current = entry.ptr.load(std::memory_order_relaxed);
-			if (current == a_listener) {
-				entry.ptr.store(nullptr, std::memory_order_release);
+			if (entry.Deactivate(a_listener)) {
 				removed = true;
 			}
 		}

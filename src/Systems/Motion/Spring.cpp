@@ -9,10 +9,6 @@ namespace {
 		return (4.0f * std::numbers::ln2_v<float>) / (halflife + eps);
 	}
 
-	float damping_to_halflife(float damping, float eps = 1e-5f)
-	{
-		return (4.0f * std::numbers::ln2_v<float>) / (damping + eps);
-	}
 	float fast_negexp(float x)
 	{
 		return 1.0f / (1.0f + x + 0.48f*x*x + 0.235f*x*x*x);
@@ -72,9 +68,11 @@ namespace GTS {
 	}
 
 	void SpringHolder::AddSpring(SpringBase* spring)  {
+		std::scoped_lock lock(springsLock);
 		springs.insert(spring);
 	}
 	void SpringHolder::RemoveSpring(SpringBase* spring) {
+		std::scoped_lock lock(springsLock);
 		springs.erase(spring);
 	}
 
@@ -84,6 +82,7 @@ namespace GTS {
 
 	void SpringHolder::Update() {
 		float dt = Time::WorldTimeDelta();
+		std::scoped_lock lock(springsLock);
 		for (auto spring: springs) {
 			spring->Update(dt);
 		}

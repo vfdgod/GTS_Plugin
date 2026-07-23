@@ -1,5 +1,4 @@
 #pragma once
-#include "Hooks/Experiments/Experiments_FootColliders.hpp"
 
 namespace GTS {
 

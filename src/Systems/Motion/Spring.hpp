@@ -47,8 +47,9 @@ namespace GTS {
 		static void RemoveSpring(SpringBase* spring);
 
 		virtual std::string DebugName() override;
-		virtual void Update() override;
+			virtual void Update() override;
 
-		static inline std::unordered_set<SpringBase*> springs;
-	};
+			static inline std::unordered_set<SpringBase*> springs;
+			static inline std::mutex springsLock;
+		};
 }

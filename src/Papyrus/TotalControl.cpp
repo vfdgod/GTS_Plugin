@@ -1,6 +1,6 @@
 #include "Papyrus/TotalControl.hpp"
 #include "Magic/Effects/Common.hpp"
-#include "Managers/Rumble.hpp"
+#include "Utils/Actions/TotalControlActions.hpp"
 
 using namespace GTS;
 using namespace RE::BSScript;
@@ -9,227 +9,31 @@ namespace {
 
 	constexpr std::string_view PapyrusClass = "GTSControl";
 
+	bool CanUseTotalControl(float power) {
+		Actor* player = PlayerCharacter::GetSingleton();
+		return power > 0.0f && player && Runtime::HasPerkTeam(player, Runtime::PERK.GTSPerkGrowthDesireAug);
+	}
 	void GrowTeammate(StaticFunctionTag*, float power) {
-		const float powerMult = std::max(power, 0.0f);
-		if (powerMult <= 0.0f) {
-			return;
+		if (CanUseTotalControl(power)) {
+			TotalControlActions::GrowTeammatesOverTime(power);
 		}
-		auto casterRef = PlayerCharacter::GetSingleton();
-		if (casterRef) {
-			if (Runtime::HasPerkTeam(casterRef, Runtime::PERK.GTSPerkGrowthDesireAug)) {
-				for (auto targetRef: FindTeammates()) {
-					if (targetRef) {
-						float falloff = 0.11f * get_visual_scale(targetRef);
-						float Volume = std::clamp(get_visual_scale(targetRef)/8.0f, 0.20f, 1.0f);
-						Runtime::PlaySoundAtNode_FallOff(Runtime::SNDR.GTSSoundGrowth, targetRef, Volume, "NPC Pelvis [Pelv]", falloff);
-
-						// Thread safe handles
-						ActorHandle casterHandle = casterRef->CreateRefHandle();
-						ActorHandle targetHandle = targetRef->CreateRefHandle();
-
-						std::string name = std::format("GrowFollower_{}", targetRef->formID);
-						constexpr float DURATION = 2.0f;
-
-						TaskManager::RunFor(name, DURATION, [=](auto& progressData){
-							if (!casterHandle) {
-								return false;
-							}
-							if (!targetHandle) {
-								return false;
-							}
-							float timeDelta = static_cast<float>(progressData.delta * 60); // Was optimised as 60fps
-
-							auto target = targetHandle.get().get();
-							auto caster = casterHandle.get().get();
-							if (!target || !caster) {
-								return false;
-							}
-
-							float target_scale = get_target_scale(target);
-							float magicka = std::clamp(GetMagikaPercentage(caster), 0.05f, 1.0f);
-
-							float bonus = 1.0f;
-							if (Runtime::HasMagicEffect(caster, Runtime::MGEF.GTSPotionEffectSizeAmplify)) {
-								bonus = target_scale * 0.25f + 0.75f;
-							}
-
-							DamageAV(caster, ActorValue::kMagicka, 0.45f * (target_scale * 0.25f + 0.75f) * magicka * bonus * timeDelta * powerMult);
-							Grow(target, 0.0030f * magicka * bonus * powerMult, 0.0f);
-							Rumbling::Once("GrowOtherButton", target, 1.0f, 0.05f);
-
-							return true;
-						});
-					}
-				}
-			}
-		}
-		
 	}
 
 	void ShrinkTeammate(StaticFunctionTag*, float power) {
-		const float powerMult = std::max(power, 0.0f);
-		if (powerMult <= 0.0f) {
-			return;
-		}
-		auto casterRef = PlayerCharacter::GetSingleton();
-		if (casterRef) {
-			if (Runtime::HasPerkTeam(casterRef, Runtime::PERK.GTSPerkGrowthDesireAug)) {
-				for (auto targetRef: FindTeammates()) {
-					if (targetRef) {
-						float scale = get_visual_scale(targetRef);
-						float Volume = std::clamp(scale * 0.10f, 0.10f, 1.0f);
-						
-						float falloff = 0.11f * scale;
-						Runtime::PlaySoundAtNode_FallOff(Runtime::SNDR.GTSSoundShrink, targetRef, Volume, "NPC Pelvis [Pelv]", falloff);
-						
-						// Thread safe handles
-						ActorHandle casterHandle = casterRef->CreateRefHandle();
-						ActorHandle targetHandle = targetRef->CreateRefHandle();
-
-						constexpr float DURATION = 2.0f;
-						std::string name = std::format("ShrinkFollower_{}", targetRef->formID);
-
-						TaskManager::RunFor(name, DURATION, [=](auto& progressData){
-							if (!casterHandle) {
-								return false;
-							}
-							if (!targetHandle) {
-								return false;
-							}
-
-							auto target = targetHandle.get().get();
-							auto caster = casterHandle.get().get();
-							if (!target || !caster) {
-								return false;
-							}
-
-							float target_scale = get_target_scale(target);
-							float magicka = std::clamp(GetMagikaPercentage(caster), 0.05f, 1.0f);
-
-							float bonus = 1.0f;
-							if (Runtime::HasMagicEffect(caster, Runtime::MGEF.GTSPotionEffectSizeAmplify)) {
-								bonus = target_scale * 0.25f + 0.75f;
-							}
-
-							if (target_scale > get_natural_scale(target, true)) {
-								DamageAV(caster, ActorValue::kMagicka, 0.25f * (target_scale * 0.25f + 0.75f) * magicka * bonus * TimeScale() * powerMult);
-								ShrinkActor(target, 0.0030f * magicka * bonus * powerMult, 0.0f);
-								Rumbling::Once("ShrinkOtherButton", target, 1.0f, 0.05f);
-							}
-							return true;
-						});
-					}
-				}
-			}
+		if (CanUseTotalControl(power)) {
+			TotalControlActions::ShrinkTeammatesOverTime(power);
 		}
 	}
 
 	void GrowPlayer(StaticFunctionTag*, float power) {
-		const float powerMult = std::max(power, 0.0f);
-		if (powerMult <= 0.0f) {
-			return;
-		}
-
-		auto casterRef = PlayerCharacter::GetSingleton();
-		if (casterRef) {
-			if (Runtime::HasPerkTeam(casterRef, Runtime::PERK.GTSPerkGrowthDesireAug)) {
-				float scale = get_visual_scale(casterRef);
-				float Volume = std::clamp(scale * 0.20f, 0.20f, 1.0f);
-
-				float falloff = 0.11f * scale;
-
-				Runtime::PlaySoundAtNode_FallOff(Runtime::SNDR.GTSSoundGrowth, casterRef, Volume, "NPC Pelvis [Pelv]", falloff);
-			
-				// Thread safe handles
-				ActorHandle casterHandle = casterRef->CreateRefHandle();
-
-				constexpr float DURATION = 2.0f;
-				std::string name = std::format("GrowPlayer_{}", casterRef->formID);
-
-				TaskManager::RunFor(name, DURATION, [=](auto& progressData){
-					if (!casterHandle) {
-						return false;
-					}
-
-					auto caster = casterHandle.get().get();
-					if (!caster) {
-						return false;
-					}
-
-					float caster_scale = get_visual_scale(caster);
-					float target_scale = get_target_scale(caster);
-
-					float bonus = 1.0f;
-					if (Runtime::HasMagicEffect(caster, Runtime::MGEF.GTSPotionEffectSizeAmplify)) {
-						bonus = target_scale * 0.25f + 0.75f;
-					}
-
-					float stamina = std::clamp(GetStaminaPercentage(caster), 0.05f, 1.0f);
-					DamageAV(caster, ActorValue::kStamina, 0.45f * (caster_scale * 0.5f + 0.5f) * stamina * TimeScale() * powerMult);
-
-					Grow(caster, 0.0030f * stamina * powerMult, 0.0f);
-
-					Rumbling::Once("GrowButton", caster, 1.0f, 0.05f);
-
-					return true;
-				});
-			}
+		if (CanUseTotalControl(power)) {
+			TotalControlActions::GrowPlayerOverTime(power);
 		}
 	}
-	
 
 	void ShrinkPlayer(StaticFunctionTag*, float power) {
-		const float powerMult = std::max(power, 0.0f);
-		if (powerMult <= 0.0f) {
-			return;
-		}
-
-		auto casterRef = PlayerCharacter::GetSingleton();
-		if (casterRef) {
-			if (Runtime::HasPerkTeam(casterRef, Runtime::PERK.GTSPerkGrowthDesireAug)) {
-				float scale = get_visual_scale(casterRef);
-				float Volume = std::clamp(scale * 0.10f, 0.10f, 1.0f);
-				float falloff = 0.11f * scale;
-
-				Runtime::PlaySoundAtNode_FallOff(Runtime::SNDR.GTSSoundShrink, casterRef, Volume, "NPC Pelvis [Pelv]", falloff);
-			
-				// Thread safe handles
-				ActorHandle casterHandle = casterRef->CreateRefHandle();
-
-				constexpr float DURATION = 2.0f;
-				std::string name = std::format("ShrinkPlayer_{}", casterRef->formID);
-
-				TaskManager::RunFor(name, DURATION, [=](auto& progressData){
-					if (!casterHandle) {
-						return false;
-					}
-
-					auto caster = casterHandle.get().get();
-					if (!caster) {
-						return false;
-					}
-
-					float caster_scale = get_visual_scale(caster);
-					float target_scale = get_target_scale(caster);
-
-					float stamina = std::clamp(GetStaminaPercentage(caster), 0.05f, 1.0f);
-
-					float bonus = 1.0f;
-					if (Runtime::HasMagicEffect(caster, Runtime::MGEF.GTSPotionEffectSizeAmplify)) {
-						bonus = target_scale * 0.25f + 0.75f;
-					}
-
-					if (target_scale > Minimum_Actor_Scale) {
-						DamageAV(caster, ActorValue::kStamina, 0.25f * (caster_scale * 0.5f + 0.5f) * stamina * TimeScale() * powerMult);
-						ShrinkActor(caster, 0.0020f * stamina * powerMult, 0.0f);
-						Rumbling::Once("ShrinkButton", caster, 0.60f, 0.05f);
-					} else {
-						set_target_scale(caster, Minimum_Actor_Scale);
-						return false;
-					}
-					return true;
-				});
-			}
+		if (CanUseTotalControl(power)) {
+			TotalControlActions::ShrinkPlayerOverTime(power, Minimum_Actor_Scale);
 		}
 	}
 

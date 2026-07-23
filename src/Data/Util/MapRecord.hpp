@@ -42,20 +42,17 @@ namespace Serialization {
             return false;
         }
 
-        void Clear(bool reclaimRetired = true) {
-            if (reclaimRetired) {
-                retired.clear();
-            }
-            for (auto& [key, data] : value) {
-                retired.emplace_back(std::move(data));
+		void Clear(bool reclaimRetired = true) {
+			(void)reclaimRetired;
+			for (auto& [key, data] : value) {
+				retired.emplace_back(std::move(data));
             }
             value.clear();
         }
 
-        template <typename Predicate>
-        void EraseIf(Predicate&& shouldErase) {
-            retired.clear();
-            for (auto it = value.begin(); it != value.end();) {
+		template <typename Predicate>
+		void EraseIf(Predicate&& shouldErase) {
+			for (auto it = value.begin(); it != value.end();) {
                 if (shouldErase(it->first)) {
                     retired.emplace_back(std::move(it->second));
                     it = value.erase(it);
@@ -168,8 +165,8 @@ namespace Serialization {
         private:
         std::unordered_map<RE::FormID, std::unique_ptr<Value>> value;
 
-        // Keep one retirement generation alive so concurrent readers can finish.
-        // The next bulk reset or purge reclaims the previous generation.
-        std::vector<std::unique_ptr<Value>> retired;
+		// Raw pointers are part of the existing accessor API, so retired values stay
+		// alive for the process lifetime instead of being reclaimed behind readers.
+		std::vector<std::unique_ptr<Value>> retired;
     };
 }

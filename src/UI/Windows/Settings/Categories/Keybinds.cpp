@@ -134,7 +134,7 @@ namespace GTS {
 
                 
                 ImGuiEx::CheckBox("紧凑视图", &singleColumn, "在单列中列出所有按键绑定。");
-                Div = 1 + singleColumn;
+				Div = singleColumn ? 1 : 2;
 
                 ImGuiEx::SeperatorV();
 

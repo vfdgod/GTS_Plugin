@@ -414,10 +414,10 @@ namespace GTS {
 		if (IsFemale(a_Actor, true)) {
 
 			if (Settings.GamemodePlayer.bMultiplyGrowthrate && a_Actor->IsPlayerRef()) {
-				RateMultiplier = clamp(get_visual_scale(a_Actor) * 0.25f, 1.0f, 10.0f);
+					RateMultiplier = std::clamp(get_visual_scale(a_Actor) * 0.25f, 1.0f, 10.0f);
 			}
 			else if (Settings.GamemodeFollower.bMultiplyGrowthrate && IsTeammate(a_Actor)) {
-				RateMultiplier = clamp(get_visual_scale(a_Actor) * 0.25f, 1.0f, 10.0f);
+					RateMultiplier = std::clamp(get_visual_scale(a_Actor) * 0.25f, 1.0f, 10.0f);
 			}
 
 			switch (a_SelectedGameMode) {

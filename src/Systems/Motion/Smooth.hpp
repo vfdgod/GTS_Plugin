@@ -22,7 +22,4 @@ namespace GTS {
 	float soft_power(const float x, const SoftPotential& soft_potential);
 
 	// https://en.wikipedia.org/wiki/Smoothstep
-	float clamp(float lowerlimit, float upperlimit, float x);
-	float smootherstep(float edge0, float edge1, float x);
-	float smoothstep (float edge0, float edge1, float x);
 }

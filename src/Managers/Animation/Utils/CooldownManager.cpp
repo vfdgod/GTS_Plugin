@@ -8,27 +8,28 @@
 using namespace GTS;
 
 namespace {
-    float Calculate_FootstepTimer(Actor* actor) {
-        float cooldown = 0.2f;
-        cooldown /= AnimationManager::GetAnimSpeed(actor);
-        //log::info("Cooldown for footstep: {}", cooldown);
-        return cooldown;
+	float ScaleCooldownWithAnimation(Actor* actor, float cooldown) {
+		const float animationSpeed = AnimationManager::GetAnimSpeed(actor);
+		return animationSpeed > 0.0f ? cooldown / animationSpeed : cooldown;
+	}
+
+	float Calculate_FootstepTimer(Actor* actor) {
+		return ScaleCooldownWithAnimation(actor, 0.2f);
+	}
+	float Calculate_EmotionCooldown(Actor* actor) {
+		return ScaleCooldownWithAnimation(actor, EMOTION_COOLDOWN);
+	}
+	float Calculate_EmotionCooldown_Long(Actor* actor) {
+		return ScaleCooldownWithAnimation(actor, EMOTION_COOLDOWN_LONG);
+	}
+	float Calculate_LaughCooldown(Actor* actor) {
+		return ScaleCooldownWithAnimation(actor, LAUGH_COOLDOWN);
+	}
+	float Calculate_MoanCooldown(Actor* actor) {
+		return ScaleCooldownWithAnimation(actor, MOAN_COOLDOWN);
     }
 
-    float Calculate_EmotionCooldown(Actor* actor) {
-        return EMOTION_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
-    }
-    float Calculate_EmotionCooldown_Long(Actor* actor) {
-        return EMOTION_COOLDOWN_LONG / AnimationManager::GetAnimSpeed(actor);
-    }
-    float Calculate_LaughCooldown(Actor* actor) {
-        return LAUGH_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
-    }
-    float Calculate_MoanCooldown(Actor* actor) {
-        return MOAN_COOLDOWN / AnimationManager::GetAnimSpeed(actor);
-    }
-
-    bool IsCooldownDisabledByCheat(CooldownSource source) {
+	bool IsCooldownDisabledByCheat(CooldownSource source) {
         if (Enum_Contains<CooldownSource>(source, "Action")) {
             return true;
         }
@@ -41,8 +42,81 @@ namespace {
                 return true;
             default:
                 return false;
-        }
-    }
+		}
+	}
+
+	float Calculate_BreastSuffocateCooldown(Actor* actor) {
+		return Calculate_BreastActionCooldown(actor, 0);
+	}
+
+	float Calculate_BreastVoreCooldown(Actor* actor) {
+		return Calculate_BreastActionCooldown(actor, 1);
+	}
+
+	float Calculate_BreastAbsorbCooldown(Actor* actor) {
+		return Calculate_BreastActionCooldown(actor, 2);
+	}
+
+	struct CooldownDescriptor {
+		double CooldownData::* timestamp;
+		float fixedDuration = 0.0f;
+		float (*calculateDuration)(Actor*) = nullptr;
+
+		float Duration(Actor* actor) const {
+			return calculateDuration ? calculateDuration(actor) : fixedDuration;
+		}
+	};
+
+	std::optional<CooldownDescriptor> GetCooldownDescriptor(CooldownSource source) {
+		using Data = CooldownData;
+		switch (source) {
+			case CooldownSource::Damage_Launch: return CooldownDescriptor{ &Data::lastLaunchTime, LAUNCH_COOLDOWN };
+			case CooldownSource::Damage_Hand: return CooldownDescriptor{ &Data::lastHandDamageTime, HANDDAMAGE_COOLDOWN };
+			case CooldownSource::Damage_Thigh: return CooldownDescriptor{ &Data::lastThighDamageTime, THIGHDAMAGE_COOLDOWN };
+			case CooldownSource::Push_Basic: return CooldownDescriptor{ &Data::lastPushTime, PUSH_COOLDOWN };
+			case CooldownSource::Action_ButtCrush: return CooldownDescriptor{ &Data::lastButtCrushTime, 0.0f, Calculate_ButtCrushTimer };
+			case CooldownSource::Action_HealthGate: return CooldownDescriptor{ &Data::lastHealthGateTime, HEALTHGATE_COOLDOWN };
+			case CooldownSource::Action_ScareOther: return CooldownDescriptor{ &Data::lastScareTime, SCARE_COOLDOWN };
+			case CooldownSource::Action_HugAbsorbOther: return CooldownDescriptor{ &Data::lastAbsorbTime, 0.0f, Calculate_HugCrushCooldown };
+			case CooldownSource::Action_Breasts_Absorb: return CooldownDescriptor{ &Data::lastBreastAbsorbTime, 0.0f, Calculate_BreastAbsorbCooldown };
+			case CooldownSource::Action_Breasts_Suffocate: return CooldownDescriptor{ &Data::lastBreastSuffocateTime, 0.0f, Calculate_BreastSuffocateCooldown };
+			case CooldownSource::Action_Breasts_Vore: return CooldownDescriptor{ &Data::lastBreastVoreTime, 0.0f, Calculate_BreastVoreCooldown };
+			case CooldownSource::Action_Hugs: return CooldownDescriptor{ &Data::lastHugTime, HUGS_COOLDOWN };
+			case CooldownSource::Emotion_Laugh: return CooldownDescriptor{ &Data::lastLaughTime, 0.0f, Calculate_LaughCooldown };
+			case CooldownSource::Emotion_Moan: return CooldownDescriptor{ &Data::lastMoanTime, 0.0f, Calculate_MoanCooldown };
+			case CooldownSource::Emotion_Moan_Crush: return CooldownDescriptor{ &Data::lastMoanCrushTime, MOAN_CRUSH_COOLDOWN };
+			case CooldownSource::Misc_RevertSound: return CooldownDescriptor{ &Data::lastRevertTime, SOUND_COOLDOWN };
+			case CooldownSource::Misc_GrowthSound: return CooldownDescriptor{ &Data::lastSoundGrowthTime, GROW_SOUND_COOLDOWN };
+			case CooldownSource::Misc_BeingHit: return CooldownDescriptor{ &Data::lastHitTime, HIT_COOLDOWN };
+			case CooldownSource::Misc_AiGrowth: return CooldownDescriptor{ &Data::lastGrowthTime, AI_GROWTH_COOLDOWN };
+			case CooldownSource::Misc_ShrinkOutburst: return CooldownDescriptor{ &Data::lastOutburstTime, 0.0f, Calculate_ShrinkOutburstTimer };
+			case CooldownSource::Misc_ShrinkOutburst_Forced: return CooldownDescriptor{ &Data::lastForceOutburstTime, SHRINK_OUTBURST_COOLDOWN_FORCED };
+			case CooldownSource::Misc_ShrinkParticle: return CooldownDescriptor{ &Data::lastShrinkParticleTime, SHRINK_PARTICLE_COOLDOWN };
+			case CooldownSource::Misc_ShrinkParticle_Animation: return CooldownDescriptor{ &Data::lastAnimShrinkParticleTime, SHRINK_PARTICLE_COOLDOWN_ANIM };
+			case CooldownSource::Misc_ShrinkParticle_Gaze: return CooldownDescriptor{ &Data::lastGazeShrinkParticleTime, SHRINK_PARTICLE_COOLDOWN_GAZE };
+			case CooldownSource::Misc_TinyCalamity_WrathfulCalamity: return CooldownDescriptor{ &Data::lastTinyCalamityOneShotTime, TINYCALAMITY_ONESHOT_COOLDOWN };
+			case CooldownSource::Misc_TinyCalamity_Shrink: return CooldownDescriptor{ &Data::lastTinyCalamityShrinkTime, TINYCALAMITY_SHRINK_COOLDOWN };
+			case CooldownSource::Footstep_Right: return CooldownDescriptor{ &Data::lastFootstepTime_R, 0.0f, Calculate_FootstepTimer };
+			case CooldownSource::Footstep_Left: return CooldownDescriptor{ &Data::lastFootstepTime_L, 0.0f, Calculate_FootstepTimer };
+			case CooldownSource::Footstep_JumpLand: return CooldownDescriptor{ &Data::lastJumplandTime, 0.0f, Calculate_FootstepTimer };
+			case CooldownSource::Emotion_Voice: return CooldownDescriptor{ &Data::lastEmotionTime, 0.0f, Calculate_EmotionCooldown };
+			case CooldownSource::Emotion_Voice_Long: return CooldownDescriptor{ &Data::lastEmotionTime_Long, 0.0f, Calculate_EmotionCooldown_Long };
+		}
+		return std::nullopt;
+	}
+
+	std::optional<double> GetCooldownEndTime(Actor* actor, CooldownSource source) {
+		if (!actor) {
+			return std::nullopt;
+		}
+		const auto descriptor = GetCooldownDescriptor(source);
+		if (!descriptor) {
+			return std::nullopt;
+		}
+
+		auto& data = CooldownManager::GetSingleton().GetCooldownData(actor);
+		return data.*descriptor->timestamp + descriptor->Duration(actor);
+	}
 }
 
 namespace GTS {
@@ -51,13 +125,12 @@ namespace GTS {
 		return "::CooldownManager";
 	}
 
-    CooldownData& CooldownManager::GetCooldownData(Actor* actor) {
-		this->CooldownData.try_emplace(actor);
-		return this->CooldownData.at(actor);
+	CooldownData& CooldownManager::GetCooldownData(Actor* actor) {
+		return this->m_cooldownData.try_emplace(actor).first->second;
 	}
 
-    void CooldownManager::Reset() {
-        this->CooldownData.clear();
+	void CooldownManager::Reset() {
+		this->m_cooldownData.clear();
         logger::info("Cooldowns cleared");
     }
     float Calculate_ShrinkOutburstTimer(Actor* actor) {
@@ -123,190 +196,31 @@ namespace GTS {
 		return BUTTCRUSH_COOLDOWN * reduction;
 	}
 
-    void CooldownManager::ResetActor(Actor* actor) {
-        if (actor) {
-            this->CooldownData.erase(actor);
+	void CooldownManager::ResetActor(Actor* actor) {
+		if (actor) {
+			this->m_cooldownData.erase(actor);
         }
     }
 
-    void ApplyActionCooldown(Actor* giant, CooldownSource source) {
-        if (!Config::Advanced.bCooldowns && IsCooldownDisabledByCheat(source)) {
-            return;
-        }
+	void ApplyActionCooldown(Actor* giant, CooldownSource source) {
+		if (!giant || (!Config::Advanced.bCooldowns && IsCooldownDisabledByCheat(source))) {
+			return;
+		}
 
-	    auto& data = CooldownManager::GetSingleton().GetCooldownData(giant);
-
-        switch (source) {
-            case CooldownSource::Damage_Launch: 
-                data.lastLaunchTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Damage_Hand:
-                data.lastHandDamageTime = Time::WorldTimeElapsed();
-                break;    
-            case CooldownSource::Damage_Thigh:
-                data.lastThighDamageTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Push_Basic:
-                data.lastPushTime = Time::WorldTimeElapsed();
-                break;    
-            case CooldownSource::Action_ButtCrush:
-                data.lastButtCrushTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Action_HealthGate:
-                data.lastHealthGateTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Action_ScareOther:   
-                data.lastScareTime = Time::WorldTimeElapsed();
-                break; 
-            case CooldownSource::Action_Hugs:   
-                data.lastHugTime = Time::WorldTimeElapsed();
-                break;     
-            case CooldownSource::Action_HugAbsorbOther:
-                data.lastAbsorbTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Action_Breasts_Suffocate:
-                data.lastBreastSuffocateTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Action_Breasts_Vore:
-                data.lastBreastVoreTime = Time::WorldTimeElapsed();
-                break;   
-            case CooldownSource::Action_Breasts_Absorb:
-                data.lastBreastAbsorbTime = Time::WorldTimeElapsed();
-                break;        
-            case CooldownSource::Emotion_Laugh:   
-                data.lastLaughTime = Time::WorldTimeElapsed();
-                break; 
-            case CooldownSource::Emotion_Moan: 
-                data.lastMoanTime = Time::WorldTimeElapsed();
-                break;  
-            case CooldownSource::Emotion_Moan_Crush: 
-                data.lastMoanCrushTime = Time::WorldTimeElapsed();
-                break;  
-            case CooldownSource::Misc_RevertSound: 
-                data.lastRevertTime = Time::WorldTimeElapsed();
-                break; 
-            case CooldownSource::Misc_GrowthSound:
-                data.lastSoundGrowthTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_BeingHit:
-                data.lastHitTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_AiGrowth:
-                data.lastGrowthTime = Time::WorldTimeElapsed();
-                break;    
-            case CooldownSource::Misc_ShrinkOutburst:
-                data.lastOutburstTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_ShrinkOutburst_Forced:
-                data.lastForceOutburstTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_ShrinkParticle:
-                data.lastShrinkParticleTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_ShrinkParticle_Animation:
-                data.lastAnimShrinkParticleTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_ShrinkParticle_Gaze:
-                data.lastGazeShrinkParticleTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_TinyCalamity_WrathfulCalamity:
-                data.lastTinyCalamityOneShotTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Misc_TinyCalamity_Shrink:
-                data.lastTinyCalamityShrinkTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Footstep_Right:
-                data.lastFootstepTime_R = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Footstep_Left:
-                data.lastFootstepTime_L = Time::WorldTimeElapsed();
-                break; 
-            case CooldownSource::Footstep_JumpLand:
-                data.lastJumplandTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Emotion_Voice:
-                data.lastEmotionTime = Time::WorldTimeElapsed();
-                break;
-            case CooldownSource::Emotion_Voice_Long:
-                data.lastEmotionTime_Long = Time::WorldTimeElapsed();
-                break;
-        }
-    }
+		if (const auto descriptor = GetCooldownDescriptor(source)) {
+			auto& data = CooldownManager::GetSingleton().GetCooldownData(giant);
+			data.*descriptor->timestamp = Time::WorldTimeElapsed();
+		}
+	}
 
     double GetRemainingCooldown(Actor* giant, CooldownSource source) {
         if (!Config::Advanced.bCooldowns && IsCooldownDisabledByCheat(source)) {
             return 0.0;
         }
 
-        double time = Time::WorldTimeElapsed();
-        auto& data = CooldownManager::GetSingleton().GetCooldownData(giant);
-
-        switch (source) {
-            case CooldownSource::Damage_Launch: 
-                return (data.lastLaunchTime + LAUNCH_COOLDOWN) - time;
-            case CooldownSource::Damage_Hand:
-                return (data.lastHandDamageTime + HANDDAMAGE_COOLDOWN) - time; 
-            case CooldownSource::Damage_Thigh:
-                return (data.lastThighDamageTime + THIGHDAMAGE_COOLDOWN) - time;
-            case CooldownSource::Push_Basic:
-                return (data.lastPushTime + PUSH_COOLDOWN) - time;
-            case CooldownSource::Action_ButtCrush:
-                return (data.lastButtCrushTime + Calculate_ButtCrushTimer(giant)) - time;
-            case CooldownSource::Action_HealthGate:
-                return (data.lastHealthGateTime + HEALTHGATE_COOLDOWN) - time;
-            case CooldownSource::Action_ScareOther:   
-                return (data.lastScareTime + SCARE_COOLDOWN) - time;
-            case CooldownSource::Action_Hugs:
-                return (data.lastHugTime + HUGS_COOLDOWN) - time;
-            case CooldownSource::Action_HugAbsorbOther:
-                return (data.lastAbsorbTime + Calculate_HugCrushCooldown(giant)) - time;    
-            case CooldownSource::Action_Breasts_Suffocate:
-                return (data.lastBreastSuffocateTime + Calculate_BreastActionCooldown(giant, 0)) - time;
-            case CooldownSource::Action_Breasts_Vore:
-                return (data.lastBreastVoreTime + Calculate_BreastActionCooldown(giant, 1)) - time;
-            case CooldownSource::Action_Breasts_Absorb:
-                return (data.lastBreastAbsorbTime + Calculate_BreastActionCooldown(giant, 2)) - time;
-            case CooldownSource::Emotion_Laugh:   
-                return (data.lastLaughTime + Calculate_LaughCooldown(giant)) - time;
-            case CooldownSource::Emotion_Moan: 
-                return (data.lastMoanTime + Calculate_MoanCooldown(giant)) - time;
-            case CooldownSource::Emotion_Moan_Crush:
-                return (data.lastMoanCrushTime + MOAN_CRUSH_COOLDOWN) - time;
-            case CooldownSource::Misc_RevertSound: 
-                return (data.lastRevertTime + SOUND_COOLDOWN) - time;
-            case CooldownSource::Misc_GrowthSound:
-                return (data.lastSoundGrowthTime + GROW_SOUND_COOLDOWN) - time;
-            case CooldownSource::Misc_BeingHit:
-                return (data.lastHitTime + HIT_COOLDOWN) - time;  
-            case CooldownSource::Misc_AiGrowth:
-                return (data.lastGrowthTime + AI_GROWTH_COOLDOWN) - time;  
-            case CooldownSource::Misc_ShrinkOutburst:
-                return (data.lastOutburstTime + Calculate_ShrinkOutburstTimer(giant)) - time; 
-            case CooldownSource::Misc_ShrinkOutburst_Forced:
-                return (data.lastForceOutburstTime + SHRINK_OUTBURST_COOLDOWN_FORCED) - time; 
-            case CooldownSource::Misc_ShrinkParticle:
-                return (data.lastShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN) - time;
-            case CooldownSource::Misc_ShrinkParticle_Animation:
-                return (data.lastAnimShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_ANIM) - time;
-            case CooldownSource::Misc_ShrinkParticle_Gaze:
-                return (data.lastGazeShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_GAZE) - time;
-            case CooldownSource::Misc_TinyCalamity_WrathfulCalamity:
-                return (data.lastTinyCalamityOneShotTime + TINYCALAMITY_ONESHOT_COOLDOWN) - time;
-            case CooldownSource::Misc_TinyCalamity_Shrink:
-                return (data.lastTinyCalamityShrinkTime + TINYCALAMITY_SHRINK_COOLDOWN) - time;
-            case CooldownSource::Footstep_Right:
-                return (data.lastFootstepTime_R + Calculate_FootstepTimer(giant)) - time;   
-            case CooldownSource::Footstep_Left:
-                return (data.lastFootstepTime_L + Calculate_FootstepTimer(giant)) - time; 
-            case CooldownSource::Footstep_JumpLand:
-                return (data.lastJumplandTime + Calculate_FootstepTimer(giant)) - time;
-            case CooldownSource::Emotion_Voice:
-                return (data.lastEmotionTime + Calculate_EmotionCooldown(giant)) - time;
-            case CooldownSource::Emotion_Voice_Long:
-                return (data.lastEmotionTime_Long + Calculate_EmotionCooldown_Long(giant)) - time;
-            }
-        return 0.0;
-    }
+		const auto endTime = GetCooldownEndTime(giant, source);
+		return endTime ? *endTime - Time::WorldTimeElapsed() : 0.0;
+	}
 
     bool IsActionOnCooldown(Actor* giant, CooldownSource source) {
 
@@ -315,73 +229,7 @@ namespace GTS {
             return false;
         }
 
-        double time = Time::WorldTimeElapsed();
-        auto& data = CooldownManager::GetSingleton().GetCooldownData(giant);
-
-        switch (source) {
-            case CooldownSource::Damage_Launch: 
-                return time <= (data.lastLaunchTime + LAUNCH_COOLDOWN);
-            case CooldownSource::Damage_Hand:
-                return time <= (data.lastHandDamageTime + HANDDAMAGE_COOLDOWN);
-            case CooldownSource::Damage_Thigh:
-                return time <= (data.lastThighDamageTime + THIGHDAMAGE_COOLDOWN);
-            case CooldownSource::Push_Basic:
-                return time <= (data.lastPushTime + PUSH_COOLDOWN);
-            case CooldownSource::Action_ButtCrush:
-                return time <= (data.lastButtCrushTime + Calculate_ButtCrushTimer(giant));
-            case CooldownSource::Action_HealthGate:
-                return time <= (data.lastHealthGateTime + HEALTHGATE_COOLDOWN);
-            case CooldownSource::Action_ScareOther:   
-                return time <= (data.lastScareTime + SCARE_COOLDOWN);
-            case CooldownSource::Action_Breasts_Suffocate:
-                return time <= (data.lastBreastSuffocateTime + Calculate_BreastActionCooldown(giant, 0));
-            case CooldownSource::Action_Breasts_Vore:
-                return time <= (data.lastBreastVoreTime + Calculate_BreastActionCooldown(giant, 1));
-            case CooldownSource::Action_Breasts_Absorb:
-                return time <= (data.lastBreastAbsorbTime + Calculate_BreastActionCooldown(giant, 2));
-            case CooldownSource::Action_Hugs:
-                return time <= (data.lastHugTime + HUGS_COOLDOWN);
-            case CooldownSource::Action_HugAbsorbOther:
-                return time <= (data.lastAbsorbTime + Calculate_HugCrushCooldown(giant));
-            case CooldownSource::Emotion_Laugh:   
-                return time <= (data.lastLaughTime + LAUGH_COOLDOWN);
-            case CooldownSource::Emotion_Moan: 
-                return time <= (data.lastMoanTime + MOAN_COOLDOWN);
-            case CooldownSource::Emotion_Moan_Crush:
-                return time <= (data.lastMoanCrushTime + MOAN_CRUSH_COOLDOWN);
-            case CooldownSource::Misc_RevertSound: 
-                return time <= (data.lastRevertTime + SOUND_COOLDOWN);
-            case CooldownSource::Misc_GrowthSound:
-                return time <= (data.lastSoundGrowthTime + GROW_SOUND_COOLDOWN);
-            case CooldownSource::Misc_BeingHit:
-                return time <= (data.lastHitTime + HIT_COOLDOWN);  
-            case CooldownSource::Misc_AiGrowth:
-                return time <= (data.lastGrowthTime + AI_GROWTH_COOLDOWN);
-            case CooldownSource::Misc_ShrinkOutburst:
-                return time <= (data.lastOutburstTime + Calculate_ShrinkOutburstTimer(giant));   
-            case CooldownSource::Misc_ShrinkOutburst_Forced:
-                return time <= (data.lastForceOutburstTime + SHRINK_OUTBURST_COOLDOWN_FORCED);   
-            case CooldownSource::Misc_ShrinkParticle:
-                return time <= (data.lastShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN); 
-            case CooldownSource::Misc_ShrinkParticle_Animation:
-                return time <= (data.lastAnimShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_ANIM);
-            case CooldownSource::Misc_ShrinkParticle_Gaze:
-                return time <= (data.lastGazeShrinkParticleTime + SHRINK_PARTICLE_COOLDOWN_GAZE);
-            case CooldownSource::Misc_TinyCalamity_WrathfulCalamity:
-                return time <= (data.lastTinyCalamityOneShotTime + TINYCALAMITY_ONESHOT_COOLDOWN); 
-            case CooldownSource::Misc_TinyCalamity_Shrink:
-                return time <= (data.lastTinyCalamityShrinkTime + TINYCALAMITY_SHRINK_COOLDOWN); 
-            case CooldownSource::Footstep_Right:
-                return time <= (data.lastFootstepTime_R + Calculate_FootstepTimer(giant));    
-            case CooldownSource::Footstep_Left:
-                return time <= (data.lastFootstepTime_L + Calculate_FootstepTimer(giant));  
-            case CooldownSource::Footstep_JumpLand:
-                return time <= (data.lastJumplandTime + Calculate_FootstepTimer(giant));
-            case CooldownSource::Emotion_Voice:
-                return time <= (data.lastEmotionTime + Calculate_EmotionCooldown(giant));
-            case CooldownSource::Emotion_Voice_Long:
-                return time <= (data.lastEmotionTime_Long + Calculate_EmotionCooldown_Long(giant));
-            }
-        return false; 
-    }
+		const auto endTime = GetCooldownEndTime(giant, source);
+		return endTime && Time::WorldTimeElapsed() <= *endTime;
+	}
 }

@@ -48,6 +48,64 @@ namespace {
 	}
 
 	constexpr auto kFibDirs = makeFibSphere<FibRayCnt>();
+
+	class ScopedCameraCollisionMask {
+		public:
+		ScopedCameraCollisionMask(RE::bhkWorld& a_world, RE::bhkCollisionFilter& a_filter, std::span<const RE::COL_LAYER> a_layers)
+			: world(a_world), filter(a_filter) {
+			constexpr auto cameraLayer = static_cast<std::uint8_t>(RE::COL_LAYER::kCamera);
+			RE::BSWriteLockGuard lock(world.worldLock);
+			originalCameraMask = filter.layerBitfields[cameraLayer];
+			originalLayerMasks.reserve(a_layers.size());
+
+			for (const auto layer : a_layers) {
+				const auto layerIndex = static_cast<std::uint8_t>(layer);
+				if (layerIndex >= 64 || layerIndex == cameraLayer) {
+					continue;
+				}
+				originalLayerMasks.emplace_back(layerIndex, filter.layerBitfields[layerIndex]);
+			}
+
+			for (const auto& layerMask : originalLayerMasks) {
+				const auto layerIndex = layerMask.first;
+				constexpr std::uint64_t cameraBit = 1ULL << cameraLayer;
+				const std::uint64_t layerBit = 1ULL << layerIndex;
+				filter.layerBitfields[cameraLayer] &= ~layerBit;
+				filter.layerBitfields[layerIndex] &= ~cameraBit;
+			}
+		}
+
+		~ScopedCameraCollisionMask() {
+			constexpr auto cameraLayer = static_cast<std::uint8_t>(RE::COL_LAYER::kCamera);
+			constexpr std::uint64_t cameraBit = 1ULL << cameraLayer;
+			RE::BSWriteLockGuard lock(world.worldLock);
+			for (const auto& [layerIndex, originalMask] : originalLayerMasks) {
+				const std::uint64_t layerBit = 1ULL << layerIndex;
+				if (originalCameraMask & layerBit) {
+					filter.layerBitfields[cameraLayer] |= layerBit;
+				}
+				else {
+					filter.layerBitfields[cameraLayer] &= ~layerBit;
+				}
+
+				if (originalMask & cameraBit) {
+					filter.layerBitfields[layerIndex] |= cameraBit;
+				}
+				else {
+					filter.layerBitfields[layerIndex] &= ~cameraBit;
+				}
+			}
+		}
+
+		ScopedCameraCollisionMask(const ScopedCameraCollisionMask&) = delete;
+		ScopedCameraCollisionMask& operator=(const ScopedCameraCollisionMask&) = delete;
+
+		private:
+		RE::bhkWorld& world;
+		RE::bhkCollisionFilter& filter;
+		std::uint64_t originalCameraMask = 0;
+		std::vector<std::pair<std::uint8_t, std::uint64_t>> originalLayerMasks;
+	};
 }
 
 namespace GTS::CameraCol {
@@ -57,8 +115,8 @@ namespace GTS::CameraCol {
 		CamRayResult res;
 
 		const auto ply = RE::PlayerCharacter::GetSingleton();
-		const auto cam = RE::PlayerCamera::GetSingleton();
-		if (!ply->parentCell || !cam->unk120) return res;
+			const auto cam = RE::PlayerCamera::GetSingleton();
+			if (!ply || !cam || !ply->parentCell || !cam->unk120) return res;
 
 		auto physicsWorld = ply->parentCell->GetbhkWorld();
 		if (physicsWorld) {
@@ -82,9 +140,14 @@ namespace GTS::CameraCol {
 		auto cell = cameraActor->GetParentCell();
 		if (!cell) return rayEnd;
 
-		//Get the world, used for a write lock later.
-		bhkWorld* physicsWorld = cell->GetbhkWorld();
-		RE::bhkCollisionFilter* filter = static_cast<RE::bhkCollisionFilter*>(physicsWorld->GetWorld2()->collisionFilter);
+			//Get the world, used for a write lock later.
+			bhkWorld* physicsWorld = cell->GetbhkWorld();
+			if (!physicsWorld) return rayEnd;
+
+			auto* world = physicsWorld->GetWorld2();
+			if (!world || !world->collisionFilter) return rayEnd;
+
+			RE::bhkCollisionFilter* filter = static_cast<RE::bhkCollisionFilter*>(world->collisionFilter);
 
 		NiPoint3 currentStart = rayStart;
 		NiPoint3 finalCameraPosition = rayEnd;
@@ -135,9 +198,13 @@ namespace GTS::CameraCol {
 
 					if (const auto* collidable = static_cast<const hkpCollidable*>(hit.body)) {
 						const auto layer = static_cast<COL_LAYER>(collidable->broadPhaseHandle.collisionFilterInfo & 0x7F);
+						const auto layerIndex = static_cast<std::uint8_t>(layer);
+						if (layerIndex >= 64) {
+							continue;
+						}
 
 						const uint64_t cameraCollidesWithBitfield = filter->layerBitfields[static_cast<uint8_t>(COL_LAYER::kCamera)];
-						const uint64_t layerBit = 1ULL << static_cast<uint64_t>(layer);
+						const uint64_t layerBit = 1ULL << layerIndex;
 
 						if (cameraCollidesWithBitfield & layerBit) {
 							if (hitPos.z > actorZPos) {
@@ -159,27 +226,15 @@ namespace GTS::CameraCol {
 		std::vector<COL_LAYER> disabledLayers;
 		disabledLayers.reserve(8);
 
-		{
 			for (RE::hkpCdBody* av : ignoreList) {
 				if (!av) continue;
 				const hkpCollidable* collidable = static_cast<const hkpCollidable*>(av);
-				COL_LAYER layer = static_cast<COL_LAYER>(collidable->broadPhaseHandle.collisionFilterInfo & 0x1F);
-				if (std::ranges::find(disabledLayers, layer) == disabledLayers.end()) {
+				COL_LAYER layer = static_cast<COL_LAYER>(collidable->broadPhaseHandle.collisionFilterInfo & 0x7F);
+				if (static_cast<std::uint8_t>(layer) < 64 && std::ranges::find(disabledLayers, layer) == disabledLayers.end()) {
 					disabledLayers.push_back(layer);
 				}
 			}
-
-			{
-				BSWriteLockGuard lock(physicsWorld->worldLock);
-
-				for (COL_LAYER layer : disabledLayers) {
-					constexpr uint64_t camBit = 1ULL << static_cast<uint64_t>(COL_LAYER::kCamera);
-					const uint64_t layerBit = 1ULL << static_cast<uint64_t>(layer);
-					filter->layerBitfields[static_cast<uint8_t>(COL_LAYER::kCamera)] &= ~layerBit;
-					filter->layerBitfields[static_cast<uint8_t>(layer)] &= ~camBit;
-				}
-			}
-		}
+			ScopedCameraCollisionMask collisionMask(*physicsWorld, *filter, disabledLayers);
 
 		{
 			//Underground prevention
@@ -253,21 +308,7 @@ namespace GTS::CameraCol {
 			}
 		}
 
-
-		// Revert the objects back to their original collision filter data.
-		{
-
-			BSWriteLockGuard lock(physicsWorld->worldLock);
-
-			for (COL_LAYER layer : disabledLayers) {
-				constexpr uint64_t camBit = 1ULL << static_cast<uint64_t>(COL_LAYER::kCamera);
-				const uint64_t layerBit = 1ULL << static_cast<uint64_t>(layer);
-				filter->layerBitfields[static_cast<uint8_t>(COL_LAYER::kCamera)] |= layerBit;
-				filter->layerBitfields[static_cast<uint8_t>(layer)] |= camBit;
-			}
-		}
-
-		return finalCameraPosition;
+			return finalCameraPosition;
 
 	}
 }

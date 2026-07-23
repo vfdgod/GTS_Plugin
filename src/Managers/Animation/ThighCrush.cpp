@@ -75,7 +75,7 @@ namespace {
 				data.animSpeed = 1.0f;
 			} else {
 				int rng = 100 + (RandomInt(0, range));
-				data.animSpeed = (rng/100 * force);
+					data.animSpeed = (rng / 100.0f) * force;
 			}
 		}
 	}

@@ -91,7 +91,7 @@ namespace GTS {
 		virtual void ResetActor(Actor* actor) override;
 		CooldownData& GetCooldownData(Actor* actor);
 
-        private: 
-        std::unordered_map<Actor*, CooldownData> CooldownData;
+		private:
+		std::unordered_map<Actor*, CooldownData> m_cooldownData;
     };
 }

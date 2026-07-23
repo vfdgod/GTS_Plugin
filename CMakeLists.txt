@@ -14,8 +14,6 @@ project(
 
 # Not exposed by CMake; manually set here for version.rc.in.
 set(PROJECT_COPYRIGHT "Apache License 2.0")
-set(PROJECT_DESCRIPTION "${PROJECT_DESCRIPTION}")
-set(PROJECT_NAME "${PROJECT_NAME}")
 set(PROJECT_FRIENDLY_NAME "${PROJECT_NAME}")
 # set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -31,10 +29,6 @@ option(GTS_BUILD_DISTRIBUTION "Construct a distribution folder after each build"
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_definitions(_DISABLE_EXTENDED_ALIGNED_STORAGE)
-
-if(MSVC)
-	add_compile_options(/utf-8)
-endif()
 
 # Check if MSVC is the compiler
 if(MSVC)
@@ -84,7 +78,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
-# Boost Reflect
+# Header-only reflect library
 # https://github.com/qlibs/reflect
 FetchContent_Declare(
 	boost_ext_reflect
@@ -106,7 +100,6 @@ FetchContent_MakeAvailable(glaze)
 # # Find dependencies - VCPKG
 # #######################################################################################################################
 
-find_package(Boost REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(lz4 CONFIG REQUIRED)
 find_package(xbyak CONFIG REQUIRED)
@@ -135,7 +128,6 @@ target_link_libraries(
 	PRIVATE
 	${DETOURS_LIBRARY}
 	xbyak::xbyak
-	Boost::headers
 	glaze::glaze
 	toml11::toml11
 	lz4::lz4

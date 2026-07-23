@@ -31,11 +31,18 @@ namespace GTS {
     class WindowSettingsRegistry : public CInitSingleton<WindowSettingsRegistry> {
 
         private:
-        std::unordered_map<WindowRegistryKey, std::unique_ptr<IWindowSettingsHolder>, WindowRegistryKeyHash> m_settingsHolders;
+		std::unordered_map<WindowRegistryKey, std::shared_ptr<IWindowSettingsHolder>, WindowRegistryKeyHash> m_settingsHolders;
 
-        static WindowRegistryKey MakeKey(const std::type_index& a_typeIndex, const std::string& a_instanceName, const std::string& a_basePrefix) {
-            return { a_typeIndex, a_instanceName, a_basePrefix };
-        }
+		static WindowRegistryKey MakeKey(const std::type_index& a_typeIndex, const std::string& a_instanceName, const std::string& a_basePrefix) {
+			return { a_typeIndex, a_instanceName, a_basePrefix };
+		}
+
+		template<typename WindowType>
+		static std::shared_ptr<WindowSettingsHolder<WindowType>> ToTypedHolder(const std::shared_ptr<IWindowSettingsHolder>& a_holder) {
+			auto* holderImpl = static_cast<WindowSettingsHolderImpl<WindowType>*>(a_holder.get());
+			auto* holder = static_cast<WindowSettingsHolder<WindowType>*>(holderImpl);
+			return { a_holder, holder };
+		}
 
         public:
         // Register a window type with optional instance name and base prefix
@@ -48,18 +55,16 @@ namespace GTS {
             auto it = m_settingsHolders.find(key);
             if (it != m_settingsHolders.end()) {
                 // Return existing holder
-                auto holderImpl = static_cast<WindowSettingsHolderImpl<WindowType>*>(it->second.get());
-                auto holder = static_cast<WindowSettingsHolder<WindowType>*>(holderImpl);
-                return std::shared_ptr<WindowSettingsHolder<WindowType>>(holder, [](WindowSettingsHolder<WindowType>*) {});
+				return ToTypedHolder<WindowType>(it->second);
             }
 
             // Create new holder with instance name and base prefix
-            auto holderImpl = std::make_unique<WindowSettingsHolderImpl<WindowType>>(a_baseDefaults, a_instanceName, a_basePrefix);
-            auto holder = static_cast<WindowSettingsHolder<WindowType>*>(holderImpl.get());
+			auto holderImpl = std::make_shared<WindowSettingsHolderImpl<WindowType>>(a_baseDefaults, a_instanceName, a_basePrefix);
+			auto holder = ToTypedHolder<WindowType>(holderImpl);
 
-            m_settingsHolders[key] = std::move(holderImpl);
+			m_settingsHolders[key] = std::move(holderImpl);
 
-            return std::shared_ptr<WindowSettingsHolder<WindowType>>(holder, [](WindowSettingsHolder<WindowType>*) {});
+			return holder;
         }
 
         // Get settings holder for a window type and instance
@@ -68,9 +73,7 @@ namespace GTS {
             auto key = MakeKey(std::type_index(typeid(WindowType)), a_instanceName, a_basePrefix);
             auto it = m_settingsHolders.find(key);
             if (it != m_settingsHolders.end()) {
-                auto holderImpl = static_cast<WindowSettingsHolderImpl<WindowType>*>(it->second.get());
-                auto holder = static_cast<WindowSettingsHolder<WindowType>*>(holderImpl);
-                return std::shared_ptr<WindowSettingsHolder<WindowType>>(holder, [](WindowSettingsHolder<WindowType>*) {});
+				return ToTypedHolder<WindowType>(it->second);
             }
             return nullptr;
         }
@@ -83,9 +86,7 @@ namespace GTS {
 
             for (const auto& [key, holderPtr] : m_settingsHolders) {
                 if (key.typeIndex == targetType) {
-                    auto holderImpl = static_cast<WindowSettingsHolderImpl<WindowType>*>(holderPtr.get());
-                    auto holder = static_cast<WindowSettingsHolder<WindowType>*>(holderImpl);
-                    instances.emplace_back(holder, [](WindowSettingsHolder<WindowType>*) {});
+				instances.emplace_back(ToTypedHolder<WindowType>(holderPtr));
                 }
             }
 

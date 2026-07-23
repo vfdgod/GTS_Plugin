@@ -124,7 +124,7 @@ namespace Serialization {
 
             std::unordered_map<uint32_t, std::pair<uint8_t, std::span<const uint8_t>>> map;
             size_t i = 0;
-            while (i + 4 + 1 + 2 <= data.size()) {
+			while (i + 4 + 1 + 2 <= data.size()) {
                 uint32_t tag = read_le<uint32_t>(data.data() + i); i += 4;
                 uint8_t tcode = data[i++];
                 uint16_t len = read_le<uint16_t>(data.data() + i); i += 2;
@@ -133,8 +133,12 @@ namespace Serialization {
                // logger::trace("Deserialize found TLV: tag=0x{:08X} type={} len={}", tag, tcode, len);
 
                 map.emplace(tag, std::make_pair(tcode, std::span<const uint8_t>(data.data() + i, len)));
-                i += len;
-            }
+				i += len;
+			}
+
+			if (i != data.size()) {
+				throw std::runtime_error("Corrupt TLV buffer: incomplete trailing record");
+			}
 
             reflect::for_each([&](const auto I) {
                 constexpr std::string_view name = reflect::member_name<I, T>();

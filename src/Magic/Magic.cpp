@@ -115,6 +115,18 @@ namespace GTS {
 		}
 	}
 
+	void Magic::Finish() {
+		if (this->state == State::CleanUp) {
+			return;
+		}
+
+		if (this->state == State::Update || this->state == State::Finish) {
+			this->OnFinish();
+		}
+		this->state = State::CleanUp;
+		this->activeEffect = nullptr;
+	}
+
 	Actor* Magic::GetTarget() const {
 		return this->target;
 	}
@@ -139,8 +151,8 @@ namespace GTS {
 	}
 
 	bool Magic::IsDualCasting() const {
-		if (this->caster) {
-			auto casting_type = GetActiveEffect()->castingSource;
+		if (this->caster && this->activeEffect) {
+			auto casting_type = this->activeEffect->castingSource;
 			if (casting_type == MagicSystem::CastingSource::kLeftHand || casting_type == MagicSystem::CastingSource::kRightHand) {
 				if (auto source = this->caster->GetMagicCaster(casting_type)) {
 					return source->GetIsDualCasting();
@@ -159,24 +171,55 @@ namespace GTS {
 			return;
 		}
 
-		BSSimpleList<ActiveEffect*>* effect_list = a_actor->AsMagicTarget()->GetActiveEffectList();
-
-		if (!effect_list) {
+		auto* magicTarget = a_actor->AsMagicTarget();
+		if (!magicTarget) {
+			MagicManager::GetSingleton().ResetActor(a_actor);
 			return;
 		}
 
+		BSSimpleList<ActiveEffect*>* effect_list = magicTarget->GetActiveEffectList();
+
+		if (!effect_list) {
+			MagicManager::GetSingleton().ResetActor(a_actor);
+			return;
+		}
+
+		std::scoped_lock lock(activeEffectsLock);
+		std::unordered_set<ActiveEffect*> currentEffects;
+
 		for (ActiveEffect* effect : (*effect_list)) {
-			numberOfEffects += 1;
+			if (!effect) {
+				continue;
+			}
+			currentEffects.insert(effect);
+
 			if (!active_effects.contains(effect)) {
 				EffectSetting* base_spell = effect->GetBaseObject();
 				auto factorySearch = factories.find(base_spell);
 				if (factorySearch != factories.end()) {
-					auto &[key, factory] = (*factorySearch);
+					auto& factory = factorySearch->second;
 					auto magic_effect = factory->MakeNew(effect);
 					if (magic_effect) {
-						active_effects.try_emplace(effect, std::move(magic_effect));
+						active_effects.try_emplace(effect, TrackedMagic{ std::move(magic_effect), a_actor });
 					}
 				}
+			}
+
+			if (auto it = active_effects.find(effect); it != active_effects.end()) {
+				it->second.effect->Poll();
+				if (it->second.effect->IsFinished()) {
+					active_effects.erase(it);
+				}
+			}
+		}
+
+		for (auto it = active_effects.begin(); it != active_effects.end();) {
+			if (it->second.owner == a_actor && !currentEffects.contains(it->first)) {
+				it->second.effect->Finish();
+				it = active_effects.erase(it);
+			}
+			else {
+				++it;
 			}
 		}
 	}
@@ -190,17 +233,32 @@ namespace GTS {
 	}
 
 	void MagicManager::Update() {
-		std::erase_if(active_effects, [&](auto& kv) {
-			numberOfOurEffects += 1;
-			kv.second->Poll();
-			return kv.second->IsFinished();
-		});
+		// Active effects are polled while their owning actor's effect list is valid.
 	}
 
 	void MagicManager::Reset() {
+		std::scoped_lock lock(activeEffectsLock);
+		for (auto& tracked : active_effects | std::views::values) {
+			tracked.effect->Finish();
+		}
 		this->active_effects.clear();
-		numberOfEffects = 0;
-		numberOfOurEffects = 0;
+	}
+
+	void MagicManager::ResetActor(RE::Actor* actor) {
+		if (!actor) {
+			return;
+		}
+
+		std::scoped_lock lock(activeEffectsLock);
+		for (auto it = active_effects.begin(); it != active_effects.end();) {
+			if (it->second.owner == actor) {
+				it->second.effect->Finish();
+				it = active_effects.erase(it);
+			}
+			else {
+				++it;
+			}
+		}
 	}
 
 	void MagicManager::DataReady() {

@@ -37,10 +37,11 @@ namespace GTS {
 	void SmoothCam::RequestConrol() {
 
 		if (Loaded()) {
-			if (!SmoothCamAPI->IsCameraEnabled()) {
-				//Camera is disabled, We don't need to do anything
-				Smoothcam_HaveCamera = false;
-			}
+				if (!SmoothCamAPI->IsCameraEnabled()) {
+					//Camera is disabled, We don't need to do anything
+					Smoothcam_HaveCamera = false;
+					return;
+				}
 
 			if (!Smoothcam_HaveCamera) {
 				auto res = SmoothCamAPI->RequestCameraControl(SKSE::GetPluginHandle());
