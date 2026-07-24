@@ -4,7 +4,7 @@
 
 namespace GTS {
 
-	inline thread_local clib_util::RNG generator;
+	inline thread_local clib_util::RNG generator{ std::random_device{}() };
 
 	// ------------------
 	// Random Float

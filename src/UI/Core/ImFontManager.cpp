@@ -37,7 +37,7 @@ namespace GTS {
 		}
 		if (it == TextTypeMap.end()) {
 			logger::error("Font manager has no regular font; using the active ImGui font");
-			ImGui::PushFont(ImGui::GetFont(), ImGui::GetFontSize());
+			ImGui::PushFont(nullptr, 0.0f);
 			return;
 		}
 		const auto& Type = it->second;

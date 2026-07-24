@@ -8,7 +8,7 @@ namespace {
 	constexpr float Duration = 2.0f;
 
 	float SizeAmplifyBonus(RE::Actor* actor, float targetScale) {
-		return Runtime::HasMagicEffect(actor, Runtime::MGEF.GTSPotionEffectSizeAmplify) ?
+		return GTS::Runtime::HasMagicEffect(actor, GTS::Runtime::MGEF.GTSPotionEffectSizeAmplify) ?
 			targetScale * 0.25f + 0.75f : 1.0f;
 	}
 }
